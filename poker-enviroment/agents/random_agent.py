@@ -16,12 +16,17 @@ class RandomAgent(IAgent):
                 - Action: The chosen action (FOLD, CALL, or RAISE).
                 - Optional[int]: The raise amount if the action is RAISE; otherwise, None.
         """
-        # Probability distribution: 10% FOLD, 60% CALL, 30% RAISE.
+        # Probability distribution: 5% FOLD, 85% CALL, 9% RAISE, 1% ALL-IN.
         
         rand_value: float = random.random()
-        if rand_value < 0.1:
+        if rand_value < 0.05:
             return (Action.FOLD, None)
-        elif rand_value < 0.7:
+        elif rand_value < 0.9:
+            # if pot is larger than chips, fold with 50% chance
+            # This is a simple strategy to avoid going all-in when the pot is larger than the player's chips.
+            if observation.get("pot", 30) > observation.get("chips", 1000) and random.random() < 0.5:
+                return (Action.FOLD, None)
+
             return (Action.CALL, None)
         else:
             chips: int = observation.get("chips", 1000)

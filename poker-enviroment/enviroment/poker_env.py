@@ -18,10 +18,10 @@ class PokerEnv:
 
     def _encode_card(self, card_str: str) -> int:
         """
-        Encodes a card string (e.g. "AH" for Ace of Hearts) into an integer (0-51).
+        Encodes a card string (e.g. "A♡" for Ace of Hearts) into an integer (0-51).
         """
         ranks = "23456789TJQKA"
-        suits = "HDCS"
+        suits = "♡♢♧♤"
         
         return suits.index(card_str[1]) * 13 + ranks.index(card_str[0])
 

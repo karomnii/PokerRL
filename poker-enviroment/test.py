@@ -29,8 +29,8 @@ def main():
         step_count += 1
         
     
-    winner = env.game.determine_winner()
-    print(f"\nHand over! Winner is Player {winner}")
+    winners = env.game.determine_winners()
+    print(f"\nHand over! Winner is Player(s) {winners}")
 
 if __name__ == "__main__":
     main()

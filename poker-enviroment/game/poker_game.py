@@ -25,12 +25,12 @@ class PokerGame:
         self.round_stage: str = "pre-flop"
         self.current_player_index: int = 0
         self.hand_over: bool = False
-        self.winner = None | int
+        self.winners: Optional[List[int]] = None
         # A set of player indices that still need to act in the current betting round.
         self.pending_players: set = set()
 
     def reset(self) -> None:
-        self.winner = None
+        self.winners = None
         self.deck = Deck()
         for p in self.players:
             p.reset()
@@ -81,7 +81,6 @@ class PokerGame:
         self.community_cards.extend(self.deck.draw(n))
 
     def next_round(self) -> None:
-
         for p in self.players:
             p.current_bet = 0
 
@@ -96,14 +95,18 @@ class PokerGame:
             self.deal_community_cards(1)
         elif self.round_stage == "river":
             self.round_stage = "showdown"
-            self.winner = self._determine_showdown_winner()
-            if self.winner is not None:
-                self.players[self.winner].chips += self.pot
+            
+            winnings = self.showdown()
+            if winnings:
+                for pid, amount_won in winnings.items():
+                    self.players[pid].chips += amount_won
+                max_win = max(winnings.values())
+                self.winners = [pid for pid, win in winnings.items() if win == max_win]
             self.hand_over = True
             self.pending_players = set()
             return
 
-        # For post-flop rounds, set the first actor based on the button.
+        # For post-flop rounds, choose the first actor based on button position.
         active = [i for i, p in enumerate(self.players) if not p.folded and not p.all_in]
         if active:
             candidate = (self.dealer_index + 1) % self.num_players
@@ -139,13 +142,10 @@ class PokerGame:
         if self.hand_over:
             return
 
-        # Early check: if all players are either folded or all-in,
-        # then finish the hand automatically.
+        # Early check: if all players are either folded or all-in, finish the hand automatically.
         if all(p.folded or p.all_in for p in self.players):
-            # Automatically advance the rounds until showdown.
             while self.round_stage not in ["river", "showdown"]:
                 self.next_round()
-            # If we're at river but haven't finished, deal the river.
             if self.round_stage == "river":
                 self.next_round()
             self.hand_over = True
@@ -199,14 +199,13 @@ class PokerGame:
                 player.current_bet += total_required
                 player.total_bet += total_required
                 self.pot += total_required
-            # Reset pending players on a raise.
+            # On a raise, reset pending players.
             self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in}
             self.pending_players.discard(self.current_player_index)
 
         # Remove the current player from pending.
         self.pending_players.discard(self.current_player_index)
 
-        # If no pending players remain, advance the round.
         if not self.pending_players:
             if self.round_stage != "showdown":
                 self.next_round()
@@ -214,45 +213,40 @@ class PokerGame:
                 self.hand_over = True
                 return
         else:
-            # Otherwise, update turn to the next pending player.
             if self.current_player_index not in self.pending_players:
                 self.current_player_index = self.get_next_pending_player(self.current_player_index)
-
 
     def rotate_dealer(self) -> None:
         """Rotates the dealer for the next hand."""
         self.dealer_index = (self.dealer_index + 1) % self.num_players
 
-    def determine_winner(self) -> Optional[int]:
+    def determine_winners(self) -> Optional[List[int]]:
+        """Determine winners after showdown, handling ties by comparing winnings."""
         active = [p for p in self.players if not p.folded]
         if len(active) == 1:
-            self.winner = active[0].player_id
-            return self.winner
+            self.winners = [active[0].player_id]
+            return self.winners
         if not active:
             return None
         winnings = self.showdown()
         if not winnings:
             return None
         max_win = max(winnings.values())
-        winners = [pid for pid, win in winnings.items() if win == max_win]
-        self.winner = random.choice(winners)
-        return self.winner
+        self.winners = [pid for pid, win in winnings.items() if win == max_win]
+        return self.winners
 
-    def _determine_showdown_winner(self) -> Optional[int]:
-        """
-        Helper to compute the showdown winner without side effects.
-        """
+    def _determine_showdown_winners(self) -> Optional[List[int]]:
+        """Helper to compute showdown winners without side effects."""
         active = [p for p in self.players if not p.folded]
         if len(active) == 1:
-            return active[0].player_id
+            return [active[0].player_id]
         if not active:
             return None
         winnings = self.showdown()
         if not winnings:
             return None
         max_win = max(winnings.values())
-        winners = [pid for pid, win in winnings.items() if win == max_win]
-        return random.choice(winners)
+        return [pid for pid, win in winnings.items() if win == max_win]
 
     def evaluate_best_hand(self, player: Player) -> Tuple:
         """Returns the best 5-card hand value from player's cards and community cards."""

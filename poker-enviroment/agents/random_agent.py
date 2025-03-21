@@ -26,11 +26,9 @@ class RandomAgent(IAgent):
         else:
             chips: int = observation.get("chips", 1000)
             
-            # ALL-IN CHANSE
             if random.random() < 0.1:
                 return (Action.RAISE, chips)    
             
-            # Choose a random raise amount between 1 and the lesser of 50 or available chips.
             max_raise = min(50, chips) if chips > 0 else 1
             raise_amount = random.randint(1, max_raise)
             return (Action.RAISE, raise_amount)

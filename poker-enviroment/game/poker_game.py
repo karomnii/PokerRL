@@ -144,18 +144,15 @@ class PokerGame:
 
         # Early check: if all players are either folded or all-in, finish the hand automatically.
         if all(p.folded or p.all_in for p in self.players):
-            while self.round_stage not in ["river", "showdown"]:
-                self.next_round()
-            if self.round_stage == "river":
+            while self.round_stage != "showdown":
                 self.next_round()
             self.hand_over = True
             return
 
         # Check if only one active (non-folded) player remains.
         active_players = [p for p in self.players if not p.folded]
-        if len(active_players) <= 1:
-            if active_players:
-                self.players[active_players[0].player_id].chips += self.pot
+        if len(active_players) == 1:
+            self.players[active_players[0].player_id].chips += self.pot
             self.hand_over = True
             return
 
@@ -185,7 +182,11 @@ class PokerGame:
         elif action == Action.RAISE:
             if amount is None:
                 raise ValueError("RAISE action requires an amount.")
+            
             call_amt = self.get_call_amount(self.current_player_index)
+            if amount < call_amt:
+                raise ValueError("Raise amount must be greater than the call amount.")
+            
             total_required = call_amt + amount
             if player.chips <= total_required:
                 total = player.chips
@@ -222,17 +223,7 @@ class PokerGame:
 
     def determine_winners(self) -> Optional[List[int]]:
         """Determine winners after showdown, handling ties by comparing winnings."""
-        active = [p for p in self.players if not p.folded]
-        if len(active) == 1:
-            self.winners = [active[0].player_id]
-            return self.winners
-        if not active:
-            return None
-        winnings = self.showdown()
-        if not winnings:
-            return None
-        max_win = max(winnings.values())
-        self.winners = [pid for pid, win in winnings.items() if win == max_win]
+        self.winners = self._determine_showdown_winners()
         return self.winners
 
     def _determine_showdown_winners(self) -> Optional[List[int]]:

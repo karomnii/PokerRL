@@ -1,3 +1,4 @@
+import time
 from agents.random_agent import RandomAgent
 from agents.dummy_agent import DummyAgent 
 
@@ -7,6 +8,7 @@ from game.card import Card, Suit, Rank
 from enviroment import PokerEnv
 
 PLAY_FULL_GAME_WITH_LOGS = False
+RENDER_SPEED = 0.7
 
 def main():
     agents = [RandomAgent() for _ in range(4)]
@@ -33,6 +35,8 @@ def main():
         env.render()
         step_count += 1
         
+        time.sleep(RENDER_SPEED)
+        
     
     winners = env.game.determine_winners()
     print(f"\nHand over! Winner is Player(s) {winners}")
@@ -43,6 +47,7 @@ class TestPokerGame(unittest.TestCase):
         self.game.reset()
 
     def test_blinds_posted(self):
+        self.game.reset()
         # For 4 players with dealer_index = 0:
         #   - Player 1 posts small blind (10 chips)
         #   - Player 2 posts big blind (20 chips)
@@ -53,11 +58,13 @@ class TestPokerGame(unittest.TestCase):
         self.assertEqual(self.game.pot, 30, "The pot should equal 30 after blinds are posted")
 
     def test_deal_hole_cards(self):
+        self.game.reset()
         # Verify that each player is dealt 2 cards.
         for p in self.game.players:
             self.assertEqual(len(p.hand), 2, f"Player {p.player_id} should have 2 hole cards")
 
     def test_round_advancement_all_in(self):
+        self.game.reset()
         # Force all players to be all–in so that the game auto–advances to showdown.
         for p in self.game.players:
             p.chips = 0
@@ -77,6 +84,7 @@ class TestPokerGame(unittest.TestCase):
         self.assertIsNotNone(self.game.winners, "Winners should be determined when all players are all-in")
         
     def test_showdown_tie(self):
+        self.game.reset()
         # Set up a scenario where all players have identical hole cards and community cards yield the same best hand.
         shared_hand = [Card(Suit.HEARTS, Rank.ACE), Card(Suit.HEARTS, Rank.KING)]
         for p in self.game.players:
@@ -100,8 +108,8 @@ class TestPokerGame(unittest.TestCase):
         self.assertTrue(len(determined_winners) > 1, "determine_winners should return a tie (multiple winners)")
 
     def test_simulation_with_dummy_agents(self):
+        self.game.reset()
         # Use the environment simulation to run through a full hand.
-        from enviroment import PokerEnv
         agents = [DummyAgent(Action.CALL) for _ in range(4)]
         env = PokerEnv(agents)
         env.reset()
@@ -118,7 +126,7 @@ class TestPokerGame(unittest.TestCase):
         self.assertGreaterEqual(len(winners), 1, "At least one winner must be determined")
     
     def test_simulation_with_random_agents(self):
-        from enviroment import PokerEnv
+        self.game.reset()
         agents = [RandomAgent() for _ in range(4)]
         env = PokerEnv(agents)
         env.reset()

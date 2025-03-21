@@ -36,13 +36,13 @@ class PokerEnv:
           - "round_stage": The current betting round (e.g., "pre-flop", "flop", etc.).
         """
         player = self.game.players[player_index]
-        # Encode player's hand.
+
         hand_str = [str(card) for card in player.hand]
         hand_encoded = [self._encode_card(card) for card in hand_str]
-        # Encode community cards.
+
         community_str = [str(card) for card in self.game.community_cards]
         community_encoded = [self._encode_card(card) for card in community_str]
-        # Pad community cards to always have 5 entries.
+
         while len(community_encoded) < 5:
             community_encoded.append(-1)
         observation = {
@@ -53,26 +53,6 @@ class PokerEnv:
             "round_stage": self.game.round_stage
         }
         return observation
-
-    def run_hand(self) -> Tuple[int, PokerGame]:
-        """
-        Runs a single hand of poker.
-        Each agent acts in turn (based on game.current_player_index) until the hand is over.
-        Returns:
-          - The winning player's ID.
-          - The final game state (the PokerGame instance).
-        """
-        self.reset()
-        # Continue until the game signals that the hand is over.
-        while not self.game.hand_over:
-            current_index = self.game.current_player_index
-            observation = self._get_observation(current_index)
-            # Agent acts based on the observation.
-            action, amount = self.agents[current_index].act(observation)
-            self.game.step(action, amount)
-        # At hand over, determine the winner (if not already awarded during showdown).
-        winner = self.game.determine_winner()
-        return winner, self.game
 
     def render(self) -> None:
         """Simple textual render of the current game state."""

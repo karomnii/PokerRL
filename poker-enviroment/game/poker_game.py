@@ -23,12 +23,14 @@ class PokerGame:
         self.community_cards: List[Card] = []
         self.pot: int = 0
         self.round_stage: str = "pre-flop"
-        # Track whose turn it is during a betting round.
         self.current_player_index: int = 0
-        # Flag indicating if the current hand is over.
         self.hand_over: bool = False
+        self.winner = None | int
+        # A set of player indices that still need to act in the current betting round.
+        self.pending_players: set = set()
 
     def reset(self) -> None:
+        self.winner = None
         self.deck = Deck()
         for p in self.players:
             p.reset()
@@ -39,20 +41,21 @@ class PokerGame:
         self.deal_hole_cards()
         self.post_blinds()
         self.set_initial_turn()
+        self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in}
 
     def set_initial_turn(self) -> None:
-        """Determine which player acts first in pre-flop."""
+        """Determine which player acts first in pre-flop.
+           Heads-up: dealer (small blind) acts first.
+           Multi-player: first to act is the player to the left of the big blind.
+        """
         if self.num_players == 2:
-            # In heads-up, the dealer (small blind) acts first pre-flop.
             self.current_player_index = self.dealer_index
         else:
-            # In multi-player, first to act is the player to the left of the big blind.
             self.current_player_index = (self.dealer_index + 3) % self.num_players
 
     def post_blinds(self) -> None:
         """Posts the blinds for the appropriate players."""
         if self.num_players == 2:
-            # Heads-up: dealer posts small blind, other posts big blind.
             small_blind_player = self.players[self.dealer_index]
             big_blind_player = self.players[(self.dealer_index + 1) % self.num_players]
         else:
@@ -78,9 +81,10 @@ class PokerGame:
         self.community_cards.extend(self.deck.draw(n))
 
     def next_round(self) -> None:
-        # Reset bets at the start of a new round.
+
         for p in self.players:
             p.current_bet = 0
+
         if self.round_stage == "pre-flop":
             self.round_stage = "flop"
             self.deal_community_cards(3)
@@ -91,32 +95,39 @@ class PokerGame:
             self.round_stage = "river"
             self.deal_community_cards(1)
         elif self.round_stage == "river":
-            # Instead of just changing the round stage to showdown,
-            # immediately process the showdown.
             self.round_stage = "showdown"
-            winner = self.determine_winner()
-            self.players[winner].chips += self.pot
+            self.winner = self._determine_showdown_winner()
+            if self.winner is not None:
+                self.players[self.winner].chips += self.pot
             self.hand_over = True
-            return  # Do not update current_player_index further.
-        # Update turn for the new round only if the hand is not over.
-        if not self.hand_over:
-            self.current_player_index = self.get_first_active_player_index()
+            self.pending_players = set()
+            return
 
+        # For post-flop rounds, set the first actor based on the button.
+        active = [i for i, p in enumerate(self.players) if not p.folded and not p.all_in]
+        if active:
+            candidate = (self.dealer_index + 1) % self.num_players
+            while candidate not in active:
+                candidate = (candidate + 1) % self.num_players
+            self.current_player_index = candidate
+            self.pending_players = set(active)
+        else:
+            self.pending_players = set()
 
     def get_first_active_player_index(self) -> int:
-        """Returns the index of the first player able to act (not folded/all-in)."""
+        """Returns the index of the first pending player starting from the small blind."""
         start = (self.dealer_index + 1) % self.num_players
         for i in range(self.num_players):
             idx = (start + i) % self.num_players
-            if not self.players[idx].folded and not self.players[idx].all_in:
+            if idx in self.pending_players:
                 return idx
         return start
 
-    def get_next_active_player_index(self, current_index: int) -> int:
-        """Returns the index of the next active player after current_index."""
-        for i in range(1, self.num_players):
+    def get_next_pending_player(self, current_index: int) -> int:
+        """Returns the next pending player after current_index in cyclic order."""
+        for i in range(1, self.num_players + 1):
             idx = (current_index + i) % self.num_players
-            if not self.players[idx].folded and not self.players[idx].all_in:
+            if idx in self.pending_players:
                 return idx
         return current_index
 
@@ -125,26 +136,41 @@ class PokerGame:
         return max_bet - self.players[pid].current_bet
 
     def step(self, action: Action, amount: Optional[int] = None) -> None:
-        """
-        Processes an action for the current player, updates game state,
-        and advances turn or betting round as necessary.
-        """
         if self.hand_over:
             return
 
-        player = self.players[self.current_player_index]
-        # Skip players who have folded or are all-in.
-        if player.folded or player.all_in:
-            self.current_player_index = self.get_next_active_player_index(self.current_player_index)
+        # Early check: if all players are either folded or all-in,
+        # then finish the hand automatically.
+        if all(p.folded or p.all_in for p in self.players):
+            # Automatically advance the rounds until showdown.
+            while self.round_stage not in ["river", "showdown"]:
+                self.next_round()
+            # If we're at river but haven't finished, deal the river.
+            if self.round_stage == "river":
+                self.next_round()
+            self.hand_over = True
             return
 
-        # Process the chosen action.
+        # Check if only one active (non-folded) player remains.
+        active_players = [p for p in self.players if not p.folded]
+        if len(active_players) <= 1:
+            if active_players:
+                self.players[active_players[0].player_id].chips += self.pot
+            self.hand_over = True
+            return
+
+        player = self.players[self.current_player_index]
+
+        if player.folded or player.all_in:
+            self.pending_players.discard(self.current_player_index)
+            self.current_player_index = self.get_next_pending_player(self.current_player_index)
+            return
+
         if action == Action.FOLD:
             player.folded = True
         elif action == Action.CALL:
             call_amt = self.get_call_amount(self.current_player_index)
             if player.chips <= call_amt:
-                # Go all-in if insufficient chips.
                 actual_bet = player.chips
                 player.current_bet += actual_bet
                 player.total_bet += actual_bet
@@ -173,49 +199,57 @@ class PokerGame:
                 player.current_bet += total_required
                 player.total_bet += total_required
                 self.pot += total_required
+            # Reset pending players on a raise.
+            self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in}
+            self.pending_players.discard(self.current_player_index)
 
-        # Check if the betting round is over.
-        if self.is_round_over():
+        # Remove the current player from pending.
+        self.pending_players.discard(self.current_player_index)
+
+        # If no pending players remain, advance the round.
+        if not self.pending_players:
             if self.round_stage != "showdown":
                 self.next_round()
             else:
-                # In showdown, determine the winner, award the pot, and mark hand as over.
-                winner = self.determine_winner()
-                self.players[winner].chips += self.pot
                 self.hand_over = True
                 return
+        else:
+            # Otherwise, update turn to the next pending player.
+            if self.current_player_index not in self.pending_players:
+                self.current_player_index = self.get_next_pending_player(self.current_player_index)
 
-        # Advance turn to the next active player.
-        self.current_player_index = self.get_next_active_player_index(self.current_player_index)
-
-    def is_round_over(self) -> bool:
-        """
-        A betting round is over if either only one player remains
-        or every player able to act has matched the highest bet.
-        """
-        active = [p for p in self.players if not p.folded]
-        if len(active) <= 1:
-            return True
-        max_bet = max(p.current_bet for p in active)
-        for p in active:
-            if not p.all_in and p.current_bet != max_bet:
-                return False
-        return True
 
     def rotate_dealer(self) -> None:
         """Rotates the dealer for the next hand."""
         self.dealer_index = (self.dealer_index + 1) % self.num_players
 
     def determine_winner(self) -> Optional[int]:
+        active = [p for p in self.players if not p.folded]
+        if len(active) == 1:
+            self.winner = active[0].player_id
+            return self.winner
+        if not active:
+            return None
+        winnings = self.showdown()
+        if not winnings:
+            return None
+        max_win = max(winnings.values())
+        winners = [pid for pid, win in winnings.items() if win == max_win]
+        self.winner = random.choice(winners)
+        return self.winner
+
+    def _determine_showdown_winner(self) -> Optional[int]:
         """
-        Determines the winner at showdown.
-        If one player remains, that player wins automatically.
-        Otherwise, side pot calculations are used based on best hand evaluation.
+        Helper to compute the showdown winner without side effects.
         """
         active = [p for p in self.players if not p.folded]
         if len(active) == 1:
             return active[0].player_id
+        if not active:
+            return None
         winnings = self.showdown()
+        if not winnings:
+            return None
         max_win = max(winnings.values())
         winners = [pid for pid, win in winnings.items() if win == max_win]
         return random.choice(winners)
@@ -312,9 +346,9 @@ class PokerGame:
 
     def showdown(self) -> Dict[int, int]:
         """
-        Implements side-pot calculations:
+        Implements side–pot calculations:
          1. Each active player's total bet is considered their contribution.
-         2. Side pots are created by “peeling off” the smallest contributions.
+         2. Side pots are created by peeling off the smallest contributions.
          3. For each pot, the best hand among eligible players wins that portion.
          4. The pot is split equally among winners.
         Returns a mapping of player_id to chips won.

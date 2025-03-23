@@ -1,0 +1,22 @@
+@TexasHoldemPoker.API_HostAddress = http://localhost:5261
+
+POST {{TexasHoldemPoker.API_HostAddress}}/api/users/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "TestPassword123"
+}
+
+###
+
+POST {{TexasHoldemPoker.API_HostAddress}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "TestPassword123"
+}
+
+###

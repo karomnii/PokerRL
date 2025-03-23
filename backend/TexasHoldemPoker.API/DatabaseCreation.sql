@@ -282,6 +282,30 @@ BEGIN
 END;
 GO
 
-SELECT * FROM PokerTables;
-INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive)
-VALUES ('Beginner Table', 100, 500, 1000, 10, 20, 9, 'Beginner', 1);
+-- Populate Cards Table
+INSERT INTO Cards (Suit, Value) VALUES 
+('Hearts', '2'), ('Hearts', '3'), ('Hearts', '4'), ('Hearts', '5'), ('Hearts', '6'),
+('Hearts', '7'), ('Hearts', '8'), ('Hearts', '9'), ('Hearts', '10'), ('Hearts', 'J'),
+('Hearts', 'Q'), ('Hearts', 'K'), ('Hearts', 'A'),
+('Diamonds', '2'), ('Diamonds', '3'), ('Diamonds', '4'), ('Diamonds', '5'), ('Diamonds', '6'),
+('Diamonds', '7'), ('Diamonds', '8'), ('Diamonds', '9'), ('Diamonds', '10'), ('Diamonds', 'J'),
+('Diamonds', 'Q'), ('Diamonds', 'K'), ('Diamonds', 'A'),
+('Clubs', '2'), ('Clubs', '3'), ('Clubs', '4'), ('Clubs', '5'), ('Clubs', '6'),
+('Clubs', '7'), ('Clubs', '8'), ('Clubs', '9'), ('Clubs', '10'), ('Clubs', 'J'),
+('Clubs', 'Q'), ('Clubs', 'K'), ('Clubs', 'A'),
+('Spades', '2'), ('Spades', '3'), ('Spades', '4'), ('Spades', '5'), ('Spades', '6'),
+('Spades', '7'), ('Spades', '8'), ('Spades', '9'), ('Spades', '10'), ('Spades', 'J'),
+('Spades', 'Q'), ('Spades', 'K'), ('Spades', 'A');
+
+-- Populate PokerTables Table
+INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive) VALUES 
+('Beginner Table', 100, 500, 1000, 10, 20, 9, 'Beginner', 1),
+('Intermediate Table', 500, 1000, 5000, 50, 100, 9, 'Intermediate', 1),
+('Pro Table', 1000, 5000, 10000, 100, 200, 9, 'Pro', 1);
+
+-- Populate ShopItems Table
+INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive) VALUES 
+('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1),
+('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1),
+('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1),
+('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1);

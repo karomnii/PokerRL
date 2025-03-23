@@ -7,7 +7,7 @@ from game.poker_game import PokerGame, Action
 from game.card import Card, Suit, Rank
 from enviroment import PokerEnv
 
-PLAY_FULL_GAME_WITH_LOGS = False
+PLAY_FULL_GAME_WITH_LOGS = True
 RENDER_SPEED = 0.7
 
 def main():

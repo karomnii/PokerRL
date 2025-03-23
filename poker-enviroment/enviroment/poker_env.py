@@ -18,10 +18,10 @@ class PokerEnv:
 
     def _encode_card(self, card_str: str) -> int:
         """
-        Encodes a card string (e.g. "AH" for Ace of Hearts) into an integer (0-51).
+        Encodes a card string (e.g. "A♡" for Ace of Hearts) into an integer (0-51).
         """
         ranks = "23456789TJQKA"
-        suits = "HDCS"
+        suits = "♡♢♧♤"
         
         return suits.index(card_str[1]) * 13 + ranks.index(card_str[0])
 
@@ -31,6 +31,8 @@ class PokerEnv:
         Observation includes:
           - "hand": Encoded list of the player's two cards.
           - "community_cards": Encoded list of community cards (padded to 5 with -1).
+          - "current_bet": The player's current bet.
+          - "call_amount": The amount needed to call the current bet.
           - "pot": Current pot size.
           - "chips": Number of chips the player has.
           - "round_stage": The current betting round (e.g., "pre-flop", "flop", etc.).
@@ -43,6 +45,9 @@ class PokerEnv:
         community_str = [str(card) for card in self.game.community_cards]
         community_encoded = [self._encode_card(card) for card in community_str]
 
+        current_bet = player.current_bet
+        call_amount = max(p.current_bet for p in self.game.players if not p.folded) - current_bet
+
         while len(community_encoded) < 5:
             community_encoded.append(-1)
         observation = {
@@ -50,7 +55,9 @@ class PokerEnv:
             "community_cards": community_encoded,
             "pot": self.game.pot,
             "chips": player.chips,
-            "round_stage": self.game.round_stage
+            "round_stage": self.game.round_stage,
+            "current_bet": current_bet,
+            "call_amount": call_amount,
         }
         return observation
 

@@ -8,5 +8,6 @@
         public string AvatarImage { get; set; }
         public int GamesWon { get; set; }
         public int GamesPlayed { get; set; }
+        public double WinRatio { get; set; }
     }
 }

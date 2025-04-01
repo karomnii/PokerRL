@@ -42,7 +42,7 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<IEnumerable<LeaderboardEntry>> GetTopPlayersSortedAsync(int count)
         {
             return await _context.LeaderboardView
-                .OrderByDescending(l => l.WinRatio) // Sortowanie według WinRatio malejąco
+                .OrderByDescending(l => l.ChipsBalance) // Sortowanie według ilości zetonow
                 .Take(count) // Pobranie określonej liczby graczy
                 .ToListAsync();
         }

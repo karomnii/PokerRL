@@ -151,17 +151,21 @@ CREATE TABLE ChipTransactions (
 GO
 
 -- Leaderboard View
-CREATE VIEW LeaderboardView AS
+CREATE OR ALTER VIEW LeaderboardView AS
 SELECT 
-    UserId,
-    Username,
-    ChipsBalance,
-    AvatarImage,
-    (SELECT COUNT(*) FROM Games WHERE WinnerId = Users.UserId) AS GamesWon,
-    (SELECT COUNT(*) FROM GamePlayers WHERE UserId = Users.UserId) AS GamesPlayed
-FROM Users
-WHERE IsActive = 1;
-GO
+    u.UserId,
+    u.Username,
+    u.ChipsBalance,
+    u.AvatarImage,
+    (SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS GamesWon,
+    (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS GamesPlayed,
+    CASE 
+        WHEN (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) = 0 THEN 0
+        ELSE CAST((SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS FLOAT) /
+             CAST((SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS FLOAT)
+    END AS WinRatio
+FROM Users u
+WHERE u.IsActive = 1;
 
 -- Indexes for better performance
 CREATE INDEX IX_Games_TableId ON Games(TableId);

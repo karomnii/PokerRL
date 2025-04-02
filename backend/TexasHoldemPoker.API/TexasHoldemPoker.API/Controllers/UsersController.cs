@@ -16,15 +16,17 @@ namespace TexasHoldemPoker.API.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher<User> _passwordHasher;
         private readonly ITokenService _tokenService;
-
+        private readonly ILeaderboardRepository _leaderboardRepository;
         public UsersController(
             IUserRepository userRepository,
             IPasswordHasher<User> passwordHasher,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            ILeaderboardRepository leaderboardRepository)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _leaderboardRepository = leaderboardRepository ?? throw new ArgumentNullException(nameof(leaderboardRepository));
         }
 
         [HttpPost("register")]
@@ -42,7 +44,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Email = registerDto.Email,
                 ChipsBalance = 1000, // Starting chips
                 RegistrationDate = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                AvatarImage = "/images/default.png"
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
@@ -129,6 +132,34 @@ namespace TexasHoldemPoker.API.Controllers
             await _userRepository.UpdateAsync(user);
 
             return NoContent();
+        }
+        
+        
+        [HttpGet("leaderboard/top")]
+        public async Task<ActionResult<IEnumerable<LeaderboardEntry>>> GetTopPlayers([FromQuery] int count = 10)
+        {
+            var topPlayers = await _leaderboardRepository.GetTopPlayersSortedAsync(count);
+            return Ok(topPlayers);
+        }
+        
+        [HttpGet("leaderboard/player-info/{userId}")]
+        public async Task<ActionResult<object>> GetPlayerInfo(int userId)
+        {
+            var playerRanking = await _leaderboardRepository.GetPlayerRankingAsync(userId);
+            if (playerRanking == null)
+                return NotFound(new { Message = "Player not found in the leaderboard." });
+            
+            var position = await _leaderboardRepository.GetPlayerRankPositionAsync(userId);
+            if (position == -1)
+                return NotFound(new { Message = "Player not found in the leaderboard." });
+
+            var result = new
+            {
+                Position = position,
+                PlayerDetails = playerRanking
+            };
+
+            return Ok(result);
         }
     }
 }

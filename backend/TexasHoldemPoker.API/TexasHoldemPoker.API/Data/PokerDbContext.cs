@@ -20,6 +20,7 @@ namespace TexasHoldemPoker.API.Data
         public DbSet<Purchase> Purchases { get; set; }
         public DbSet<ChipTransaction> ChipTransactions { get; set; }
         public DbSet<LeaderboardEntry> LeaderboardEntries { get; set; }
+        public DbSet<LeaderboardEntry> LeaderboardView { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

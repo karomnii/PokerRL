@@ -39,6 +39,13 @@ namespace TexasHoldemPoker.API.Repositories
             // Return 1-based position (or -1 if not found)
             return position >= 0 ? position + 1 : -1;
         }
+        public async Task<IEnumerable<LeaderboardEntry>> GetTopPlayersSortedAsync(int count)
+        {
+            return await _context.LeaderboardView
+                .OrderByDescending(l => l.ChipsBalance) // Sortowanie według ilości zetonow
+                .Take(count) // Pobranie określonej liczby graczy
+                .ToListAsync();
+        }
     }
 
 }

@@ -8,20 +8,15 @@ class HomePageView extends GetView<HomePageController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rx Page')),
-      body: Center(
-          child: Column(
+      appBar: AppBar(
+          title: const Center(child: Text('Home Page')),
+          backgroundColor: const Color.fromARGB(129, 177, 173, 247)),
+      body: Stack(
         children: [
-          Obx(
-            () => Text(
-              '${controller.counter.value}',
-              style: const TextStyle(fontSize: 250),
-            ),
-          ),
-          FilledButton(
-              onPressed: controller.addOne, child: const Text('Powiekszanie'))
+          Positioned.fill(
+              child: Image.asset('background.png', repeat: ImageRepeat.repeat))
         ],
-      )),
+      ),
     );
   }
 }

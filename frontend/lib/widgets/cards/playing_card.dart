@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+// ignore: must_be_immutable
 class PlayingCard extends StatefulWidget {
   String? frontAsset;
   final String backAsset;
@@ -47,9 +48,7 @@ class PlayingCardState extends State<PlayingCard>
   }
 
   void _flipCard() {
-    print('flip');
     if (_frontAsset == null) return;
-    print('ups');
     if (isFaceUp) {
       _controller.reverse();
     } else {

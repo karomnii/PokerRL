@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/app/home/home.controller.dart';
+import 'package:frontend/widgets/app_bar.dart';
+import 'package:frontend/widgets/page_scaffold.dart';
 import 'package:get/get.dart';
 
 class HomePageView extends GetView<HomePageController> {
@@ -7,16 +9,11 @@ class HomePageView extends GetView<HomePageController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          title: const Center(child: Text('Home Page')),
-          backgroundColor: const Color.fromARGB(129, 177, 173, 247)),
-      body: Stack(
-        children: [
-          Positioned.fill(
-              child: Image.asset('background.png', repeat: ImageRepeat.repeat))
-        ],
+    return const ThemedScaffold(
+      appBar: ThemedAppBar(
+        title: 'Home Page',
       ),
+      body: Center(child: Text('Your content goes here')),
     );
   }
 }

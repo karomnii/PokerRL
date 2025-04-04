@@ -4,6 +4,7 @@ import 'package:frontend/app/game/game.binding.dart';
 import 'package:frontend/app/game/game.view.dart';
 import 'package:frontend/app/home/home.binding.dart';
 import 'package:frontend/app/home/home.view.dart';
+import 'package:frontend/theme/theme.dart';
 import 'package:get/get.dart';
 
 void main() {
@@ -19,10 +20,14 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Flutter Router Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        extensions: const <ThemeExtension<dynamic>>[
+          MyTheme(
+            backgroundImageAsset: "background.png",
+            appBarColor: Color.fromARGB(255, 5, 19, 33),
+            appBarTextColor: Color.fromARGB(255, 255, 242, 242),
+          ),
+        ],
       ),
-      // Set the initial route and define available routes
       initialRoute: '/',
       getPages: [
         GetPage(

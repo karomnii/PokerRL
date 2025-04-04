@@ -11,6 +11,7 @@ namespace TexasHoldemPoker.API.Models
         public decimal Price { get; set; }
         public string ItemType { get; set; }
         public bool IsActive { get; set; }
+        public string Currency { get; set; }
 
         // Navigation properties
         public ICollection<Purchase> Purchases { get; set; }

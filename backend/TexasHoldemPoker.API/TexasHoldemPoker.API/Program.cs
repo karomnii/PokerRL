@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Hubs;
@@ -39,7 +40,13 @@ public class Program
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-
+        
+        // stripe 
+        
+        builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+        Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+        builder.Services.AddScoped<StripePaymentService>();
+        
         // Add authentication
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -75,15 +82,55 @@ public class Program
                     .AllowCredentials();
             });
         });
+        // swagger 
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Texas Hold'em Poker API",
+                Version = "v1",
+                Description = "API for Texas Hold'em Poker game",
+                Contact = new OpenApiContact
+                {
+                    Name = "Your Name",
+                    Email = "your.email@example.com"
+                }
+            });
 
+            // Opcjonalnie: dodanie autoryzacji JWT do Swaggera
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "Enter 'Bearer {token}'",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] {}
+                }
+            });
+        });
+        
         var app = builder.Build();
 
         // Configure the HTTP request pipeline
-        if (app.Environment.IsDevelopment())
-        {
+        // if (app.Environment.IsDevelopment())
+        // {
             app.UseSwagger();
             app.UseSwaggerUI();
-        }
+        // }
 
         app.UseHttpsRedirection();
         app.UseCors("CorsPolicy");

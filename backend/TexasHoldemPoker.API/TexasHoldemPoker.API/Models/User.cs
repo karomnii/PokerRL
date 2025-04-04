@@ -14,6 +14,7 @@ namespace TexasHoldemPoker.API.Models
         public DateTime RegistrationDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
         public bool IsActive { get; set; }
+        public string AvatarType { get; set; }
 
         // Navigation properties
         public ICollection<GamePlayer> GamePlayers { get; set; }

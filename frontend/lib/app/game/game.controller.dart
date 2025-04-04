@@ -7,13 +7,11 @@ class GamePageController extends GetxController {
   TextEditingController textEditingController = TextEditingController();
 
   void addCard(String cardStr) {
-    print(cardStr);
     for (var i = 0; i < cardAssets.length; i++) {
       if (cardAssets[i] == null) {
         cardAssets[i] = 'assets/cards/$cardStr.png';
         break;
       }
     }
-    print(cardAssets);
   }
 }

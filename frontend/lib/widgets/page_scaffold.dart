@@ -19,24 +19,65 @@ class ThemedScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the custom theme extension.
-    final myTheme = Theme.of(context).extension<MyTheme>();
-    final imageAsset = myTheme?.backgroundImageAsset ?? 'background.png';
+    // Get the custom theme extension
+    final customTheme = Theme.of(context).extension<AppCustomTheme>();
+    // Get the core theme data
+    final theme = Theme.of(context);
 
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage(imageAsset),
+          image:
+              AssetImage(customTheme?.backgroundImageAsset ?? 'background.png'),
+          scale: 0.5,
           repeat: ImageRepeat.repeat,
+          filterQuality: FilterQuality.high,
         ),
+        color: theme.colorScheme.surface, // Fallback background color
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: appBar,
+        appBar: appBar != null
+            ? PreferredSize(
+                preferredSize: appBar!.preferredSize,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    appBarTheme: AppBarTheme(
+                      backgroundColor:
+                          Theme.of(context).appBarTheme.backgroundColor,
+                      foregroundColor:
+                          Theme.of(context).appBarTheme.titleTextStyle?.color,
+                    ),
+                  ),
+                  child: appBar!,
+                ),
+              )
+            : null,
         body: body,
-        floatingActionButton: floatingActionButton,
+        floatingActionButton: floatingActionButton is FloatingActionButton
+            ? Theme(
+                data: theme.copyWith(
+                  floatingActionButtonTheme:
+                      theme.floatingActionButtonTheme.copyWith(
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                  ),
+                ),
+                child: floatingActionButton ?? const SizedBox.shrink(),
+              )
+            : floatingActionButton,
         drawer: drawer,
-        bottomNavigationBar: bottomNavigationBar,
+        bottomNavigationBar: bottomNavigationBar is BottomNavigationBar
+            ? Theme(
+                data: theme.copyWith(
+                  bottomNavigationBarTheme: BottomNavigationBarThemeData(
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    selectedItemColor: theme.colorScheme.primary,
+                    unselectedItemColor: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                child: bottomNavigationBar ?? const SizedBox.shrink(),
+              )
+            : bottomNavigationBar,
       ),
     );
   }

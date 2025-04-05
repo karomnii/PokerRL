@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 
 void main() {
   setUrlStrategy(PathUrlStrategy());
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -19,6 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Router Demo',
       theme: AppTheme.lightTheme,
       initialRoute: '/',
@@ -33,6 +35,9 @@ class MyApp extends StatelessWidget {
           page: () => const GamePageView(),
           binding: GamePageBinding(),
         ),
+      ],
+      navigatorObservers: [
+        GetObserver(),
       ],
     );
   }

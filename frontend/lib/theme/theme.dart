@@ -1,10 +1,11 @@
 // theme.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static ThemeData get lightTheme => ThemeData.light().copyWith(
         colorScheme: const ColorScheme.light(
-          primary: Color.fromARGB(255, 5, 19, 33),
+          primary: Color.fromARGB(255, 255, 255, 255),
           secondary: Color.fromARGB(255, 100, 130, 180),
           tertiary: Color.fromARGB(255, 200, 210, 230),
           onPrimary: Color.fromARGB(255, 255, 242, 242),
@@ -13,16 +14,20 @@ class AppTheme {
           surfaceContainer: Color.fromARGB(255, 13, 3, 54),
           shadow: Colors.grey,
         ),
+        textTheme: GoogleFonts.ubuntuMonoTextTheme().apply(
+          bodyColor: Colors.white,
+          displayColor: Colors.white,
+        ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color.fromARGB(255, 20, 14, 30),
+          backgroundColor: Color(0xFF121112),
           titleTextStyle: TextStyle(
             color: Color.fromARGB(255, 255, 242, 242),
-            fontSize: 20,
+            fontSize: 46,
             fontWeight: FontWeight.bold,
           ),
         ),
         cardTheme: CardTheme(
-          color: const Color.fromARGB(255, 31, 39, 50),
+          color: const Color(0xFF131212),
           surfaceTintColor: Colors.transparent,
           elevation: 4,
           shadowColor: Colors.transparent,
@@ -36,15 +41,15 @@ class AppTheme {
             backgroundColor: WidgetStateProperty.resolveWith<Color>(
               (states) {
                 if (states.contains(WidgetState.disabled)) {
-                  return Colors.grey.shade400;
+                  return Colors.blueGrey.shade900;
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return const Color.fromARGB(255, 3, 12, 22);
+                  return const Color.fromARGB(255, 155, 96, 0);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return const Color.fromARGB(255, 8, 25, 45);
+                  return const Color.fromARGB(255, 154, 106, 27);
                 }
-                return ThemeData.light().colorScheme.primary;
+                return const Color(0xFF9B773D);
               },
             ),
             foregroundColor: WidgetStateProperty.all<Color>(
@@ -54,11 +59,10 @@ class AppTheme {
               const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             ),
             textStyle: WidgetStateProperty.all<TextStyle>(
-              const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
+              GoogleFonts.ubuntuMonoTextTheme().bodyLarge!.copyWith(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
               RoundedRectangleBorder(
@@ -75,15 +79,15 @@ class AppTheme {
             backgroundColor: WidgetStateProperty.resolveWith<Color>(
               (states) {
                 if (states.contains(WidgetState.disabled)) {
-                  return Colors.grey.shade400;
+                  return Colors.blueGrey.shade900;
                 }
                 if (states.contains(WidgetState.pressed)) {
-                  return const Color.fromARGB(255, 80, 110, 160);
+                  return const Color.fromARGB(255, 94, 53, 0);
                 }
                 if (states.contains(WidgetState.hovered)) {
-                  return const Color.fromARGB(255, 120, 150, 200);
+                  return const Color.fromARGB(255, 96, 64, 23);
                 }
-                return ThemeData.light().colorScheme.secondary;
+                return const Color(0xFF615545);
               },
             ),
             foregroundColor: WidgetStateProperty.all<Color>(
@@ -93,11 +97,10 @@ class AppTheme {
               const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             ),
             textStyle: WidgetStateProperty.all<TextStyle>(
-              const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
+              GoogleFonts.ubuntuMonoTextTheme().bodyLarge!.copyWith(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             shape: WidgetStateProperty.all<RoundedRectangleBorder>(
               RoundedRectangleBorder(
@@ -116,7 +119,7 @@ class AppTheme {
                 if (states.contains(WidgetState.disabled)) {
                   return Colors.grey;
                 }
-                return ThemeData.light().colorScheme.primary;
+                return const Color(0xFF9B773D);
               },
             ),
             padding: WidgetStateProperty.all<EdgeInsetsGeometry>(

@@ -19,9 +19,7 @@ class ThemedScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the custom theme extension
     final customTheme = Theme.of(context).extension<AppCustomTheme>();
-    // Get the core theme data
     final theme = Theme.of(context);
 
     return Container(
@@ -29,7 +27,6 @@ class ThemedScaffold extends StatelessWidget {
         image: DecorationImage(
           image:
               AssetImage(customTheme?.backgroundImageAsset ?? 'background.png'),
-          scale: 0.5,
           repeat: ImageRepeat.repeat,
           filterQuality: FilterQuality.high,
         ),

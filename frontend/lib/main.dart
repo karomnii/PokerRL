@@ -1,3 +1,4 @@
+// main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:frontend/app/game/game.binding.dart';
@@ -19,15 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Flutter Router Demo',
-      theme: ThemeData(
-        extensions: const <ThemeExtension<dynamic>>[
-          MyTheme(
-            backgroundImageAsset: "background.png",
-            appBarColor: Color.fromARGB(255, 5, 19, 33),
-            appBarTextColor: Color.fromARGB(255, 255, 242, 242),
-          ),
-        ],
-      ),
+      theme: AppTheme.lightTheme,
       initialRoute: '/',
       getPages: [
         GetPage(

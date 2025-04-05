@@ -26,4 +26,5 @@ dev_dependencies:
 flutter:
   assets:
     - assets/cards/
+    - assets/
   uses-material-design: true

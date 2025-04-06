@@ -21,6 +21,7 @@ namespace TexasHoldemPoker.API.Data
         public DbSet<ChipTransaction> ChipTransactions { get; set; }
         public DbSet<LeaderboardEntry> LeaderboardEntries { get; set; }
         public DbSet<LeaderboardEntry> LeaderboardView { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -127,38 +128,32 @@ namespace TexasHoldemPoker.API.Data
                 new ShopItem
                 {
                     ItemId = 1,
-                    Name = "Basic Chips Pack",
-                    Description = "Get 1000 chips.",
-                    Price = 4.99m,
-                    ItemType = "Chips",
-                    IsActive = true
+                    Name = "Premium Avatar",
+                    Description = "Unlock a premium avatar for your profile.",
+                    Price = 9.99m,
+                    ItemType = "Avatar",
+                    IsActive = true,
+                    Currency = "PLN" 
                 },
                 new ShopItem
                 {
                     ItemId = 2,
-                    Name = "Premium Chips Pack",
-                    Description = "Get 5000 chips.",
-                    Price = 19.99m,
-                    ItemType = "Chips",
-                    IsActive = true
+                    Name = "Golden Avatar",
+                    Description = "Unlock a golden avatar.",
+                    Price = 14.99m,
+                    ItemType = "Avatar",
+                    IsActive = true,
+                    Currency = "PLN" 
                 },
                 new ShopItem
                 {
                     ItemId = 3,
-                    Name = "Golden Avatar",
-                    Description = "Unlock a golden avatar.",
-                    Price = 9.99m,
-                    ItemType = "Avatar",
-                    IsActive = true
-                },
-                new ShopItem
-                {
-                    ItemId = 4,
-                    Name = "Luxury Card Deck",
-                    Description = "Upgrade your card deck to a luxury theme.",
-                    Price = 14.99m,
-                    ItemType = "CardDeck",
-                    IsActive = true
+                    Name = "Basic Chips Pack",
+                    Description = "Get 1000 chips.",
+                    Price = 1000,
+                    ItemType = "Chips",
+                    IsActive = true,
+                    Currency = "CHIPS"
                 }
             };
 

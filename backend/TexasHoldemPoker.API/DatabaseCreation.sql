@@ -17,6 +17,10 @@ CREATE TABLE Users (
     LastLoginDate DATETIME,
     IsActive BIT NOT NULL DEFAULT 1
 );
+
+ALTER TABLE Users
+ADD AvatarType NVARCHAR(20) NOT NULL DEFAULT 'Uzytkownik';
+
 GO
 
 -- Tables Table
@@ -123,6 +127,9 @@ CREATE TABLE ShopItems (
 );
 GO
 
+ALTER TABLE ShopItems
+ADD Currency NVARCHAR(10) NOT NULL CHECK (Currency IN ('PLN', 'CHIPS')) DEFAULT 'PLN';
+go
 -- Purchases Table
 CREATE TABLE Purchases (
     PurchaseId INT IDENTITY(1,1) PRIMARY KEY,
@@ -308,8 +315,14 @@ INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlin
 ('Pro Table', 1000, 5000, 10000, 100, 200, 9, 'Pro', 1);
 
 -- Populate ShopItems Table
-INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive) VALUES 
-('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1),
-('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1),
-('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1),
-('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1);
+INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) VALUES 
+('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1, 'PLN'),
+('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1, 'PLN'),
+('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1, 'PLN'),
+('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1, 'CHIPS');
+
+
+INSERT INTO ShopItems (Name, Description, Price, ItemType, Currency, IsActive) VALUES 
+('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 'PLN', 1),
+('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 'PLN', 1),
+('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 'CHIPS', 1);

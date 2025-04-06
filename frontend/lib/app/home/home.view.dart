@@ -41,32 +41,60 @@ class HomePageView extends GetView<HomePageController> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Giga AI Casino'),
+            const PageRow(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 50,
+                  child: Divider(
+                    color: Colors.white,
+                    thickness: 2,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text('AI Casino',
+                      style:
+                          TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+                ),
+                SizedBox(
+                  width: 50,
+                  child: Divider(
+                    color: Colors.white,
+                    thickness: 2,
+                  ),
+                ),
+              ],
+            ),
             Image.asset(
               width: 500,
               'dices.png',
               scale: 0.2,
               fit: BoxFit.contain,
             ),
-            const PageRow(
+            PageRow(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ElevatedButton(
-                  onPressed: null,
-                  child: Text('Elevated'),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      Get.offNamed('/game', preventDuplicates: false),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Play'),
                 ),
               ],
             ),
             PageRow(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FilledButton(
+                ElevatedButton.icon(
                   onPressed: () {},
-                  child: const Text('Elevated'),
+                  icon: const Icon(Icons.person),
+                  label: const Text('Sign In'),
                 ),
-                FilledButton(
+                ElevatedButton.icon(
                   onPressed: () {},
-                  child: const Text('Filled'),
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Sign up'),
                 ),
               ],
             ),

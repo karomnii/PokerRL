@@ -25,7 +25,7 @@ class HomePageView extends GetView<HomePageController> {
           AppBarIcon(
             icon: Icons.store,
             tooltipText: 'Shop',
-            onPressed: () {},
+            onPressed: () => Get.offNamed('/shop', preventDuplicates: false),
           ),
           AppBarIcon(
             icon: Icons.person,

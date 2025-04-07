@@ -5,6 +5,8 @@ import 'package:frontend/app/game/game.binding.dart';
 import 'package:frontend/app/game/game.view.dart';
 import 'package:frontend/app/home/home.binding.dart';
 import 'package:frontend/app/home/home.view.dart';
+import 'package:frontend/app/shop/shop.binding.dart';
+import 'package:frontend/app/shop/shop.view.dart';
 import 'package:frontend/theme/theme.dart';
 import 'package:get/get.dart';
 
@@ -34,6 +36,11 @@ class MyApp extends StatelessWidget {
           name: '/game',
           page: () => const GamePageView(),
           binding: GamePageBinding(),
+        ),
+        GetPage(
+          name: '/shop',
+          page: () => const ShopPageView(),
+          binding: ShopPageBinding(),
         ),
       ],
       navigatorObservers: [

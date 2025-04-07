@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static ThemeData get lightTheme => ThemeData.light().copyWith(
+        primaryColor: const Color(0xFF9B773D),
         colorScheme: const ColorScheme.light(
           primary: Color.fromARGB(255, 255, 255, 255),
           secondary: Color.fromARGB(255, 100, 130, 180),
@@ -141,7 +142,7 @@ class AppTheme {
         ),
         extensions: const <ThemeExtension<dynamic>>[
           AppCustomTheme(
-              backgroundImageAsset: "background_gold_and_silver.png"),
+              backgroundImageAsset: "background_gold_and_silver_dimmed2.png"),
         ],
       );
 }

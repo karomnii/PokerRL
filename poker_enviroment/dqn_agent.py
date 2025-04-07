@@ -9,71 +9,114 @@ import datetime
 import os
 
 
-# Główna architektura sieci neuronowej DQN (Deep Q-Network)
+def encode_card(card: int) -> torch.Tensor:
+    """
+    Encodes a single card (0..51) into a 17-dim one-hot vector:
+      - 13 for rank (0..12)
+      - 4  for suit (0..3)
+    """
+    # card // 4 => rank in [0..12]
+    # card % 4  => suit in [0..3]
+    rank = card // 4
+    suit = card % 4
+    
+    vector = torch.zeros(17)
+    vector[rank] = 1.0
+    vector[13 + suit] = 1.0
+    return vector
+
+
 class DQN(nn.Module):
-    def __init__(self, input_dim=104, output_dim=3):
+    def __init__(self, input_dim=119, output_dim=3):
+        """
+        A simple 3-layer MLP for Q-value approximation.
+        input_dim = 7 cards * 17 dims per card = 119
+        output_dim = 3 (RAISE, CALL, FOLD)
+        """
         super(DQN, self).__init__()
-        # Warstwa wejściowa o wymiarze wejścia równym liczbie kart (52) dla ręki i kart wspólnych (łącznie 104)
         self.fc1 = nn.Linear(input_dim, 128)
         self.fc2 = nn.Linear(128, 64)
-        # Warstwa wyjściowa - odpowiada liczbie możliwych akcji: RAISE, CALL, FOLD
         self.fc3 = nn.Linear(64, output_dim)
         
-    def forward(self, x):
-        # Funkcje aktywacji ReLU pomiędzy warstwami w celu nieliniowości
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        return self.fc3(x)  # Surowe wartości Q (logity) dla każdej akcji
+        return self.fc3(x)
 
-# Agent DQN stosujący uczenie przez wzmocnienie w środowisku pokerowym
+
 class DQNAgent(IAgent):
-    def __init__(self, player_id=0, gamma=0.99, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995):
+    def __init__(self,
+                 player_id=0,
+                 gamma=0.99,
+                 epsilon_start=1.0,
+                 epsilon_end=0.01,
+                 epsilon_decay=0.999):
         super().__init__()
         self.player_id = player_id
-        self.model = DQN()  # Główna sieć Q
-        self.target_model = DQN()  # Sieć celu - stabilizuje uczenie
-        self.target_model.load_state_dict(self.model.state_dict())  # Początkowe skopiowanie wag
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)  # Optymalizator Adam
-        self.gamma = gamma  # Współczynnik dyskontowy - znaczenie przyszłych nagród
-        self.epsilon = epsilon_start  # Początkowe prawdopodobieństwo eksploracji
-        self.epsilon_end = epsilon_end  # Minimalna eksploracja
-        self.epsilon_decay = epsilon_decay  # Tempo redukcji epsilon
-        self.replay_buffer = []  # Bufor doświadczeń dla uczenia
-        self.batch_size = 64  # Rozmiar mini-batcha
-        self.loss_history = [] # Dane funkcji straty
+        
+        # Main and target networks
+        self.model = DQN()  
+        self.target_model = DQN()
+        self.target_model.load_state_dict(self.model.state_dict())
+        
+        # Optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        
+        # Hyperparameters
+        self.gamma = gamma
+        self.epsilon = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.epsilon_decay = epsilon_decay
+        
+        # Replay buffer and related
+        self.replay_buffer = []
+        self.batch_size = 64
+        
+        # For tracking training
+        self.loss_history = []
 
-    # Przekształca obserwację z gry na wektor wejściowy dla sieci (one-hot encoding kart)
-    def _preprocess_observation(self, observation):
-        hand = observation['hand']
-        community = observation['community_cards']
+    def _preprocess_observation(self, observation) -> torch.Tensor:
+        """
+        Convert the observation (dict with 'hand' and 'community_cards') to a
+        119-dim vector: 7 cards each encoded with 17 dims (13 rank + 4 suit).
         
-        hand_vector = torch.zeros(52)
-        for card in hand:
-            if 0 <= card < 52:
-                hand_vector[card] = 1.0  # Kodowanie jednej karty jako 1 w wektorze
+        If the community has fewer than 5 cards, the remainder are zero-padded.
+        """
+        hand = observation['hand']            # up to 2 cards
+        community = observation['community_cards']  # up to 5 cards
+        all_cards = hand + community
         
-        community_vector = torch.zeros(52)
-        for card in community:
-            if 0 <= card < 52:
-                community_vector[card] = 1.0
+        # If there are fewer than 7 total cards, pad with zeros
+        # If there are more than 7 for some reason (extreme game variation),
+        # we'll just take the first 7. (Typically not needed for Texas Hold'em)
+        max_cards = 7
         
-        return torch.cat([hand_vector, community_vector])  # Wektor 104-elementowy
+        card_vectors = []
+        for i in range(max_cards):
+            if i < len(all_cards):
+                card_vectors.append(encode_card(all_cards[i]))
+            else:
+                card_vectors.append(torch.zeros(17))
+        
+        # Flatten into a single 119-dim vector
+        return torch.cat(card_vectors)
 
-    # Wybór akcji na podstawie polityki ε-greedy
     def act(self, observation: dict) -> Tuple[Action, Optional[int]]:
+        """
+        Choose an action using an ε-greedy policy.
+        Returns: (Action, amount)
+        """
         state = self._preprocess_observation(observation)
         
+        # Epsilon-greedy action selection
         if random.random() < self.epsilon:
-            # Eksploracja: losowy wybór akcji
             action = random.choice([Action.RAISE, Action.CALL, Action.FOLD])
         else:
-            # Eksploatacja: wybór najlepszej akcji wg Q sieci
             with torch.no_grad():
                 q_values = self.model(state)
                 action_idx = torch.argmax(q_values).item()
                 action = [Action.RAISE, Action.CALL, Action.FOLD][action_idx]
         
-        # Obsługa wysokości podbicia jeśli wybrano akcję RAISE
         amount = None
         if action == Action.RAISE:
             call_amount = observation['call_amount']
@@ -83,7 +126,7 @@ class DQNAgent(IAgent):
             if max_raise >= min_raise:
                 amount = random.randint(min_raise, max_raise)
             else:
-                # Jeśli nie można podbić, podejmij CALL lub FOLD w zależności od dostępnych żetonów
+                # If we cannot legally raise, decide to CALL or FOLD
                 if observation['chips'] >= call_amount:
                     action = Action.CALL
                 else:
@@ -91,14 +134,18 @@ class DQNAgent(IAgent):
         
         return action, amount
 
-    # Mapuje akcje (enum) na indeksy do sieci neuronowej
     def _action_to_index(self, action: Action) -> int:
         return [Action.RAISE, Action.CALL, Action.FOLD].index(action)
 
-    # Uaktualnia model DQN na podstawie mini-batcha próbek z replay buffer
-    def update_model(self) -> int:
+    def update_model(self) -> Optional[float]:
+        """
+        Sample a mini-batch of experiences from the replay buffer, compute the
+        loss, and update the network. Also decays epsilon.
+        
+        Returns: The loss value (float) if an update happened, otherwise None.
+        """
         if len(self.replay_buffer) < self.batch_size:
-            return  # Nie aktualizuj jeśli zbyt mało danych
+            return None
         
         batch = random.sample(self.replay_buffer, self.batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
@@ -106,46 +153,56 @@ class DQNAgent(IAgent):
         states = torch.stack(states)
         actions = torch.tensor([self._action_to_index(a) for a in actions], dtype=torch.long)
         rewards = torch.tensor(rewards, dtype=torch.float32)
-        next_states = torch.stack([s if s is not None else torch.zeros_like(states[0]) for s in next_states])
+        next_states = torch.stack([
+            s if s is not None else torch.zeros_like(states[0])
+            for s in next_states
+        ])
         dones = torch.tensor(dones, dtype=torch.float32)
         
-        # Obliczenie obecnych Q-wartości dla wybranych akcji
-        current_q = self.model(states).gather(1, actions.unsqueeze(1))
-        # Obliczenie maksymalnych przyszłych Q-wartości
+        # Current Q for chosen actions
+        current_q = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        
+        # Next Q from target network
         next_q = self.target_model(next_states).max(1)[0].detach()
-        # Obliczenie docelowych wartości Q
+        
+        # Target values
         target_q = rewards + (1 - dones) * self.gamma * next_q
         
-        # Funkcja straty: błąd średniokwadratowy pomiędzy aktualnymi a docelowymi Q
-        loss = F.mse_loss(current_q.squeeze(), target_q)
+        loss = F.mse_loss(current_q, target_q)
         self.loss_history.append(loss.item())
         
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         
-        # Aktualizacja współczynnika eksploracji
+        # Epsilon decay
         self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+        
         return loss.item()
 
-    # Aktualizuje sieć celu - okresowe kopiowanie wag z głównej sieci
     def update_target_network(self):
+        """
+        Update target model by copying weights from the main model.
+        """
         self.target_model.load_state_dict(self.model.state_dict())
 
-    # Zapisuje model na dysku z dokładnością do milisekundy
     def save_model(self, path='dqn_model.pth'):
+        """
+        Saves the current model weights to disk. Creates a timestamped folder
+        under ./models/ by default.
+        """
         os.makedirs('./models', exist_ok=True)
-        
-        # Generowanie unikalnej nazwy katalogu z timestampem
         now = datetime.datetime.now()
         dt = now.strftime("%Y-%m-%d_%H-%M-%S") + f"-{int(now.microsecond / 1000):03d}"
         folder = f'./models/{dt}/'
         
         try:
-            os.makedirs(folder)
-            torch.save(self.model.state_dict(), os.path.join(folder, path))
-            print(f"Model saved to {os.path.join(folder, path)}")
+            os.makedirs(folder, exist_ok=True)
+            filepath = os.path.join(folder, path)
+            torch.save(self.model.state_dict(), filepath)
+            print(f"Model saved to {filepath}")
         except OSError as e:
-            print(f"Error saving model: {e}")
+            print(f"Error saving model to {folder}: {e}")
+            # Fall back to saving directly as path
             torch.save(self.model.state_dict(), path)
             print(f"Model saved to {path}")

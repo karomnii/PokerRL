@@ -9,27 +9,33 @@ from dqn_agent import DQNAgent
 
 class PokerTrainer:
     def __init__(self):
+        # Feel free to adjust these as needed
         self.num_episodes = 10000
         self.update_target_every = 50
-        self.save_every = 100
-        self.print_stats_every = 20
+        # Save model less frequently
+        self.save_every = 500  
+        self.print_stats_every = 50
         self.window_size = 100
         
-        # Initialize tracking variables
+        # Tracking variables
         self.episode_losses = []
         self.episode_rewards = []
         self.win_history = []
         self.moving_avg_loss = []
         self.moving_avg_reward = []
         
-        # TensorBoard writer
+        # TensorBoard
         self.writer = SummaryWriter()
         
-        # Initialize agents
+        # Initialize agents (1x DQN + 3x Random for a 4-player game)
         self.dqn_agent = DQNAgent(player_id=0)
         self.agents = [self.dqn_agent] + [RandomAgent() for _ in range(3)]
     
     def run_episode(self):
+        """
+        Plays out one episode (one deal/hand of poker) until the hand is over.
+        Returns (won, total_reward_for_episode, number_of_actions_taken).
+        """
         env = PokerEnv(self.agents)
         env.reset()
         episode_transitions = []
@@ -42,6 +48,7 @@ class PokerTrainer:
             
             action, amount = agent.act(observation)
             
+            # Record transitions only for the DQN agent
             if agent is self.dqn_agent:
                 state = self.dqn_agent._preprocess_observation(observation)
                 episode_transitions.append({
@@ -52,16 +59,20 @@ class PokerTrainer:
             
             env.game.step(action, amount)
         
-        # Process episode results
+        # Once the hand ends, determine reward
         winners = env.game.determine_winners()
-        won = self.dqn_agent.player_id in winners
+        won = (self.dqn_agent.player_id in winners)
         num_steps = len(episode_transitions)
         
+        # Assign rewards for each step
         for i, transition in enumerate(episode_transitions):
-            reward = (2.0 if won else -2.0) / (num_steps - i)
+            # Simple reward: +2 if you eventually won, else -2, discounted over steps
+            reward = (2.0 if won else -2.0) * (num_steps - i)
             episode_reward += reward
             
-            next_state = episode_transitions[i+1]['state'] if i < num_steps-1 else None
+            next_state = (episode_transitions[i+1]['state']
+                          if i < num_steps-1 else None)
+            
             self.dqn_agent.replay_buffer.append((
                 transition['state'],
                 transition['action'],
@@ -70,36 +81,38 @@ class PokerTrainer:
                 next_state is None
             ))
         
-        return won, episode_reward, len(episode_transitions)
+        return won, episode_reward, num_steps
 
     def train(self):
+        """
+        Main training loop over self.num_episodes episodes.
+        """
         for episode in range(self.num_episodes):
             won, episode_reward, num_actions = self.run_episode()
             
-            # Train the model
+            # Update (train) the DQN model
             loss = self.dqn_agent.update_model()
             
-            # Update tracking variables
+            # Track stats
             if loss is not None:
                 self.episode_losses.append(loss)
                 self.episode_rewards.append(episode_reward)
                 self.win_history.append(won)
                 
-                # Update moving averages
+                # Moving averages
                 if len(self.episode_losses) >= self.window_size:
-                    self.moving_avg_loss.append(
-                        sum(self.episode_losses[-self.window_size:])/self.window_size
-                    )
-                    self.moving_avg_reward.append(
-                        sum(self.episode_rewards[-self.window_size:])/self.window_size
-                    )
+                    window_losses = self.episode_losses[-self.window_size:]
+                    window_rewards = self.episode_rewards[-self.window_size:]
+                    
+                    self.moving_avg_loss.append(sum(window_losses)/len(window_losses))
+                    self.moving_avg_reward.append(sum(window_rewards)/len(window_rewards))
             
-            # Update target network
-            if episode % self.update_target_every == 0:
+            # Periodically update the target network
+            if episode % self.update_target_every == 0 and episode > 0:
                 self.dqn_agent.update_target_network()
             
-            # Save model
-            if episode % self.save_every == 0:
+            # Save model less frequently
+            if episode % self.save_every == 0 and episode > 0:
                 self.dqn_agent.save_model()
             
             # Log to TensorBoard
@@ -109,62 +122,80 @@ class PokerTrainer:
                 self.writer.add_scalar('Wins/outcome', int(won), episode)
                 self.writer.add_scalar('Exploration/epsilon', self.dqn_agent.epsilon, episode)
             
-            # Print statistics
+            # Print intermediate statistics
             if episode % self.print_stats_every == 0 and episode > 0:
                 recent_wins = sum(self.win_history[-self.print_stats_every:])
-                avg_loss = sum(self.episode_losses[-self.print_stats_every:])/self.print_stats_every
-                avg_reward = sum(self.episode_rewards[-self.print_stats_every:])/self.print_stats_every
+                avg_loss = (sum(self.episode_losses[-self.print_stats_every:]) /
+                            self.print_stats_every)
+                avg_reward = (sum(self.episode_rewards[-self.print_stats_every:]) /
+                              self.print_stats_every)
                 
-                print(f"Episode {episode+1}/{self.num_episodes} | "
-                      f"Loss: {avg_loss:.4f} | "
-                      f"Reward: {avg_reward:.2f} | "
+                print(f"Episode {episode}/{self.num_episodes} | "
+                      f"Avg Loss: {avg_loss:.4f} | "
+                      f"Avg Reward: {avg_reward:.2f} | "
                       f"Wins: {recent_wins}/{self.print_stats_every} | "
                       f"Epsilon: {self.dqn_agent.epsilon:.3f} | "
                       f"Actions: {num_actions}")
         
-        # Final statistics and plots
+        # Final report and plots
         self._final_report()
         self.writer.close()
     
     def _final_report(self):
-        # Calculate final statistics
+        # Basic stats
+        total_episodes = len(self.win_history)
         total_wins = sum(self.win_history)
-        win_rate = total_wins / len(self.win_history)
-        avg_loss = sum(self.episode_losses) / len(self.episode_losses)
-        avg_reward = sum(self.episode_rewards) / len(self.episode_rewards)
+        win_rate = total_wins / (total_episodes if total_episodes > 0 else 1)
+        avg_loss = (sum(self.episode_losses) / len(self.episode_losses)
+                    if self.episode_losses else 0.0)
+        avg_reward = (sum(self.episode_rewards) / len(self.episode_rewards)
+                      if self.episode_rewards else 0.0)
         
         print("\n=== Training Complete ===")
-        print(f"Total Episodes: {self.num_episodes}")
+        print(f"Total Episodes: {total_episodes}")
         print(f"Total Wins: {total_wins} ({win_rate*100:.1f}%)")
         print(f"Average Loss: {avg_loss:.4f}")
         print(f"Average Reward: {avg_reward:.2f}")
         
-        # Plot training curves
+        # Generate some plots
         plt.figure(figsize=(15, 5))
         
+        # 1) Loss
         plt.subplot(1, 3, 1)
-        plt.plot(self.episode_losses)
-        plt.plot(range(self.window_size - 1, len(self.episode_losses)), self.moving_avg_loss, 'r-')
         plt.title('Training Loss')
         plt.xlabel('Episode')
         plt.ylabel('Loss')
+        plt.plot(self.episode_losses, label='Loss')
+        if self.moving_avg_loss:
+            plt.plot(range(self.window_size - 1,
+                           self.window_size - 1 + len(self.moving_avg_loss)),
+                     self.moving_avg_loss, label='Moving Avg Loss')
         
+        # 2) Reward
         plt.subplot(1, 3, 2)
-        plt.plot(self.episode_rewards)
-        plt.plot(range(self.window_size - 1, len(self.episode_rewards)), self.moving_avg_reward, 'r-')
         plt.title('Episode Rewards')
         plt.xlabel('Episode')
         plt.ylabel('Reward')
+        plt.plot(self.episode_rewards, label='Reward')
+        if self.moving_avg_reward:
+            plt.plot(range(self.window_size - 1,
+                           self.window_size - 1 + len(self.moving_avg_reward)),
+                     self.moving_avg_reward, label='Moving Avg Reward')
         
+        # 3) Win Rate (rolling window of 100)
         plt.subplot(1, 3, 3)
-        plt.plot([sum(self.win_history[i:i+100]) for i in range(len(self.win_history)-100)])
-        plt.title('Win Rate (Last 100 Episodes)')
+        plt.title('Win Rate (Rolling 100)')
         plt.xlabel('Episode')
-        plt.ylabel('Wins')
+        plt.ylabel('Wins in Last 100')
+        rolling_win_count = []
+        for i in range(len(self.win_history)):
+            rolling_win_count.append(sum(self.win_history[i:i+100]))
+        plt.plot(rolling_win_count, label='Wins in last 100')
         
         plt.tight_layout()
         plt.savefig('training_results.png')
         plt.close()
+
 
 if __name__ == "__main__":
     trainer = PokerTrainer()

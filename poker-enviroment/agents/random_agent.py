@@ -32,12 +32,14 @@ class RandomAgent(IAgent):
 
             # minimum raise is big blind amount, or call amount if it's larger
             # it may be needed to add big blind amount to observation
-            min_raise = observation.get("call_amount") if observation.get("call_amount") > 0 else 20
+            min_raise = observation.get("call_amount")*2 if observation.get("call_amount") > 0 else 20
             
             random_raise: float = random.random()
             raise_amount = min_raise
 
-            if random.random() < 0.1:
+            if min_raise > chips:
+                return (Action.CALL, None)
+            elif random.random() < 0.1:
                 return (Action.RAISE, chips)    
             elif random_raise < 0.8:
                 raise_amount = min_raise * random.randint(1, 5)

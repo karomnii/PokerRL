@@ -11,9 +11,17 @@ class PokerEnv:
         self.agents = agents
         self.num_players = len(agents)
         self.game = PokerGame(num_players=self.num_players, small_blind=small_blind, big_blind=big_blind)
+        self.games_won_by_agents = [0] * self.num_players
+        self.games_played = 0
 
     def reset(self) -> None:
         """Resets the game for a new hand."""
+        for i in range(self.num_players):
+            if self.game.winners is not None and i in self.game.winners:
+                self.games_won_by_agents[i] += 1
+        self.games_played += 1
+        # print(f"Games played: {self.games_played}, Wins: {self.game.winners}")
+
         self.game.reset()
 
     def _encode_card(self, card_str: str) -> int:
@@ -74,3 +82,34 @@ class PokerEnv:
                 f"Hand={[str(card) for card in p.hand]}, Folded={p.folded}, All-in={p.all_in}"
             )
         print("==========================")
+
+    def calculate_reward(self, player_index):
+        """Calculate reward for RL agent"""
+        player = self.game.players[player_index]
+        reward = 0.0
+        
+        if self.game.hand_over:
+            if self.game.winners is not None and player_index in self.game.winners:
+                reward += 10.0  # Bonus for winning the hand
+            elif player.folded:
+                # Use the game's hand evaluation for folding penalty
+                if len(self.game.community_cards) > 0:
+                    # Get hand strength using the game's evaluation
+                    hand_value = self.game.evaluate_best_hand(player)
+                    # Normalize to 0-1 range (8 is straight flush, 0 is high card)
+                    normalized_strength = hand_value[0] / 8.0
+                    fold_penalty = 5.0 * (normalized_strength)
+                    reward -= fold_penalty
+                else:
+                    # Pre-flop folding penalty
+                    reward -= 2.0
+        
+        return reward
+
+
+    def step_rl(self, player_index, action, amount=None):
+        self.game.step(action, amount)
+        
+        reward = self.calculate_reward(player_index)
+        
+        return reward, {}

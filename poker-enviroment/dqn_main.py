@@ -54,6 +54,7 @@ def main():
                 print(f"  {action}: {pct:.2%}")
             print(f"BB/100: {results['bb_per_100']:.2f}")
             print(f"Total hands: {results['total_hands']}")
+            print(f"Wins by agent: {results['wins_from_env.game']}")
 
         except Exception as e:
             print(f"Error loading model: {e}")

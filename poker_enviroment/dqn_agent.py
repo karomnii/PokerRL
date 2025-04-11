@@ -27,21 +27,36 @@ def encode_card(card: int) -> torch.Tensor:
 
 
 class DQN(nn.Module):
-    def __init__(self, input_dim=119, output_dim=3):
+    def __init__(
+        self, 
+        input_dim=119, 
+        hidden_layers=[512, 256], 
+        output_dim=3
+    ):
         """
-        A simple 3-layer MLP for Q-value approximation.
-        input_dim = 7 cards * 17 dims per card = 119
-        output_dim = 3 (RAISE, CALL, FOLD)
+        A flexible MLP for Q-value approximation.
+        - input_dim: size of input features
+        - hidden_layers: list indicating the number of neurons in each hidden layer
+        - output_dim: number of actions (Q-value outputs)
         """
         super(DQN, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, output_dim)
-        
+
+        # Build a sequence of [Linear -> ReLU] for each hidden layer
+        layers = []
+        prev_dim = input_dim
+        for layer_size in hidden_layers:
+            layers.append(nn.Linear(prev_dim, layer_size))
+            layers.append(nn.ReLU())
+            prev_dim = layer_size
+
+        # Final layer: from last hidden layer to output_dim
+        layers.append(nn.Linear(prev_dim, output_dim))
+
+        # Wrap it all in an nn.Sequential so forward() can just pass through
+        self.model = nn.Sequential(*layers)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        return self.model(x)
 
 
 class DQNAgent(IAgent):
@@ -50,7 +65,7 @@ class DQNAgent(IAgent):
                  gamma=0.99,
                  epsilon_start=1.0,
                  epsilon_end=0.01,
-                 epsilon_decay=0.999):
+                 epsilon_decay=0.9995):
         super().__init__()
         self.player_id = player_id
         

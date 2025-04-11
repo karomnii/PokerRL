@@ -245,6 +245,8 @@ class PokerGame:
         return self.best_hand(all_cards)
 
     def best_hand(self, cards: List[Card]) -> Tuple:
+        if len(cards) < 5:
+            return (-1, [])
         best = None
         for combo in combinations(cards, 5):
             value = self.evaluate_five(list(combo))

@@ -234,7 +234,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
 
 if __name__ == "__main__":
     play_with_model(
-        model_path='./models/2025-04-11_21-02-08-549/dqn_model.pth',
-        num_hands=100,
+        model_path='./models/2025-04-12_00-19-45-911/dqn_model.pth',
+        num_hands=1000,
         render_speed=0  # Set to 0 for fast execution
     )

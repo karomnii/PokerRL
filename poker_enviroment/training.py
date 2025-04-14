@@ -105,7 +105,7 @@ class PokerTrainer:
 
     def run_episode(self):
         env = PokerEnv(self.agents)
-        env.reset()
+        #env.reset() Not needed since we only train the model on a single round with started state so we never need to reset the game
         episode_transitions = []
         episode_reward = 0
         dqn_player_id = self.dqn_agent.player_id

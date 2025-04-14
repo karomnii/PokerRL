@@ -1,11 +1,14 @@
+import math
 import random
 from typing import List, Dict, Tuple, Optional
 from enum import Enum, auto
 from itertools import combinations
 from collections import Counter
+
 from .deck import Deck
 from .player import Player
-from .card import Card
+from .card import Card, Suit, Rank
+
 
 class Action(Enum):
     FOLD = auto()
@@ -17,7 +20,8 @@ class PokerGame:
         self.num_players = num_players
         self.small_blind = small_blind
         self.big_blind = big_blind
-        self.dealer_index = 0
+        self.dealer_index = random.randint(0, self.num_players - 1)
+        self.big_blind_index:int =-1
         self.deck = Deck()
         self.players: List[Player] = [Player(i) for i in range(num_players)]
         self.community_cards: List[Card] = []
@@ -25,6 +29,8 @@ class PokerGame:
         self.round_stage: str = "pre-flop"
         self.current_player_index: int = 0
         self.hand_over: bool = False
+        self.table_over: bool = False
+        self.games_played: int = 0
         self.winners: Optional[List[int]] = None
         # A set of player indices that still need to act in the current betting round.
         self.pending_players: set = set()
@@ -34,33 +40,40 @@ class PokerGame:
         self.deck = Deck()
         for p in self.players:
             p.reset()
+        active_players = [p for p in self.players if not p.busted]
+        if len(active_players) == 1:
+            self.games_played+=1
+            print("\n#####Starting New Game#####\n")
+            for p in self.players:
+                p.prepare_for_new_game()
         self.community_cards = []
         self.pot = 0
         self.round_stage = "pre-flop"
         self.hand_over = False
+        self.rotate_dealer()
         self.deal_hole_cards()
         self.post_blinds()
         self.set_initial_turn()
-        self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in}
+        self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in and not p.busted}
+
 
     def set_initial_turn(self) -> None:
         """Determine which player acts first in pre-flop.
            Heads-up: dealer (small blind) acts first.
            Multi-player: first to act is the player to the left of the big blind.
         """
-        if self.num_players == 2:
-            self.current_player_index = self.dealer_index
-        else:
-            self.current_player_index = (self.dealer_index + 3) % self.num_players
+        index=self.dealer_index
+        for _ in range(3):
+            index=self.get_next_playing_player_index(index)
+        self.current_player_index = index
+
 
     def post_blinds(self) -> None:
         """Posts the blinds for the appropriate players."""
-        if self.num_players == 2:
-            small_blind_player = self.players[self.dealer_index]
-            big_blind_player = self.players[(self.dealer_index + 1) % self.num_players]
-        else:
-            small_blind_player = self.players[(self.dealer_index + 1) % self.num_players]
-            big_blind_player = self.players[(self.dealer_index + 2) % self.num_players]
+        small_blind_player_index=self.get_next_playing_player_index(self.dealer_index)
+        small_blind_player = self.players[small_blind_player_index]
+        self.big_blind_index=self.get_next_playing_player_index(small_blind_player_index)
+        big_blind_player = self.players[self.big_blind_index]
         small_amount = min(self.small_blind, small_blind_player.chips)
         big_amount = min(self.big_blind, big_blind_player.chips)
         small_blind_player.chips -= small_amount
@@ -74,7 +87,8 @@ class PokerGame:
     def deal_hole_cards(self) -> None:
         """Deal two cards to each player."""
         for p in self.players:
-            p.hand = self.deck.draw(2)
+            if not p.busted:
+                p.hand = self.deck.draw(2)
 
     def deal_community_cards(self, n: int) -> None:
         """Deal n community cards."""
@@ -83,7 +97,10 @@ class PokerGame:
     def next_round(self) -> None:
         for p in self.players:
             p.current_bet = 0
-
+        if self.hand_over:
+            self.pending_players = set()
+            self.reset()
+            return
         if self.round_stage == "pre-flop":
             self.round_stage = "flop"
             self.deal_community_cards(3)
@@ -99,20 +116,19 @@ class PokerGame:
             winnings = self.showdown()
             if winnings:
                 for pid, amount_won in winnings.items():
+                    print(f"Player {pid}, Won {amount_won}")
                     self.players[pid].chips += amount_won
                 max_win = max(winnings.values())
                 self.winners = [pid for pid, win in winnings.items() if win == max_win]
-            self.hand_over = True
-            self.pending_players = set()
+                print(f"Round ended winner: {self.winners}, Pot: {self.pot}")
+                self.hand_over=True
+                self.next_round()
             return
 
         # For post-flop rounds, choose the first actor based on button position.
-        active = [i for i, p in enumerate(self.players) if not p.folded and not p.all_in]
+        active = [i for i, p in enumerate(self.players) if not p.folded and not p.all_in and not p.busted]
         if active:
-            candidate = (self.dealer_index + 1) % self.num_players
-            while candidate not in active:
-                candidate = (candidate + 1) % self.num_players
-            self.current_player_index = candidate
+            self.current_player_index = self.get_next_playing_player_index(self.big_blind_index)
             self.pending_players = set(active)
         else:
             self.pending_players = set()
@@ -140,24 +156,31 @@ class PokerGame:
 
     def step(self, action: Action, amount: Optional[int] = None) -> None:
         if self.hand_over:
+            self.next_round()
+            return
+
+        if self.players[self.current_player_index].busted:
+            self.current_player_index = self.get_next_pending_player(self.current_player_index)
             return
 
         # Early check: if all players are either folded or all-in, finish the hand automatically.
-        if all(p.folded or p.all_in for p in self.players):
+        if all(p.folded or p.all_in or p.busted for p in self.players):
             while self.round_stage != "showdown":
                 self.next_round()
+                for p in self.players:
+                    print(f"PID {p.player_id}, Busted {p.busted}, All-in {p.all_in}, Folded {p.folded}")
             self.hand_over = True
             return
 
         # Check if only one active (non-folded) player remains.
-        active_players = [p for p in self.players if not p.folded]
+        active_players = [p for p in self.players if not p.folded and not p.busted and not p.all_in]
         if len(active_players) == 1:
             self.players[active_players[0].player_id].chips += self.pot
             self.hand_over = True
             return
 
         player = self.players[self.current_player_index]
-
+        print(f"PID: {player.player_id}, Action {action}, Amount: {amount}, Chips: {player.chips},Pot: {self.pot}")
         if player.folded or player.all_in:
             self.pending_players.discard(self.current_player_index)
             self.current_player_index = self.get_next_pending_player(self.current_player_index)
@@ -201,7 +224,7 @@ class PokerGame:
                 player.total_bet += total_required
                 self.pot += total_required
             # On a raise, reset pending players.
-            self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in}
+            self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in and not p.busted}
             self.pending_players.discard(self.current_player_index)
 
         # Remove the current player from pending.
@@ -219,7 +242,12 @@ class PokerGame:
 
     def rotate_dealer(self) -> None:
         """Rotates the dealer for the next hand."""
-        self.dealer_index = (self.dealer_index + 1) % self.num_players
+        index = (self.dealer_index + 1) % len(self.players)
+        for _ in range(len(self.players)):
+            if self.players[index%len(self.players)].chips>0:
+                self.dealer_index=index%len(self.players)
+                return
+            index+=1
 
     def determine_winners(self) -> Optional[List[int]]:
         """Determine winners after showdown, handling ties by comparing winnings."""
@@ -239,20 +267,26 @@ class PokerGame:
         max_win = max(winnings.values())
         return [pid for pid, win in winnings.items() if win == max_win]
 
-    def evaluate_best_hand(self, player: Player) -> Tuple:
+    def evaluate_best_hand(self, player: Player) -> None:
         """Returns the best 5-card hand value from player's cards and community cards."""
         all_cards = player.hand + self.community_cards
-        return self.best_hand(all_cards)
+        player.best_hand["rank"],player.best_hand["hand"] = self.best_hand(all_cards)
 
     def best_hand(self, cards: List[Card]) -> Tuple:
         if len(cards) < 5:
             return (-1, [])
         best = None
+        best_combo=None
         for combo in combinations(cards, 5):
-            value = self.evaluate_five(list(combo))
+            value,value_cards = self.evaluate_five(list(combo))
             if best is None or value > best:
                 best = value
-        return best
+                best_combo = value_cards
+            elif best==value:
+                temp = self.compare_hands(best_combo,value_cards,value)
+                if temp is not None:
+                    best_combo = temp
+        return best,best_combo
 
     def evaluate_five(self, cards: List[Card]) -> Tuple:
         """
@@ -282,54 +316,85 @@ class PokerGame:
 
         unique_ranks = sorted(set(card_ranks), reverse=True)
         is_straight = False
-        straight_high = None
         if len(unique_ranks) >= 5:
             for i in range(len(unique_ranks) - 4):
                 if unique_ranks[i] - unique_ranks[i+4] == 4:
                     is_straight = True
-                    straight_high = unique_ranks[i]
                     break
             if set([14, 2, 3, 4, 5]).issubset(set(card_ranks)):
                 is_straight = True
-                straight_high = 5
 
         counts = Counter(card_ranks)
         count_values = sorted(counts.values(), reverse=True)
+        hand = sorted(card_ranks, key=lambda x: (counts[x], x), reverse=True)
         if is_flush and is_straight:
             hand_rank = 8
-            kicker = [straight_high]
         elif 4 in count_values:
             hand_rank = 7
-            four_rank = [rank for rank, cnt in counts.items() if cnt == 4][0]
-            kicker = [r for r in card_ranks if r != four_rank]
         elif 3 in count_values and 2 in count_values:
             hand_rank = 6
-            three_rank = max([rank for rank, cnt in counts.items() if cnt == 3])
-            pair_rank = max([rank for rank, cnt in counts.items() if cnt == 2])
-            kicker = [three_rank, pair_rank]
         elif is_flush:
             hand_rank = 5
-            kicker = card_ranks
         elif is_straight:
             hand_rank = 4
-            kicker = [straight_high]
         elif 3 in count_values:
             hand_rank = 3
-            three_rank = [rank for rank, cnt in counts.items() if cnt == 3][0]
-            remaining = sorted([r for r in card_ranks if r != three_rank], reverse=True)
-            kicker = [three_rank] + remaining
         elif count_values.count(2) >= 2:
             hand_rank = 2
-            pairs = sorted([rank for rank, cnt in counts.items() if cnt == 2], reverse=True)
-            kicker = pairs + sorted([r for r in card_ranks if r not in pairs], reverse=True)
         elif 2 in count_values:
             hand_rank = 1
-            pair_rank = [rank for rank, cnt in counts.items() if cnt == 2][0]
-            kicker = [pair_rank] + sorted([r for r in card_ranks if r != pair_rank], reverse=True)
         else:
             hand_rank = 0
-            kicker = card_ranks
-        return (hand_rank, kicker)
+        return hand_rank, hand
+
+    def compare_hands(self, hand1,hand2,hand_rank:int):
+        match hand_rank:
+            # Regular determination
+            case 0 | 1 | 2 | 3 | 5 | 6 | 7:
+                for c1,c2 in zip(hand1,hand2):
+                    if c1 > c2:
+                        return hand1
+                    if c1 < c2:
+                        return hand2
+                return None
+            # Straights
+            case 4 | 8:
+                # Straight values
+                # 1-lowest possible
+                # 2-regular
+                # 3-highest
+                h1_value=2
+                h2_value=2
+                if hand1[0]==14:
+                    if hand1[1]==5:
+                        h1_value=1
+                    if hand1[1]==13:
+                        h1_value=3
+                if hand2[0]==14:
+                    if hand2[1]==5:
+                        h2_value=1
+                    if hand2[1]==13:
+                        h2_value=3
+                if h1_value > h2_value:
+                    return hand1
+                elif h1_value < h2_value:
+                    return hand2
+                else:
+                    for c1, c2 in zip(hand1, hand2):
+                        if c1 > c2:
+                            return hand1
+                        if c1 < c2:
+                            return hand2
+                    return None
+            case _:
+                return None
+
+    def test(self):
+        """ For testin purposes """
+        h1=[Card(Suit.HEARTS,Rank.ACE),Card(Suit.HEARTS,Rank.FOUR),Card(Suit.HEARTS,Rank.FIVE),Card(Suit.HEARTS,Rank.TWO),Card(Suit.HEARTS,Rank.THREE)]
+        h2=[Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.SIX),Card(Suit.HEARTS,Rank.SIX)]
+        print(self.compare_hands([6,5,4,3,2],[13,12,11,10,9],4))
+
 
     def showdown(self) -> Dict[int, int]:
         """
@@ -340,31 +405,70 @@ class PokerGame:
          4. The pot is split equally among winners.
         Returns a mapping of player_id to chips won.
         """
-        active_players = [p for p in self.players if not p.folded]
+        active_players = [p for p in self.players if not p.folded and not p.busted]
         if len(active_players) == 1:
             return {active_players[0].player_id: self.pot}
-        contributions = {p.player_id: p.total_bet for p in active_players}
-        pots = []
-        sorted_contrib = sorted(contributions.items(), key=lambda x: x[1])
-        previous = 0
-        for pid, bet in sorted_contrib:
-            eligible = [pid2 for pid2, bet2 in contributions.items() if bet2 >= bet]
-            pot_amount = (bet - previous) * len(eligible)
-            pots.append((pot_amount, eligible))
-            previous = bet
+
         winnings = {p.player_id: 0 for p in active_players}
-        hand_values = {p.player_id: self.evaluate_best_hand(p) for p in active_players}
-        for pot_amount, eligible in pots:
-            best_value = None
-            pot_winners = []
-            for pid in eligible:
-                val = hand_values[pid]
-                if best_value is None or val > best_value:
-                    best_value = val
-                    pot_winners = [pid]
-                elif val == best_value:
-                    pot_winners.append(pid)
-            split = pot_amount // len(pot_winners)
-            for pid in pot_winners:
-                winnings[pid] += split
+        winning_players=active_players
+        for p in active_players:
+            self.evaluate_best_hand(p)
+        best_rank=max(p.best_hand["rank"] for p in active_players)
+
+        # Eliminate inferior hands by value
+        for p in active_players:
+            if p.best_hand["rank"] < best_rank:
+                winning_players.remove(p)
+
+        # If more than 1 player remains find best hands
+        if len(winning_players) >1 :
+            final_winners=[]
+            best_player= None
+
+            for p in winning_players:
+                if best_player is None:
+                    best_player = p
+                    final_winners.append(p)
+                else:
+                    if p.best_hand["hand"] == best_player.best_hand["hand"]:
+                        final_winners.append(p)
+                    else:
+                        temp = self.compare_hands(best_player.best_hand["hand"],p.best_hand["hand"],best_rank)
+                        if temp is not None:
+                            if p.best_hand["hand"] == temp:
+                                best_player = p
+                                final_winners= [p]
+            winning_players=final_winners
+
+        # Only 1 winner
+        if len(winning_players) == 1:
+            winnings[winning_players[0].player_id]=self.pot
+            return winnings
+
+        # More winners
+        contributions = sorted(
+            [[p.player_id, p.total_bet] for p in winning_players],
+            key=lambda item: item[1]
+        )
+        all_contributions=sum(contribution[1] for contribution in contributions)
+
+        pot_copy=self.pot
+        for contribution in contributions:
+            pot_winning = math.ceil(self.pot * (contribution[1] / all_contributions))
+            if pot_winning >= pot_copy:
+                winnings[contribution[0]]=pot_copy
+            else:
+                winnings[contribution[0]]=pot_winning
+                pot_copy-=pot_winning
         return winnings
+
+
+    def get_next_playing_player_index(self, player_index):
+        index = (player_index + 1) % len(self.players)
+        for _ in range(len(self.players)):
+            if not self.players[index % len(self.players)].busted:
+                return index % len(self.players)
+            index += 1
+    pass
+
+

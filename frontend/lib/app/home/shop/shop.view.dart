@@ -1,6 +1,5 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:frontend/app/shop/shop.controller.dart';
+import 'package:frontend/app/home/shop/shop.controller.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:get/get.dart';
 import 'package:frontend/widgets/page_scaffold.dart';

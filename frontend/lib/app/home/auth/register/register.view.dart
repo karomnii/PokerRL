@@ -3,8 +3,8 @@ import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
 
-class LoginView extends StatelessWidget {
-  const LoginView({super.key});
+class RegisterView extends StatelessWidget {
+  const RegisterView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class LoginView extends StatelessWidget {
               children: [
                 const Center(
                   child: Text(
-                    "Login",
+                    "Register",
                     style: TextStyle(fontSize: 30),
                   ),
                 ),
@@ -32,6 +32,22 @@ class LoginView extends StatelessWidget {
                       hintStyle: const TextStyle(color: Colors.grey),
                       suffixIcon: const Icon(
                         Icons.person,
+                        color: Colors.white,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 450,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'E-mail',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      suffixIcon: const Icon(
+                        Icons.mail,
                         color: Colors.white,
                       ),
                       border: OutlineInputBorder(
@@ -62,11 +78,11 @@ class LoginView extends StatelessWidget {
                     minimumSize: const Size(0, 50),
                   ),
                   onPressed: () {},
-                  child: const Text("Login"),
+                  child: const Text("Register"),
                 ),
                 const Center(
                   child: Text(
-                    "Don't have an account? Register",
+                    "Already have account? Login",
                     style: TextStyle(fontSize: 16),
                   ),
                 ),

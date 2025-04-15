@@ -1,6 +1,10 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:frontend/app/home/auth/auth.binding.dart';
+import 'package:frontend/app/home/auth/auth.view.dart';
+import 'package:frontend/app/home/auth/register/register.binding.dart';
+import 'package:frontend/app/home/auth/register/register.view.dart';
 import 'package:frontend/app/home/game/game.binding.dart';
 import 'package:frontend/app/home/game/game.view.dart';
 import 'package:frontend/app/home/home.binding.dart';
@@ -46,13 +50,18 @@ class MyApp extends StatelessWidget {
               ),
               GetPage(
                   name: '/auth',
-                  page: () => const LoginView(),
-                  binding: LoginPageBinding(),
+                  page: () => const AuthView(),
+                  binding: AuthPageBinding(),
                   children: [
                     GetPage(
                       name: '/login',
                       page: () => const LoginView(),
                       binding: LoginPageBinding(),
+                    ),
+                    GetPage(
+                      name: '/register',
+                      page: () => const RegisterView(),
+                      binding: RegisterPageBinding(),
                     ),
                   ]),
             ]),

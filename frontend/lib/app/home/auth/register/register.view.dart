@@ -80,11 +80,26 @@ class RegisterView extends StatelessWidget {
                   onPressed: () {},
                   child: const Text("Register"),
                 ),
-                const Center(
-                  child: Text(
-                    "Already have account? Login",
-                    style: TextStyle(fontSize: 16),
-                  ),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    const Text(
+                      "Already have account? ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/auth/login');
+                      },
+                      child: const Text(
+                        "login",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

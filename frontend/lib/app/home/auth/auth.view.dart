@@ -49,10 +49,46 @@ class AuthView extends StatelessWidget {
                   color: Colors.lightBlue,
                   onPressed: () {},
                 ),
-                const Center(
-                  child: Text(
-                    "Or use your password to login",
-                    style: TextStyle(fontSize: 16),
+                Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 5,
+                    children: [
+                      const Text(
+                        'Or use your password to',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(context, 'auth/login');
+                        },
+                        child: const Text(
+                          'login',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'or',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(context, 'auth/register');
+                        },
+                        child: const Text(
+                          'register',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

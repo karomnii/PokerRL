@@ -64,11 +64,26 @@ class LoginView extends StatelessWidget {
                   onPressed: () {},
                   child: const Text("Login"),
                 ),
-                const Center(
-                  child: Text(
-                    "Don't have an account? Register",
-                    style: TextStyle(fontSize: 16),
-                  ),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/auth/register');
+                      },
+                      child: const Text(
+                        "register",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  ],
                 ),
               ],
             ),

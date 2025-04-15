@@ -5,6 +5,8 @@ import 'package:frontend/app/game/game.binding.dart';
 import 'package:frontend/app/game/game.view.dart';
 import 'package:frontend/app/home/home.binding.dart';
 import 'package:frontend/app/home/home.view.dart';
+import 'package:frontend/app/login/login.binding.dart';
+import 'package:frontend/app/login/login.view.dart';
 import 'package:frontend/app/shop/shop.binding.dart';
 import 'package:frontend/app/shop/shop.view.dart';
 import 'package:frontend/theme/theme.dart';
@@ -42,6 +44,10 @@ class MyApp extends StatelessWidget {
           page: () => const ShopPageView(),
           binding: ShopPageBinding(),
         ),
+        GetPage(
+            name: '/login',
+            page: () => const LoginView(),
+            binding: LoginPageBinding())
       ],
       navigatorObservers: [
         GetObserver(),

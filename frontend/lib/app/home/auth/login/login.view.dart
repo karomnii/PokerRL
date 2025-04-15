@@ -18,7 +18,7 @@ class LoginView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text("Login", style: TextStyle(fontSize: 30)),
+                const Text("Login", style: TextStyle(fontSize: 30)),
                 SizedBox(
                   width: 400,
                   child: TextField(
@@ -41,9 +41,9 @@ class LoginView extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {},
-                  child: Text("Login"),
+                  child: const Text("Login"),
                 ),
-                Text("Don't have an account? Register"),
+                const Text("Don't have an account? Register"),
               ]),
         ),
       ),

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
@@ -196,16 +195,16 @@ namespace TexasHoldemPoker.Tests
 
             // Add players to the game
             var gamePlayers = new List<GamePlayer>
-            {
-                TestHelper.CreateTestGamePlayer(1, 1, 1),
-                TestHelper.CreateTestGamePlayer(1, 2, 2),
-                TestHelper.CreateTestGamePlayer(1, 3, 3)
-            };
+    {
+        TestHelper.CreateTestGamePlayer(1, 1, 1),
+        TestHelper.CreateTestGamePlayer(1, 2, 2),
+        TestHelper.CreateTestGamePlayer(1, 3, 3)
+    };
+
             context.GamePlayers.AddRange(gamePlayers);
 
             // Add cards to the database
             context.Cards.AddRange(TestHelper.CreateTestDeck());
-
             await context.SaveChangesAsync();
 
             // Create repositories
@@ -221,8 +220,7 @@ namespace TexasHoldemPoker.Tests
                 gamePlayerRepository,
                 cardRepository,
                 moveRepository,
-                chipTransactionRepository
-            );
+                chipTransactionRepository);
 
             // Act - Start the game
             await gameService.StartGameAsync(1);
@@ -234,9 +232,7 @@ namespace TexasHoldemPoker.Tests
             // First player folds
             await gameService.PlaceBetAsync(1, firstTurn, "Fold", 0);
 
-            // Update player status to reflect fold
-            var foldedPlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(1, firstTurn);
-            await gamePlayerRepository.SetPlayerStatusAsync(foldedPlayer.GamePlayerId, false);
+            // No need to manually set player status - the service should handle this
 
             // Get next player's turn
             game = await gameRepository.GetByIdAsync(1);
@@ -252,9 +248,12 @@ namespace TexasHoldemPoker.Tests
             // Third player calls
             await gameService.PlaceBetAsync(1, thirdTurn, "Call", 20);
 
+            // Advance to the Flop round
+            await gameService.DealFlopAsync(1);
+            await gameService.SetFirstPlayerInRoundAsync(1);
+
             // Assert - The folded player should be skipped in next round
             game = await gameRepository.GetByIdAsync(1);
-            Assert.NotEqual(firstTurn, game.CurrentTurnUserId);
 
             // The active players should continue to take turns
             var activePlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(1);
@@ -262,6 +261,25 @@ namespace TexasHoldemPoker.Tests
 
             Assert.Contains(game.CurrentTurnUserId.Value, activePlayerIds);
             Assert.DoesNotContain(firstTurn, activePlayerIds);
+
+            // Simulate a complete betting round in the Flop
+            var currentTurn = game.CurrentTurnUserId.Value;
+
+            // First active player bets
+            await gameService.PlaceBetAsync(1, currentTurn, "Bet", 20);
+
+            // Get next active player
+            game = await gameRepository.GetByIdAsync(1);
+            var nextTurn = game.CurrentTurnUserId.Value;
+
+            // Second active player calls
+            await gameService.PlaceBetAsync(1, nextTurn, "Call", 20);
+
+            // Verify the folded player was never given a turn
+            var allMoves = await moveRepository.GetMovesByGameIdAsync(1);
+            var flopMoves = allMoves.Where(m => m.Round == "Flop").ToList();
+
+            Assert.DoesNotContain(flopMoves, m => m.PlayerId == firstTurn);
         }
     }
 }

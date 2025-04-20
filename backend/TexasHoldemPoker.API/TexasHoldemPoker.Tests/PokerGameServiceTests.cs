@@ -47,7 +47,8 @@ namespace TexasHoldemPoker.Tests
             var gamePlayer = TestHelper.CreateTestGamePlayer(gameId, userId);
 
             _mockGameRepository.Setup(r => r.GetByIdAsync(gameId)).ReturnsAsync(game);
-            _mockGamePlayerRepository.Setup(r => r.GetPlayerByGameAndUserAsync(gameId, userId)).ReturnsAsync(gamePlayer);
+            _mockGamePlayerRepository.Setup(r => r.GetPlayerByGameAndUserAsync(gameId, userId))
+                .ReturnsAsync(gamePlayer);
 
             // Act
             var result = await _gameService.PlaceBetAsync(gameId, userId, "Call", 100);
@@ -73,9 +74,11 @@ namespace TexasHoldemPoker.Tests
             };
 
             _mockGameRepository.Setup(r => r.GetByIdAsync(gameId)).ReturnsAsync(game);
-            _mockGamePlayerRepository.Setup(r => r.GetPlayerByGameAndUserAsync(gameId, userId)).ReturnsAsync(gamePlayer);
+            _mockGamePlayerRepository.Setup(r => r.GetPlayerByGameAndUserAsync(gameId, userId))
+                .ReturnsAsync(gamePlayer);
             _mockGamePlayerRepository.Setup(r => r.GetPlayersByGameIdAsync(gameId)).ReturnsAsync(activePlayers);
-            _mockMoveRepository.Setup(r => r.RecordMoveAsync(gameId, userId, "Call", 100, "PreFlop")).ReturnsAsync(new Move());
+            _mockMoveRepository.Setup(r => r.RecordMoveAsync(gameId, userId, "Call", 100, "PreFlop"))
+                .ReturnsAsync(new Move());
             _mockGameRepository.Setup(r => r.SetCurrentTurnAsync(gameId, It.IsAny<int>())).ReturnsAsync(true);
             _mockMoveRepository.Setup(r => r.GetLastRoundMovesAsync(gameId, "PreFlop")).ReturnsAsync(new List<Move>());
 
@@ -104,24 +107,47 @@ namespace TexasHoldemPoker.Tests
                 TestHelper.CreateTestGamePlayer(gameId, 103, seatPosition: 3)
             };
 
+            // Set the first player as dealer to avoid calling PrepareNextHandAsync
+            players[0].IsDealer = true;
+            players[1].IsSmallBlind = true; // Seat 2 = SB
+            players[2].IsBigBlind = true; // Seat 3 = BB
+
             _mockGameRepository.Setup(r => r.GetByIdAsync(gameId)).ReturnsAsync(game);
             _mockGamePlayerRepository.Setup(r => r.GetPlayersByGameIdAsync(gameId)).ReturnsAsync(players);
+
+            // Mocks potentially needed if PrepareNextHandAsync wasn't fully bypassed or if StartGameAsync relies on them
             _mockGamePlayerRepository.Setup(r => r.SetDealerPositionAsync(gameId, It.IsAny<int>())).ReturnsAsync(true);
             _mockCardRepository.Setup(r => r.ClearGameCardsAsync(gameId)).ReturnsAsync(true);
             _mockCardRepository.Setup(r => r.GetAllCardsAsync()).ReturnsAsync(TestHelper.CreateTestDeck());
-            _mockGamePlayerRepository.Setup(r => r.SetBlindPositionsAsync(gameId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(true);
-            _mockMoveRepository.Setup(r => r.RecordMoveAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(new Move());
-            _mockGameRepository.Setup(r => r.SetCurrentTurnAsync(gameId, It.IsAny<int>())).ReturnsAsync(true);
+            _mockGamePlayerRepository.Setup(r => r.SetBlindPositionsAsync(gameId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(true);
+            _mockCardRepository.Setup(r => r.DealPlayerCardAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(true);
+
+            // Setup for the actual StartGameAsync method's actions
+            _mockMoveRepository.Setup(r => r.RecordMoveAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(),
+                It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(new Move());
+            _mockGameRepository.Setup(r => r.SetCurrentTurnAsync(gameId, It.IsAny<int>()))
+                .ReturnsAsync(true); // Mock the specific call being verified
             _mockGameRepository.Setup(r => r.UpdateGameStateAsync(gameId, "PreFlop")).ReturnsAsync(true);
-            _mockCardRepository.Setup(r => r.DealPlayerCardAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(true);
 
             // Act
             var result = await _gameService.StartGameAsync(gameId);
 
             // Assert
             Assert.True(result);
-            _mockGameRepository.Verify(r => r.SetCurrentTurnAsync(gameId, It.IsAny<int>()), Times.Once);
+
+            // Verify the CORRECT player's turn was set (UserId 101 is Seat 1, left of BB Seat 3)
+            _mockGameRepository.Verify(r => r.SetCurrentTurnAsync(gameId, 101), Times.Once);
+
+            // Verify the game state was updated
             _mockGameRepository.Verify(r => r.UpdateGameStateAsync(gameId, "PreFlop"), Times.Once);
+
+            // Verify blind bets were placed (Optional but good practice)
+            _mockMoveRepository.Verify(r => r.RecordMoveAsync(gameId, 102, "Bet", table.SmallBlind, "PreFlop"),
+                Times.Once); // SB Bet
+            _mockMoveRepository.Verify(r => r.RecordMoveAsync(gameId, 103, "Bet", table.BigBlind, "PreFlop"),
+                Times.Once); // BB Bet
         }
 
         [Fact]

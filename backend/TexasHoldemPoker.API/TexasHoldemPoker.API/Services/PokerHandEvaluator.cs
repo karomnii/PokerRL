@@ -55,16 +55,20 @@ namespace TexasHoldemPoker.API.Services
             // Check for four of a kind
             var groups = cards.GroupBy(c => c.Value).OrderByDescending(g => g.Count());
             if (groups.First().Count() == 4)
-                return FourOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 + GetCardValue(groups.Skip(1).First().First()) * 100;
+                return FourOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 +
+                       GetCardValue(groups.Skip(1).First().First()) * 100;
 
             // Check for full house
             if (groups.First().Count() == 3 && groups.Skip(1).First().Count() == 2)
-                return FullHouse * 1000000 + GetCardValue(groups.First().First()) * 10000 + GetCardValue(groups.Skip(1).First().First()) * 100;
+                return FullHouse * 1000000 + GetCardValue(groups.First().First()) * 10000 +
+                       GetCardValue(groups.Skip(1).First().First()) * 100;
 
             // Check for flush
             if (isFlush)
-                return Flush * 1000000 + GetCardValue(groups.First().First()) * 10000 + GetCardValue(groups.Skip(1).First().First()) * 100 
-                    + GetCardValue(groups.Skip(2).First().First()) * 50 + GetCardValue(groups.Skip(3).First().First()) * 25 + GetCardValue(groups.Skip(4).First().First());
+                return Flush * 1000000 + GetCardValue(groups.First().First()) * 10000 +
+                       GetCardValue(groups.Skip(1).First().First()) * 100
+                       + GetCardValue(groups.Skip(2).First().First()) * 50 +
+                       GetCardValue(groups.Skip(3).First().First()) * 25 + GetCardValue(groups.Skip(4).First().First());
 
             // Check for straight
             if (isStraight)
@@ -72,18 +76,24 @@ namespace TexasHoldemPoker.API.Services
 
             // Check for three of a kind
             if (groups.First().Count() == 3)
-                return ThreeOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 + GetCardValue(groups.Skip(1).First().First()) * 100 
-                    + GetCardValue(groups.Skip(2).First().First());
+                return ThreeOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 +
+                       GetCardValue(groups.Skip(1).First().First()) * 100
+                       + GetCardValue(groups.Skip(2).First().First());
 
             // Check for two pair
             if (groups.First().Count() == 2 && groups.Skip(1).First().Count() == 2)
-                return TwoPair * 1000000 + Math.Max(GetCardValue(groups.First().First()), GetCardValue(groups.Skip(1).First().First())) * 10000
-                    + Math.Min(GetCardValue(groups.First().First()), GetCardValue(groups.Skip(1).First().First())) * 100 + GetCardValue(groups.Skip(2).First().First());
+                return TwoPair * 1000000 + Math.Max(GetCardValue(groups.First().First()),
+                                             GetCardValue(groups.Skip(1).First().First())) * 10000
+                                         + Math.Min(GetCardValue(groups.First().First()),
+                                             GetCardValue(groups.Skip(1).First().First())) * 100 +
+                                         GetCardValue(groups.Skip(2).First().First());
 
             // Check for pair
             if (groups.First().Count() == 2)
-                return Pair * 1000000 + GetCardValue(groups.First().First()) * 10000 + GetCardValue(groups.Skip(1).First().First()) * 100
-                    + GetCardValue(groups.Skip(2).First().First()) * 50 + GetCardValue(groups.Skip(3).First().First());
+                return Pair * 1000000 + GetCardValue(groups.First().First()) * 10000 +
+                       GetCardValue(groups.Skip(1).First().First()) * 100
+                       + GetCardValue(groups.Skip(2).First().First()) * 50 +
+                       GetCardValue(groups.Skip(3).First().First());
 
             // High card
             return HighCard * 1000000 + GetHighCardValue(cards);

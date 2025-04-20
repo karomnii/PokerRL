@@ -33,16 +33,27 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<GameState>> GetGame(int id)
+        public async Task<ActionResult<GameStateDto>> GetGame(int id)
         {
-            //var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var userId = 2;
-            var gameState = await _gameService.GetGameStateAsync(id, userId);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var gameStateDto = await _gameService.GetGameStateAsync(id, userId);
 
-            if (gameState == null)
+            if (gameStateDto == null)
                 return NotFound();
 
-            return Ok(gameState);
+            return Ok(gameStateDto);
+        }
+
+        [HttpGet("{id}/public")]
+        public async Task<ActionResult<GameStateDto>> GetGamePublic(int id)
+        {
+            var userId = 0; // 0 means public state only
+            var gameStateDto = await _gameService.GetGameStateAsync(id, userId);
+
+            if (gameStateDto == null)
+                return NotFound();
+
+            return Ok(gameStateDto);
         }
 
         [HttpPost]
@@ -55,8 +66,7 @@ namespace TexasHoldemPoker.API.Controllers
         [HttpPost("{id}/join")]
         public async Task<ActionResult> JoinGame(int id, JoinGameDto joinDto)
         {
-            //var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var userId = 3;
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
             var result = await _gameService.JoinGameAsync(
                 id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
@@ -94,8 +104,7 @@ namespace TexasHoldemPoker.API.Controllers
         [HttpPost("{id}/move")]
         public async Task<ActionResult> MakeMove(int id, MakeMoveDto moveDto)
         {
-            //var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var userId = 3;
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
             var result = await _gameService.PlaceBetAsync(
                 id, userId, moveDto.ActionType, moveDto.Amount);
@@ -105,5 +114,41 @@ namespace TexasHoldemPoker.API.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("{id}/{userId}")]
+        public async Task<ActionResult<GameStateDto>> GetGameWithUserId(int id, int userId)
+        {
+            var gameStateDto = await _gameService.GetGameStateAsync(id, userId);
+
+            if (gameStateDto == null)
+                return NotFound();
+
+            return Ok(gameStateDto);
+        }
+
+        [HttpPost("{id}/join/{userid}")]
+        public async Task<ActionResult> JoinGameWithUserId(int id, JoinGameDto joinDto, int userId)
+        {
+            var result = await _gameService.JoinGameAsync(
+                id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
+
+            if (!result)
+                return BadRequest("Failed to join game");
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/move/{userid}")]
+        public async Task<ActionResult> MakeMoveWithUserId(int id, MakeMoveDto moveDto, int userId)
+        {
+            var result = await _gameService.PlaceBetAsync(
+                id, userId, moveDto.ActionType, moveDto.Amount);
+
+            if (!result)
+                return BadRequest("Invalid move");
+
+            return NoContent();
+        }
+
     }
 }

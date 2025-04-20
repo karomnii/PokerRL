@@ -1,4 +1,5 @@
-﻿using TexasHoldemPoker.API.Models;
+﻿using TexasHoldemPoker.API.DTOs;
+using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 
 namespace TexasHoldemPoker.API.Services
@@ -107,7 +108,7 @@ namespace TexasHoldemPoker.API.Services
         public async Task<bool> DealCardsAsync(int gameId)
         {
             var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "PreFlop")
+            if (game == null || game.CurrentState != "Waiting")
                 return false;
 
             // Clear any existing cards
@@ -371,7 +372,7 @@ namespace TexasHoldemPoker.API.Services
             return true;
         }
 
-        public async Task<GameState> GetGameStateAsync(int gameId, int userId)
+        public async Task<GameStateDto> GetGameStateAsync(int gameId, int userId)
         {
             var game = await _gameRepository.GetByIdAsync(gameId);
             if (game == null)
@@ -383,18 +384,19 @@ namespace TexasHoldemPoker.API.Services
             // Get community cards
             var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
 
-            // Get player's cards
-            List<Card> playerCards = new List<Card>();
-            if (currentPlayer != null)
-            {
-                playerCards = (await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(currentPlayer.GamePlayerId)).ToList();
-            }
-
             // Get last moves
             var lastMoves = await _moveRepository.GetMovesByGameIdAsync(gameId);
 
-            // Create player state objects
-            var playerStates = players.Select(p => new PlayerState
+            var communityCardDtos = communityCards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
+
+            var playerCardDtos = new List<CardDto>();
+            if (currentPlayer != null)
+            {
+                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(currentPlayer.GamePlayerId);
+                playerCardDtos = playerCards.Select(pc => new CardDto { Suit = pc.Suit, Value = pc.Value }).ToList();
+            }
+
+            var playerStateDtos = players.Select(p => new PlayerStateDto
             {
                 UserId = p.UserId,
                 Username = p.User.Username,
@@ -404,23 +406,33 @@ namespace TexasHoldemPoker.API.Services
                 IsDealer = p.IsDealer,
                 IsSmallBlind = p.IsSmallBlind,
                 IsBigBlind = p.IsBigBlind,
-                // Only include cards for the current player or if game is in showdown
-                Cards = p.UserId == userId || game.CurrentState == "Showdown"
-                    ? _cardRepository.GetPlayerCardsByGamePlayerIdAsync(p.GamePlayerId).Result.ToList()
-                    : new List<Card>()
+                // Conditionally include cards based on user ID or game state
+                Cards = (p.UserId == userId || game.CurrentState == "Showdown") 
+                    ? _cardRepository.GetPlayerCardsByGamePlayerIdAsync(p.GamePlayerId).Result.Select(pc => new CardDto { Suit = pc.Suit, Value = pc.Value }).ToList()
+                    : new List<CardDto>()
             }).ToList();
 
-            return new GameState
+            var moveDtos = lastMoves.OrderByDescending(m => m.MoveTime).Take(10)
+                       .Select(m => new MoveDto
+                       {
+                           PlayerId = m.PlayerId,
+                           ActionType = m.ActionType,
+                           Amount = m.Amount,
+                           Round = m.Round,
+                           MoveTime = m.MoveTime
+                       }).ToList();
+
+            return new GameStateDto
             {
                 GameId = game.GameId,
                 TableId = game.TableId,
                 TableName = game.Table.Name,
                 CurrentState = game.CurrentState,
                 PotSize = game.PotSize,
-                CommunityCards = communityCards.ToList(),
-                PlayerCards = playerCards,
-                Players = playerStates,
-                LastMoves = lastMoves.OrderByDescending(m => m.MoveTime).Take(10).ToList(),
+                CommunityCards = communityCardDtos,
+                PlayerCards = playerCardDtos, // Player-specific cards
+                Players = playerStateDtos,
+                LastMoves = moveDtos,
                 WinnerId = game.WinnerId
             };
         }

@@ -128,5 +128,23 @@ namespace TexasHoldemPoker.API.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> SetCurrentTurnAsync(int gameId, int userId)
+        {
+            var game = await _context.Games.FindAsync(gameId);
+            if (game == null)
+                return false;
+
+            game.CurrentTurnUserId = userId;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<int?> GetCurrentTurnUserIdAsync(int gameId)
+        {
+            var game = await _context.Games.FindAsync(gameId);
+            return game?.CurrentTurnUserId;
+        }
+
     }
 }

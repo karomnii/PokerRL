@@ -41,9 +41,11 @@ CREATE TABLE Games (
     StartTime DATETIME NOT NULL DEFAULT GETDATE(),
     EndTime DATETIME,
     CurrentState NVARCHAR(20) NOT NULL CHECK (CurrentState IN ('Waiting', 'PreFlop', 'Flop', 'Turn', 'River', 'Showdown', 'Completed')),
+	CurrentTurnUserId INT NULL,
     PotSize INT NOT NULL DEFAULT 0,
     WinnerId INT FOREIGN KEY REFERENCES Users(UserId),
-    CONSTRAINT FK_Games_Tables FOREIGN KEY (TableId) REFERENCES PokerTables(TableId)
+    CONSTRAINT FK_Games_Tables FOREIGN KEY (TableId) REFERENCES PokerTables(TableId),
+	CONSTRAINT FK_Games_CurrentTurnUser FOREIGN KEY (CurrentTurnUserId) REFERENCES Users(UserId)
 );
 GO
 

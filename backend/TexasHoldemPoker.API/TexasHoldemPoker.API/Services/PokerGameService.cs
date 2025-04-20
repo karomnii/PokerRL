@@ -1,4 +1,5 @@
-﻿using TexasHoldemPoker.API.DTOs;
+﻿using System;
+using TexasHoldemPoker.API.DTOs;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 
@@ -72,7 +73,6 @@ namespace TexasHoldemPoker.API.Services
             // Set small and big blinds
             int smallBlindIndex = (dealerIndex + 1) % players.Count();
             int bigBlindIndex = (dealerIndex + 2) % players.Count();
-
             var smallBlindPlayer = players.ElementAt(smallBlindIndex);
             var bigBlindPlayer = players.ElementAt(bigBlindIndex);
 
@@ -99,11 +99,17 @@ namespace TexasHoldemPoker.API.Services
                 table.BigBlind,
                 "PreFlop");
 
+            // Set the first player to act (after big blind)
+            int firstToActIndex = (bigBlindIndex + 1) % players.Count();
+            var firstToActPlayer = players.ElementAt(firstToActIndex);
+            await _gameRepository.SetCurrentTurnAsync(gameId, firstToActPlayer.UserId);
+
             // Update game state
             await _gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
 
             return true;
         }
+
 
         public async Task<bool> DealCardsAsync(int gameId)
         {
@@ -144,6 +150,10 @@ namespace TexasHoldemPoker.API.Services
             if (gamePlayer == null || !gamePlayer.IsActive)
                 return false;
 
+            // Check if it's this player's turn
+            if (game.CurrentTurnUserId != userId)
+                return false;  // Not this player's turn
+
             // Validate action
             if (actionType == "Fold")
             {
@@ -171,48 +181,38 @@ namespace TexasHoldemPoker.API.Services
                 return false;
             }
 
+            // Move to the next player's turn
+            await SetNextPlayerTurnAsync(gameId, userId);
+
             // Check if round is complete (all active players have acted)
-            var activePlayers = (await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId))
-                .Where(p => p.IsActive)
-                .ToList();
-
-            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
-
-            bool roundComplete = true;
-            foreach (var player in activePlayers)
-            {
-                // Check if player has made a move in this round
-                bool hasActed = roundMoves.Any(m => m.PlayerId == player.UserId);
-                if (!hasActed)
-                {
-                    roundComplete = false;
-                    break;
-                }
-            }
-
-            // If round is complete, advance to next stage
-            if (roundComplete)
-            {
-                if (game.CurrentState == "PreFlop")
-                {
-                    await DealFlopAsync(gameId);
-                }
-                else if (game.CurrentState == "Flop")
-                {
-                    await DealTurnAsync(gameId);
-                }
-                else if (game.CurrentState == "Turn")
-                {
-                    await DealRiverAsync(gameId);
-                }
-                else if (game.CurrentState == "River")
-                {
-                    await DetermineWinnerAsync(gameId);
-                }
-            }
+            await CheckAndAdvanceRoundAsync(gameId);
 
             return true;
         }
+
+        private async Task<bool> SetNextPlayerTurnAsync(int gameId, int currentUserId)
+        {
+            var game = await _gameRepository.GetByIdAsync(gameId);
+            if (game == null)
+                return false;
+
+            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive).OrderBy(p => p.SeatPosition).ToList();
+
+            if (activePlayers.Count <= 1)
+                return true;  // Only one player left, no need to set next turn
+
+            // Find the current player's index
+            int currentIndex = activePlayers.FindIndex(p => p.UserId == currentUserId);
+
+            // Get the next player (wrap around to the beginning if needed)
+            int nextIndex = (currentIndex + 1) % activePlayers.Count;
+            int nextUserId = activePlayers[nextIndex].UserId;
+
+            // Set the next player's turn
+            return await _gameRepository.SetCurrentTurnAsync(gameId, nextUserId);
+        }
+
 
         public async Task<bool> DealFlopAsync(int gameId)
         {
@@ -429,12 +429,97 @@ namespace TexasHoldemPoker.API.Services
                 TableName = game.Table.Name,
                 CurrentState = game.CurrentState,
                 PotSize = game.PotSize,
+                CurrentTurnUserId = game.CurrentTurnUserId,
                 CommunityCards = communityCardDtos,
-                PlayerCards = playerCardDtos, // Player-specific cards
+                PlayerCards = playerCardDtos,
                 Players = playerStateDtos,
                 LastMoves = moveDtos,
                 WinnerId = game.WinnerId
             };
         }
+
+        private async Task<bool> CheckAndAdvanceRoundAsync(int gameId)
+        {
+            var game = await _gameRepository.GetByIdAsync(gameId);
+            if (game == null)
+                return false;
+
+            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive).ToList();
+
+            // If only one player remains active, they win by default
+            if (activePlayers.Count == 1)
+            {
+                await _gameRepository.EndGameAsync(gameId, activePlayers[0].UserId);
+                return true;
+            }
+
+            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
+
+            // Check if all active players have acted in this round
+            bool roundComplete = true;
+            foreach (var player in activePlayers)
+            {
+                // Check if player has made a move in this round
+                bool hasActed = roundMoves.Any(m => m.PlayerId == player.UserId);
+                if (!hasActed)
+                {
+                    roundComplete = false;
+                    break;
+                }
+            }
+
+            // If round is complete, advance to next stage
+            if (roundComplete)
+            {
+                if (game.CurrentState == "PreFlop")
+                {
+                    await DealFlopAsync(gameId);
+                    // Set first active player after dealer to act
+                    await SetFirstPlayerInRoundAsync(gameId);
+                }
+                else if (game.CurrentState == "Flop")
+                {
+                    await DealTurnAsync(gameId);
+                    // Set first active player after dealer to act
+                    await SetFirstPlayerInRoundAsync(gameId);
+                }
+                else if (game.CurrentState == "Turn")
+                {
+                    await DealRiverAsync(gameId);
+                    // Set first active player after dealer to act
+                    await SetFirstPlayerInRoundAsync(gameId);
+                }
+                else if (game.CurrentState == "River")
+                {
+                    await DetermineWinnerAsync(gameId);
+                }
+            }
+
+            return true;
+        }
+
+        // New method to set the first player to act in a new round
+        private async Task<bool> SetFirstPlayerInRoundAsync(int gameId)
+        {
+            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive).OrderBy(p => p.SeatPosition).ToList();
+
+            if (activePlayers.Count == 0)
+                return false;
+
+            // Find the dealer
+            var dealer = players.FirstOrDefault(p => p.IsDealer);
+            if (dealer == null)
+                return false;
+
+            // Find the first active player after the dealer
+            int dealerPosition = dealer.SeatPosition;
+            var nextPlayer = activePlayers.FirstOrDefault(p => p.SeatPosition > dealerPosition) ?? activePlayers.First();
+
+            // Set this player's turn
+            return await _gameRepository.SetCurrentTurnAsync(gameId, nextPlayer.UserId);
+        }
+
     }
 }

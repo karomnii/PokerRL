@@ -13,5 +13,7 @@ namespace TexasHoldemPoker.API.Repositories
         Task<bool> EndGameAsync(int gameId, int winnerId);
         Task<bool> UpdatePotSizeAsync(int gameId, int amount);
         Task<bool> UpdateGameStateAsync(int gameId, string newState);
+        Task<bool> SetCurrentTurnAsync(int gameId, int userId);
+        Task<int?> GetCurrentTurnUserIdAsync(int gameId);
     }
 }

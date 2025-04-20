@@ -7,6 +7,7 @@
         public string TableName { get; set; }
         public string CurrentState { get; set; }
         public int PotSize { get; set; }
+        public int? CurrentTurnUserId { get; set; }
         public List<CardDto> CommunityCards { get; set; }
         public List<PlayerStateDto> Players { get; set; }
         public List<CardDto> PlayerCards { get; set; } // Only populated for the requesting player

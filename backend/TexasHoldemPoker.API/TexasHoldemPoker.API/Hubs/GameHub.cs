@@ -43,5 +43,14 @@ namespace TexasHoldemPoker.API.Hubs
             var username = Context.User.FindFirst(ClaimTypes.Name)?.Value;
             await Clients.Group($"Game_{gameId}").SendAsync("ReceiveChatMessage", username, message);
         }
+
+        public async Task SendTurnNotification(int gameId, int userId)
+        {
+            // Send a notification to the specific player that it's their turn
+            await Clients.User(userId.ToString()).SendAsync("YourTurn", gameId);
+
+            // Also update all players about the game state change
+            await SendGameUpdate(gameId);
+        }
     }
 }

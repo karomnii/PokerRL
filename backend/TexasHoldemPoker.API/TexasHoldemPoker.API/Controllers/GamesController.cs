@@ -110,7 +110,7 @@ namespace TexasHoldemPoker.API.Controllers
                 id, userId, moveDto.ActionType, moveDto.Amount);
 
             if (!result)
-                return BadRequest("Invalid move");
+                return BadRequest("Invalid move or not your turn");
 
             return NoContent();
         }
@@ -145,7 +145,7 @@ namespace TexasHoldemPoker.API.Controllers
                 id, userId, moveDto.ActionType, moveDto.Amount);
 
             if (!result)
-                return BadRequest("Invalid move");
+                return BadRequest("Invalid move or not your turn");
 
             return NoContent();
         }

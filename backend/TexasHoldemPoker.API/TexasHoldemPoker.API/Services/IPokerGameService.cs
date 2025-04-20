@@ -1,4 +1,5 @@
-﻿using TexasHoldemPoker.API.Models;
+﻿using TexasHoldemPoker.API.DTOs;
+using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Services
 {
@@ -14,7 +15,7 @@ namespace TexasHoldemPoker.API.Services
         Task<bool> DealTurnAsync(int gameId);
         Task<bool> DealRiverAsync(int gameId);
         Task<bool> DetermineWinnerAsync(int gameId);
-        Task<GameState> GetGameStateAsync(int gameId, int userId);
+        Task<GameStateDto> GetGameStateAsync(int gameId, int userId);
     }
 
 }

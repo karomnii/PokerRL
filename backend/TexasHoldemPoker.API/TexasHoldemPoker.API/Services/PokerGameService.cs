@@ -166,6 +166,148 @@ namespace TexasHoldemPoker.API.Services
             if (game.CurrentTurnUserId != userId)
                 return false; // Not this player's turn
 
+            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
+            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive).ToList();
+
+            // Calculate contributions this round
+            var playerContributions = new Dictionary<int, int>();
+            foreach (var p in activePlayers) { playerContributions[p.UserId] = 0; }
+            foreach (var move in roundMoves)
+            {
+                if (playerContributions.ContainsKey(move.PlayerId) && (move.ActionType == "Bet" || move.ActionType == "Call" || move.ActionType == "Raise" || move.ActionType == "AllIn"))
+                {
+                    playerContributions[move.PlayerId] += move.Amount;
+                }
+            }
+
+            int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
+            int currentPlayerContribution = playerContributions.GetValueOrDefault(userId, 0);
+            int amountToCall = highestContributionInRound - currentPlayerContribution;
+
+            // Find the size of the last raise/bet for minimum raise calculation
+            var lastAggressiveMove = roundMoves
+                                    .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
+                                    .OrderByDescending(m => m.MoveTime)
+                                    .FirstOrDefault();
+            int minRaiseAmount = lastAggressiveMove?.Amount ?? game.Table.BigBlind; // Default to BB if no prior aggression
+
+
+            // --- PERFORM VALIDATION BASED ON actionType ---
+
+            if (actionType == "Fold")
+            {
+                // Fold is always allowed
+            }
+            else if (actionType == "Check")
+            {
+                // Check is only allowed if amountToCall is 0
+                if (amountToCall > 0)
+                {
+                    // Log error: Cannot check, must call amountToCall
+                    return false; // Invalid move
+                }
+                // Ensure amount passed is 0 for check
+                if (amount != 0) amount = 0;
+            }
+            else if (actionType == "Call")
+            {
+                // Call is only allowed if there is something to call (amountToCall > 0)
+                if (amountToCall <= 0)
+                {
+                    // Log error: Nothing to call, must Check or Bet
+                    return false; // Invalid move
+                }
+                // Amount must be the exact amount to call, unless player is all-in
+                int callAmount = Math.Min(amountToCall, gamePlayer.CurrentChips); // Effective call amount if all-in
+                if (amount != callAmount)
+                {
+                    // Log error: Incorrect call amount. Expected callAmount
+                    // Allow the move if amount matches effective call amount (covers all-in case)
+                    // If client sent wrong amount but it wasn't all-in, reject
+                    if (amount != callAmount && callAmount != gamePlayer.CurrentChips) return false;
+                    amount = callAmount; // Correct the amount if it was an all-in situation misreported by client
+                }
+            }
+            else if (actionType == "Bet")
+            {
+                // Bet is only allowed if no one has bet yet (highestContributionInRound == 0)
+                if (highestContributionInRound > 0)
+                {
+                    // Log error: Cannot Bet, must Call, Raise, or Fold
+                    return false; // Invalid move
+                }
+                // Bet amount must be >= Big Blind (or a minimum bet size)
+                if (amount < game.Table.BigBlind)
+                {
+                    // Log error: Bet amount too small
+                    return false;
+                }
+                if (amount > gamePlayer.CurrentChips) return false; // Not enough chips
+            }
+            else if (actionType == "Raise")
+            {
+                // Raise is only allowed if there was a prior bet/raise (highestContributionInRound > 0)
+                if (highestContributionInRound <= 0)
+                {
+                    // Log error: Cannot Raise, must Bet or Check/Fold
+                    return false;
+                }
+                // The total amount the player is putting in (contribution + raise amount) must be >= highest + minRaise
+                int totalBetSize = currentPlayerContribution + amount;
+                int requiredTotalSize = highestContributionInRound + minRaiseAmount;
+
+                // Ensure the total size of the raise is sufficient
+                if (totalBetSize < requiredTotalSize && (currentPlayerContribution + amount) < gamePlayer.CurrentChips) // Allow smaller raise if all-in
+                {
+                    // Log error: Raise amount too small. Min total is requiredTotalSize
+                    return false;
+                }
+                if (amount > gamePlayer.CurrentChips) return false; // Not enough chips
+
+                // Adjust amount if it's effectively an all-in raise that's less than the minimum
+                if (amount == gamePlayer.CurrentChips && totalBetSize < requiredTotalSize)
+                {
+                    // It's a valid all-in, even if less than min raise. Keep amount as is.
+                }
+                else if (totalBetSize < requiredTotalSize)
+                {
+                    // This case should ideally be caught above, but double-check logic.
+                    return false;
+                }
+            }
+            else if (actionType == "AllIn")
+            {
+                amount = gamePlayer.CurrentChips; // Ensure amount is exactly player's chips
+                                                  // Determine if this AllIn acts as a Call or a Raise based on context
+                if (amount + currentPlayerContribution <= highestContributionInRound)
+                {
+                    actionType = "Call"; // It's an all-in call (for less than full amount)
+                }
+                else
+                {
+                    // Check if it meets min-raise requirements IF it's more than a call
+                    int totalBetSize = currentPlayerContribution + amount;
+                    int requiredTotalSize = highestContributionInRound + minRaiseAmount;
+                    if (totalBetSize < requiredTotalSize)
+                    {
+                        // It's an all-in raise, but less than min-raise. Still valid as an all-in.
+                        actionType = "Raise"; // Still considered a raise action type for betting purposes
+                    }
+                    else
+                    {
+                        actionType = "Raise"; // A full all-in raise
+                    }
+                    // Note: The RecordMove should just store "AllIn" maybe, or maybe store the effective action ("Call" or "Raise")?
+                    // Storing "AllIn" is likely clearer. The validation ensures it's *contextually* a call or raise.
+                    actionType = "AllIn"; // Keep original actionType for clarity in DB? Needs decision.
+                }
+            }
+            else
+            {
+                return false; // Unknown action type
+            }
+
             // Validate action
             if (actionType == "Fold")
             {
@@ -616,8 +758,6 @@ namespace TexasHoldemPoker.API.Services
             // Get all moves for the current round
             var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
 
-            // Calculate the highest bet in this round
-            int highestBet = 0;
             Dictionary<int, int> playerContributions = new Dictionary<int, int>();
 
             // Initialize player contributions to 0
@@ -636,13 +776,10 @@ namespace TexasHoldemPoker.API.Services
                         continue; // Skip if player folded before this move
 
                     playerContributions[move.PlayerId] += move.Amount;
-
-                    if (playerContributions[move.PlayerId] > highestBet)
-                    {
-                        highestBet = playerContributions[move.PlayerId];
-                    }
                 }
             }
+
+            int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
 
             // Find the last aggressive action (bet or raise)
             var lastAggressiveMove = roundMoves
@@ -695,14 +832,13 @@ namespace TexasHoldemPoker.API.Services
 
             // Check if all active players have matched the highest bet or folded
             bool allBetsMatched = true;
-            foreach (var player in activePlayers)
+            foreach (var player in activePlayers) // Only check active players
             {
-                int contribution = playerContributions.ContainsKey(player.UserId)
-                    ? playerContributions[player.UserId]
-                    : 0;
+                int contribution = playerContributions.GetValueOrDefault(player.UserId, 0); // Use GetValueOrDefault
 
-                // If a player hasn't matched the highest bet and hasn't folded
-                if (contribution < highestBet)
+                // If this active player's contribution is less than the highest required,
+                // the bets are not matched.
+                if (contribution < highestContributionInRound)
                 {
                     allBetsMatched = false;
                     break;

@@ -7,87 +7,86 @@ namespace TexasHoldemPoker.API.Repositories
 {
     public class PurchaseRepository : IPurchaseRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly PokerDbContext context;
 
         public PurchaseRepository(PokerDbContext context)
         {
-            _context = context;
+            this.context = context;
         }
 
         public async Task<Purchase> GetByIdAsync(int purchaseId)
         {
-            return await _context.Purchases
-                .Include(p => p.Item)
+            return await context.Purchases
+                .Include(p => p.ShopItem)
                 .FirstOrDefaultAsync(p => p.PurchaseId == purchaseId);
         }
 
         public async Task<IEnumerable<Purchase>> GetPurchasesByUserIdAsync(int userId)
         {
-            return await _context.Purchases
+            return await context.Purchases
                 .Where(p => p.UserId == userId)
-                .Include(p => p.Item)
+                .Include(p => p.ShopItem)
                 .OrderByDescending(p => p.PurchaseDate)
                 .ToListAsync();
         }
 
         public async Task<Purchase> CreatePurchaseAsync(int userId, int itemId, string paymentMethod, string transactionId)
         {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
+            using var transaction = await context.Database.BeginTransactionAsync();
+
+            try
             {
-                try
+                var item = await context.ShopItems.FindAsync(itemId);
+                if (item == null)
+                    throw new InvalidOperationException("Item not found");
+
+                var user = await context.Users.FindAsync(userId);
+                if (user == null)
+                    throw new InvalidOperationException("User not found");
+
+                // Create the purchase record
+                var purchase = new Purchase
                 {
-                    var item = await _context.ShopItems.FindAsync(itemId);
-                    if (item == null)
-                        throw new InvalidOperationException("Item not found");
+                    UserId = userId,
+                    ItemId = itemId,
+                    PurchaseDate = DateTime.UtcNow,
+                    Price = item.Price,
+                    PaymentMethod = paymentMethod,
+                    TransactionId = transactionId
+                };
 
-                    var user = await _context.Users.FindAsync(userId);
-                    if (user == null)
-                        throw new InvalidOperationException("User not found");
+                context.Purchases.Add(purchase);
 
-                    // Create the purchase record
-                    var purchase = new Purchase
+                // If purchasing chips, update user's chip balance
+                if (item.ItemType == "Chips")
+                {
+                    // Parse the chip amount from the item name or description
+                    int chipAmount = ParseChipAmount(item.Name, item.Description);
+                    user.ChipsBalance += chipAmount;
+
+                    // Log the chip transaction
+                    var chipTransaction = new ChipTransaction
                     {
                         UserId = userId,
-                        ItemId = itemId,
-                        PurchaseDate = DateTime.UtcNow,
-                        Price = item.Price,
-                        PaymentMethod = paymentMethod,
-                        TransactionId = transactionId
+                        Amount = chipAmount,
+                        TransactionType = "Purchase",
+                        ReferenceId = purchase.PurchaseId,
+                        TransactionDate = DateTime.UtcNow,
+                        Description = $"Purchased {chipAmount} chips"
                     };
 
-                    _context.Purchases.Add(purchase);
-
-                    // If purchasing chips, update user's chip balance
-                    if (item.ItemType == "Chips")
-                    {
-                        // Parse the chip amount from the item name or description
-                        int chipAmount = ParseChipAmount(item.Name, item.Description);
-                        user.ChipsBalance += chipAmount;
-
-                        // Log the chip transaction
-                        var chipTransaction = new ChipTransaction
-                        {
-                            UserId = userId,
-                            Amount = chipAmount,
-                            TransactionType = "Purchase",
-                            ReferenceId = purchase.PurchaseId,
-                            TransactionDate = DateTime.UtcNow,
-                            Description = $"Purchased {chipAmount} chips"
-                        };
-
-                        _context.ChipTransactions.Add(chipTransaction);
-                    }
-
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return purchase;
+                    context.ChipTransactions.Add(chipTransaction);
                 }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return purchase;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 
@@ -96,9 +95,8 @@ namespace TexasHoldemPoker.API.Repositories
             // This is a simplified implementation
             // In a real app, you might store the chip amount directly in the database
             // or have a more sophisticated parsing logic
-
             string textToSearch = name + " " + description;
-            var match = Regex.Match(textToSearch, @"(\d{1,3}(,\d{3})*|\d+)\s*chips", RegexOptions.IgnoreCase);
+            var match = Regex.Match(textToSearch, @"(\d{1,3}(,\d{3})*)\s*chips", RegexOptions.IgnoreCase);
 
             if (match.Success)
             {

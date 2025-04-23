@@ -13,5 +13,7 @@ namespace TexasHoldemPoker.API.Repositories
         Task<bool> SetDealerPositionAsync(int gameId, int gamePlayerId);
         Task<bool> SetBlindPositionsAsync(int gameId, int smallBlindPlayerId, int bigBlindPlayerId);
         Task<bool> RemovePlayerFromGameAsync(int gamePlayerId);
+        Task<int> GetNextActivePlayerPositionAsync(int gameId, int currentPosition);
+        Task<GamePlayer> GetPlayerBySeatPositionAsync(int gameId, int seatPosition);
     }
 }

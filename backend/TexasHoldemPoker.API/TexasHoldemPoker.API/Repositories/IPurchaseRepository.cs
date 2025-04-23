@@ -8,5 +8,4 @@ namespace TexasHoldemPoker.API.Repositories
         Task<IEnumerable<Purchase>> GetPurchasesByUserIdAsync(int userId);
         Task<Purchase> CreatePurchaseAsync(int userId, int itemId, string paymentMethod, string transactionId);
     }
-
 }

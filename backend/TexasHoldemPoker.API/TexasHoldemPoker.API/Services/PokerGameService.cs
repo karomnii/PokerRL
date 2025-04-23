@@ -172,10 +172,17 @@ namespace TexasHoldemPoker.API.Services
 
             // Calculate contributions this round
             var playerContributions = new Dictionary<int, int>();
-            foreach (var p in activePlayers) { playerContributions[p.UserId] = 0; }
+            foreach (var p in activePlayers)
+            {
+                playerContributions[p.UserId] = 0;
+            }
+
             foreach (var move in roundMoves)
             {
-                if (playerContributions.ContainsKey(move.PlayerId) && (move.ActionType == "Bet" || move.ActionType == "Call" || move.ActionType == "Raise" || move.ActionType == "AllIn"))
+                if (playerContributions.ContainsKey(move.PlayerId) && (move.ActionType == "Bet" ||
+                                                                       move.ActionType == "Call" ||
+                                                                       move.ActionType == "Raise" ||
+                                                                       move.ActionType == "AllIn"))
                 {
                     playerContributions[move.PlayerId] += move.Amount;
                 }
@@ -187,10 +194,11 @@ namespace TexasHoldemPoker.API.Services
 
             // Find the size of the last raise/bet for minimum raise calculation
             var lastAggressiveMove = roundMoves
-                                    .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
-                                    .OrderByDescending(m => m.MoveTime)
-                                    .FirstOrDefault();
-            int minRaiseAmount = lastAggressiveMove?.Amount ?? game.Table.BigBlind; // Default to BB if no prior aggression
+                .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
+                .OrderByDescending(m => m.MoveTime)
+                .FirstOrDefault();
+            int minRaiseAmount =
+                lastAggressiveMove?.Amount ?? game.Table.BigBlind; // Default to BB if no prior aggression
 
 
             // --- PERFORM VALIDATION BASED ON actionType ---
@@ -207,6 +215,7 @@ namespace TexasHoldemPoker.API.Services
                     // Log error: Cannot check, must call amountToCall
                     return false; // Invalid move
                 }
+
                 // Ensure amount passed is 0 for check
                 if (amount != 0) amount = 0;
             }
@@ -218,6 +227,7 @@ namespace TexasHoldemPoker.API.Services
                     // Log error: Nothing to call, must Check or Bet
                     return false; // Invalid move
                 }
+
                 // Amount must be the exact amount to call, unless player is all-in
                 int callAmount = Math.Min(amountToCall, gamePlayer.CurrentChips); // Effective call amount if all-in
                 if (amount != callAmount)
@@ -237,12 +247,14 @@ namespace TexasHoldemPoker.API.Services
                     // Log error: Cannot Bet, must Call, Raise, or Fold
                     return false; // Invalid move
                 }
+
                 // Bet amount must be >= Big Blind (or a minimum bet size)
                 if (amount < game.Table.BigBlind)
                 {
                     // Log error: Bet amount too small
                     return false;
                 }
+
                 if (amount > gamePlayer.CurrentChips) return false; // Not enough chips
             }
             else if (actionType == "Raise")
@@ -253,16 +265,19 @@ namespace TexasHoldemPoker.API.Services
                     // Log error: Cannot Raise, must Bet or Check/Fold
                     return false;
                 }
+
                 // The total amount the player is putting in (contribution + raise amount) must be >= highest + minRaise
                 int totalBetSize = currentPlayerContribution + amount;
                 int requiredTotalSize = highestContributionInRound + minRaiseAmount;
 
                 // Ensure the total size of the raise is sufficient
-                if (totalBetSize < requiredTotalSize && (currentPlayerContribution + amount) < gamePlayer.CurrentChips) // Allow smaller raise if all-in
+                if (totalBetSize < requiredTotalSize &&
+                    (currentPlayerContribution + amount) < gamePlayer.CurrentChips) // Allow smaller raise if all-in
                 {
                     // Log error: Raise amount too small. Min total is requiredTotalSize
                     return false;
                 }
+
                 if (amount > gamePlayer.CurrentChips) return false; // Not enough chips
 
                 // Adjust amount if it's effectively an all-in raise that's less than the minimum
@@ -279,7 +294,7 @@ namespace TexasHoldemPoker.API.Services
             else if (actionType == "AllIn")
             {
                 amount = gamePlayer.CurrentChips; // Ensure amount is exactly player's chips
-                                                  // Determine if this AllIn acts as a Call or a Raise based on context
+                // Determine if this AllIn acts as a Call or a Raise based on context
                 if (amount + currentPlayerContribution <= highestContributionInRound)
                 {
                     actionType = "Call"; // It's an all-in call (for less than full amount)
@@ -298,6 +313,7 @@ namespace TexasHoldemPoker.API.Services
                     {
                         actionType = "Raise"; // A full all-in raise
                     }
+
                     // Note: The RecordMove should just store "AllIn" maybe, or maybe store the effective action ("Call" or "Raise")?
                     // Storing "AllIn" is likely clearer. The validation ensures it's *contextually* a call or raise.
                     actionType = "AllIn"; // Keep original actionType for clarity in DB? Needs decision.
@@ -676,41 +692,56 @@ namespace TexasHoldemPoker.API.Services
                 return null;
 
             var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var currentPlayer = players.FirstOrDefault(p => p.UserId == userId);
-
-            // Get community cards
             var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
+            var moves = await _moveRepository.GetMovesByGameIdAsync(gameId);
 
-            // Get last moves
-            var lastMoves = await _moveRepository.GetMovesByGameIdAsync(gameId);
+            // Determine if we should show all cards (showdown or game completed)
+            bool showAllCards = game.CurrentState == "Showdown" || game.CurrentState == "Completed";
 
-            var communityCardDtos = communityCards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
-
-            var playerCardDtos = new List<CardDto>();
-            if (currentPlayer != null)
+            // Get the requesting player's cards
+            var playerCards = new List<CardDto>();
+            if (userId > 0) // Only get player cards if a specific user is requesting
             {
-                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(currentPlayer.GamePlayerId);
-                playerCardDtos = playerCards.Select(pc => new CardDto { Suit = pc.Suit, Value = pc.Value }).ToList();
+                var gamePlayer = players.FirstOrDefault(p => p.UserId == userId);
+                if (gamePlayer != null)
+                {
+                    var cards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(gamePlayer.GamePlayerId);
+                    playerCards = cards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
+                }
             }
 
-            var playerStateDtos = players.Select(p => new PlayerStateDto
+            // Build player state DTOs
+            var playerStateDtos = new List<PlayerStateDto>();
+            foreach (var player in players)
             {
-                UserId = p.UserId,
-                Username = p.User.Username,
-                SeatPosition = p.SeatPosition,
-                ChipCount = p.CurrentChips,
-                IsActive = p.IsActive,
-                IsDealer = p.IsDealer,
-                IsSmallBlind = p.IsSmallBlind,
-                IsBigBlind = p.IsBigBlind,
-                // Conditionally include cards based on user ID or game state
-                Cards = (p.UserId == userId || game.CurrentState == "Showdown")
-                    ? _cardRepository.GetPlayerCardsByGamePlayerIdAsync(p.GamePlayerId).Result
-                        .Select(pc => new CardDto { Suit = pc.Suit, Value = pc.Value }).ToList()
-                    : new List<CardDto>()
-            }).ToList();
+                var playerStateDto = new PlayerStateDto
+                {
+                    UserId = player.UserId,
+                    Username = player.User.Username,
+                    SeatPosition = player.SeatPosition,
+                    ChipCount = player.CurrentChips,
+                    IsActive = player.IsActive,
+                    IsDealer = player.IsDealer,
+                    IsSmallBlind = player.IsSmallBlind,
+                    IsBigBlind = player.IsBigBlind,
+                    Cards = new List<CardDto>() // Empty by default
+                };
 
-            var moveDtos = lastMoves.OrderByDescending(m => m.MoveTime).Take(10)
+                // Include cards if:
+                // 1. This is the requesting player, OR
+                // 2. It's showdown/completed state AND the player was active at the end
+                if (player.UserId == userId || (showAllCards && player.IsActive))
+                {
+                    var cards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
+                    playerStateDto.Cards = cards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
+                }
+
+                playerStateDtos.Add(playerStateDto);
+            }
+
+            // Get last few moves for context
+            var lastMoves = moves.OrderByDescending(m => m.MoveTime)
+                .Take(10)
                 .Select(m => new MoveDto
                 {
                     PlayerId = m.PlayerId,
@@ -718,23 +749,28 @@ namespace TexasHoldemPoker.API.Services
                     Amount = m.Amount,
                     Round = m.Round,
                     MoveTime = m.MoveTime
-                }).ToList();
+                })
+                .ToList();
 
-            return new GameStateDto
+            // Build the game state DTO
+            var gameStateDto = new GameStateDto
             {
                 GameId = game.GameId,
                 TableId = game.TableId,
-                TableName = game.Table.Name,
+                TableName = game.Table?.Name,
                 CurrentState = game.CurrentState,
                 PotSize = game.PotSize,
                 CurrentTurnUserId = game.CurrentTurnUserId,
-                CommunityCards = communityCardDtos,
-                PlayerCards = playerCardDtos,
+                CommunityCards = communityCards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList(),
                 Players = playerStateDtos,
-                LastMoves = moveDtos,
+                PlayerCards = playerCards,
+                LastMoves = lastMoves,
                 WinnerId = game.WinnerId
             };
+
+            return gameStateDto;
         }
+
 
         private async Task<bool> CheckAndAdvanceRoundAsync(int gameId)
         {

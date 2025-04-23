@@ -2,7 +2,7 @@ from typing import List
 from .card import Card
 
 class Player:
-    def __init__(self, player_id: int, chips: int = 100) -> None:
+    def __init__(self, player_id: int, chips: int = 1000) -> None:
         self.player_id = player_id
         self.chips = chips
         self.hand: List[Card] = []
@@ -23,6 +23,6 @@ class Player:
             self.busted = True
 
     def prepare_for_new_game(self) -> None:
-        self.reset()
-        self.chips=100
+        self.chips=1000
         self.busted=False
+        self.reset()

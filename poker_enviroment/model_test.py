@@ -87,7 +87,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
             final_stack = player.chips
             initial_total = player_stats[i]['starting_stack']
             net_chips = final_stack - initial_total
-            
+
             # Adjust for pot winnings
             if i in winners:
                 net_chips += pot / len(winners)
@@ -234,7 +234,9 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
 
 if __name__ == "__main__":
     play_with_model(
-        model_path='./models/2025-04-12_00-19-45-911/dqn_model.pth',
+        #model_path='./models/2025-04-19_13-11-31-302/dqn_model.pth',
+        #test
+        model_path='./models/2025-04-23_07-55-31-240/dqn_model.pth',
         num_hands=1000,
         render_speed=0  # Set to 0 for fast execution
     )

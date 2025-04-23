@@ -31,21 +31,28 @@ class PokerGame:
         self.hand_over: bool = False
         self.table_over: bool = False
         self.games_played: int = 0
-        self.winners: Optional[List[int]] = None
+        self.winners: Optional[List[int]] = []
+
+        # chip earnings data
+        self.chip_data_flag = False
+        self.chip_initial_value: [int, int] = {p.player_id: p.chips for p in self.players}
+        self.chip_earnings: Dict[int, int] = {p.player_id: 0 for p in self.players}
+
         # A set of player indices that still need to act in the current betting round.
         self.pending_players: set = set()
 
     def reset(self) -> None:
-        self.winners = None
+        self.winners = []
         self.deck = Deck()
         for p in self.players:
             p.reset()
         active_players = [p for p in self.players if not p.busted]
         if len(active_players) == 1:
             self.games_played+=1
-            print("\n#####Starting New Game#####\n")
+            #print("\n#####Starting New Game#####\n")
             for p in self.players:
                 p.prepare_for_new_game()
+        self.reset_initial_chip_values()
         self.community_cards = []
         self.pot = 0
         self.round_stage = "pre-flop"
@@ -56,6 +63,12 @@ class PokerGame:
         self.set_initial_turn()
         self.pending_players = {i for i, p in enumerate(self.players) if not p.folded and not p.all_in and not p.busted}
 
+    def restart_table(self):
+        self.games_played += 1
+        # print("\n#####Starting New Game#####\n")
+        for p in self.players:
+            p.prepare_for_new_game()
+        self.reset()
 
     def set_initial_turn(self) -> None:
         """Determine which player acts first in pre-flop.
@@ -97,10 +110,6 @@ class PokerGame:
     def next_round(self) -> None:
         for p in self.players:
             p.current_bet = 0
-        if self.hand_over:
-            self.pending_players = set()
-            self.reset()
-            return
         if self.round_stage == "pre-flop":
             self.round_stage = "flop"
             self.deal_community_cards(3)
@@ -116,13 +125,14 @@ class PokerGame:
             winnings = self.showdown()
             if winnings:
                 for pid, amount_won in winnings.items():
-                    print(f"Player {pid}, Won {amount_won}")
+                    #print(f"Player {pid}, Won {amount_won}")
                     self.players[pid].chips += amount_won
-                max_win = max(winnings.values())
-                self.winners = [pid for pid, win in winnings.items() if win == max_win]
-                print(f"Round ended winner: {self.winners}, Pot: {self.pot}")
-                self.hand_over=True
-                self.next_round()
+                for pid in winnings.keys():
+                    if winnings[pid] > 0:
+                        self.winners.append(pid)
+                #print(f"Round ended winner: {self.winners}, Pot: {self.pot}, Winning Hand: {self.players[self.winners[0]].best_hand["hand"]}")
+                self.set_player_earnings()
+                self.reset()
             return
 
         # For post-flop rounds, choose the first actor based on button position.
@@ -165,22 +175,18 @@ class PokerGame:
 
         # Early check: if all players are either folded or all-in, finish the hand automatically.
         if all(p.folded or p.all_in or p.busted for p in self.players):
-            while self.round_stage != "showdown":
-                self.next_round()
-                for p in self.players:
-                    print(f"PID {p.player_id}, Busted {p.busted}, All-in {p.all_in}, Folded {p.folded}")
+            #print("Finishing hand automatically")
             self.hand_over = True
             return
 
         # Check if only one active (non-folded) player remains.
-        active_players = [p for p in self.players if not p.folded and not p.busted and not p.all_in]
+        active_players = [p for p in self.players if not p.folded and not p.busted]
         if len(active_players) == 1:
-            self.players[active_players[0].player_id].chips += self.pot
             self.hand_over = True
             return
 
         player = self.players[self.current_player_index]
-        print(f"PID: {player.player_id}, Action {action}, Amount: {amount}, Chips: {player.chips},Pot: {self.pot}")
+        #print(f"PID: {player.player_id}, Action {action}, Amount: {amount}, Chips: {player.chips},Pot: {self.pot}")
         if player.folded or player.all_in:
             self.pending_players.discard(self.current_player_index)
             self.current_player_index = self.get_next_pending_player(self.current_player_index)
@@ -208,7 +214,20 @@ class PokerGame:
             
             call_amt = self.get_call_amount(self.current_player_index)
             if amount < call_amt:
-                raise ValueError("Raise amount must be greater than the call amount.")
+                #print("Raise amount must be greater than the call amount. Call instead")
+                call_amt = self.get_call_amount(self.current_player_index)
+                if player.chips <= call_amt:
+                    actual_bet = player.chips
+                    player.current_bet += actual_bet
+                    player.total_bet += actual_bet
+                    self.pot += actual_bet
+                    player.chips = 0
+                    player.all_in = True
+                else:
+                    player.chips -= call_amt
+                    player.current_bet += call_amt
+                    player.total_bet += call_amt
+                    self.pot += call_amt
             
             total_required = call_amt + amount
             if player.chips <= total_required:
@@ -248,24 +267,6 @@ class PokerGame:
                 self.dealer_index=index%len(self.players)
                 return
             index+=1
-
-    def determine_winners(self) -> Optional[List[int]]:
-        """Determine winners after showdown, handling ties by comparing winnings."""
-        self.winners = self._determine_showdown_winners()
-        return self.winners
-
-    def _determine_showdown_winners(self) -> Optional[List[int]]:
-        """Helper to compute showdown winners without side effects."""
-        active = [p for p in self.players if not p.folded]
-        if len(active) == 1:
-            return [active[0].player_id]
-        if not active:
-            return None
-        winnings = self.showdown()
-        if not winnings:
-            return None
-        max_win = max(winnings.values())
-        return [pid for pid, win in winnings.items() if win == max_win]
 
     def evaluate_best_hand(self, player: Player) -> None:
         """Returns the best 5-card hand value from player's cards and community cards."""
@@ -450,8 +451,11 @@ class PokerGame:
             [[p.player_id, p.total_bet] for p in winning_players],
             key=lambda item: item[1]
         )
+        #print(f"Contributions: {contributions}")
+        #for p in winning_players:
+            #print(p.best_hand["rank"],p.best_hand["hand"])
         all_contributions=sum(contribution[1] for contribution in contributions)
-
+        #print(f"all contributions: {all_contributions}")
         pot_copy=self.pot
         for contribution in contributions:
             pot_winning = math.ceil(self.pot * (contribution[1] / all_contributions))
@@ -471,4 +475,17 @@ class PokerGame:
             index += 1
     pass
 
+    def reset_initial_chip_values(self):
+        for p in self.players:
+            self.chip_initial_value[p.player_id]=p.chips
+        pass
 
+    def set_player_earnings(self):
+        for p in self.players:
+            self.chip_earnings[p.player_id]=p.chips-self.chip_initial_value[p.player_id]
+        self.chip_data_flag=True
+        pass
+
+    def get_chip_earning_data(self):
+        self.chip_data_flag=False
+        return self.chip_earnings

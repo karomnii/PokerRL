@@ -19,7 +19,7 @@ def encode_card(card: int) -> torch.Tensor:
     # card % 4  => suit in [0..3]
     rank = card // 4
     suit = card % 4
-    
+
     vector = torch.zeros(17)
     vector[rank] = 1.0
     vector[13 + suit] = 1.0
@@ -28,9 +28,9 @@ def encode_card(card: int) -> torch.Tensor:
 
 class DQN(nn.Module):
     def __init__(
-        self, 
-        input_dim=119, 
-        hidden_layers=[512, 256], 
+        self,
+        input_dim=119,
+        hidden_layers=[512, 256],
         output_dim=3
     ):
         """
@@ -64,29 +64,29 @@ class DQNAgent(IAgent):
                  player_id=0,
                  gamma=0.99,
                  epsilon_start=1.0,
-                 epsilon_end=0.01,
-                 epsilon_decay=0.9995):
+                 epsilon_end=0.05,
+                 epsilon_decay=0.9999):
         super().__init__()
         self.player_id = player_id
-        
+
         # Main and target networks
-        self.model = DQN()  
+        self.model = DQN()
         self.target_model = DQN()
         self.target_model.load_state_dict(self.model.state_dict())
-        
+
         # Optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-4)
-        
+
         # Hyperparameters
         self.gamma = gamma
         self.epsilon = epsilon_start
         self.epsilon_end = epsilon_end
         self.epsilon_decay = epsilon_decay
-        
+
         # Replay buffer and related
         self.replay_buffer = []
         self.batch_size = 64
-        
+
         # For tracking training
         self.loss_history = []
 
@@ -94,25 +94,25 @@ class DQNAgent(IAgent):
         """
         Convert the observation (dict with 'hand' and 'community_cards') to a
         119-dim vector: 7 cards each encoded with 17 dims (13 rank + 4 suit).
-        
+
         If the community has fewer than 5 cards, the remainder are zero-padded.
         """
         hand = observation['hand']            # up to 2 cards
         community = observation['community_cards']  # up to 5 cards
         all_cards = hand + community
-        
+
         # If there are fewer than 7 total cards, pad with zeros
         # If there are more than 7 for some reason (extreme game variation),
         # we'll just take the first 7. (Typically not needed for Texas Hold'em)
         max_cards = 7
-        
+
         card_vectors = []
         for i in range(max_cards):
             if i < len(all_cards):
                 card_vectors.append(encode_card(all_cards[i]))
             else:
                 card_vectors.append(torch.zeros(17))
-        
+
         # Flatten into a single 119-dim vector
         return torch.cat(card_vectors)
 
@@ -122,7 +122,7 @@ class DQNAgent(IAgent):
         Returns: (Action, amount)
         """
         state = self._preprocess_observation(observation)
-        
+
         # Epsilon-greedy action selection
         if random.random() < self.epsilon:
             action = random.choice([Action.RAISE, Action.CALL, Action.FOLD])
@@ -131,13 +131,13 @@ class DQNAgent(IAgent):
                 q_values = self.model(state)
                 action_idx = torch.argmax(q_values).item()
                 action = [Action.RAISE, Action.CALL, Action.FOLD][action_idx]
-        
+
         amount = None
         if action == Action.RAISE:
             call_amount = observation['call_amount']
             min_raise = call_amount + 1
             max_raise = observation['chips']
-            
+
             if max_raise >= min_raise:
                 amount = random.randint(min_raise, max_raise)
             else:
@@ -146,7 +146,7 @@ class DQNAgent(IAgent):
                     action = Action.CALL
                 else:
                     action = Action.FOLD
-        
+
         return action, amount
 
     def _action_to_index(self, action: Action) -> int:
@@ -156,15 +156,16 @@ class DQNAgent(IAgent):
         """
         Sample a mini-batch of experiences from the replay buffer, compute the
         loss, and update the network. Also decays epsilon.
-        
+
         Returns: The loss value (float) if an update happened, otherwise None.
         """
+
         if len(self.replay_buffer) < self.batch_size:
             return None
-        
+
         batch = random.sample(self.replay_buffer, self.batch_size)
         states, actions, rewards, next_states, dones = zip(*batch)
-        
+
         states = torch.stack(states)
         actions = torch.tensor([self._action_to_index(a) for a in actions], dtype=torch.long)
         rewards = torch.tensor(rewards, dtype=torch.float32)
@@ -173,26 +174,27 @@ class DQNAgent(IAgent):
             for s in next_states
         ])
         dones = torch.tensor(dones, dtype=torch.float32)
-        
+
         # Current Q for chosen actions
         current_q = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-        
+
         # Next Q from target network
         next_q = self.target_model(next_states).max(1)[0].detach()
-        
+
         # Target values
         target_q = rewards + (1 - dones) * self.gamma * next_q
-        
+
         loss = F.mse_loss(current_q, target_q)
         self.loss_history.append(loss.item())
-        
+
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         self.optimizer.step()
-        
+
         # Epsilon decay
         self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
-        
+
         return loss.item()
 
     def update_target_network(self):
@@ -210,7 +212,7 @@ class DQNAgent(IAgent):
         now = datetime.datetime.now()
         dt = now.strftime("%Y-%m-%d_%H-%M-%S") + f"-{int(now.microsecond / 1000):03d}"
         folder = f'./models/{dt}/'
-        
+
         try:
             os.makedirs(folder, exist_ok=True)
             filepath = os.path.join(folder, path)

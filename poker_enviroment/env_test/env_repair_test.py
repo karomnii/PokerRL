@@ -10,9 +10,9 @@ def main():
     agents = [RandomAgent() for _ in range(4)]
 
     env = PokerEnv(agents)
-
     env.reset()
-    print("Starting a new hand...\n")
+
+    print("Starting a new sim...\n")
     env.render()
     while env.game.games_played<GAMES_TO_PLAY:
         current_index = env.game.current_player_index
@@ -23,9 +23,10 @@ def main():
         print(f"Player {current_index} takes action: {action_str}\n")
 
         env.game.step(action, amount)
-
         env.render()
+        if env.game.chip_data_flag:
 
+            print(env.game.get_chip_earning_data())
         # Waiting input
         input()
     print("Sim finished")

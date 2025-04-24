@@ -47,7 +47,7 @@ namespace TexasHoldemPoker.API.Controllers
 
             user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
 
-            await _userRepository.CreateAsync(user);
+            await _userRepository.CreateUserAsync(user);
 
             return new UserDto
             {
@@ -55,7 +55,7 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
+                AvatarImage = "/images/default.png",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -76,7 +76,7 @@ namespace TexasHoldemPoker.API.Controllers
 
             // Update last login date
             user.LastLoginDate = DateTime.UtcNow;
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return new UserDto
             {
@@ -126,7 +126,7 @@ namespace TexasHoldemPoker.API.Controllers
             if (!string.IsNullOrEmpty(updateDto.AvatarImage))
                 user.AvatarImage = updateDto.AvatarImage;
 
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return NoContent();
         }

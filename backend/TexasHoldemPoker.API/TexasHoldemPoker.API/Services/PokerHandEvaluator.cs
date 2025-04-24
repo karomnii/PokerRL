@@ -1,118 +1,147 @@
-﻿using TexasHoldemPoker.API.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Services
 {
-    public class PokerHandEvaluator
+    public static class PokerHandEvaluator
     {
-        // Constants for hand rankings
-        private const int HighCard = 1;
-        private const int Pair = 2;
-        private const int TwoPair = 3;
-        private const int ThreeOfAKind = 4;
-        private const int Straight = 5;
-        private const int Flush = 6;
-        private const int FullHouse = 7;
-        private const int FourOfAKind = 8;
-        private const int StraightFlush = 9;
-        private const int RoyalFlush = 10;
+        // Hand rankings from lowest to highest
+        private const int HIGH_CARD = 1;
+        private const int PAIR = 2;
+        private const int TWO_PAIR = 3;
+        private const int THREE_OF_A_KIND = 4;
+        private const int STRAIGHT = 5;
+        private const int FLUSH = 6;
+        private const int FULL_HOUSE = 7;
+        private const int FOUR_OF_A_KIND = 8;
+        private const int STRAIGHT_FLUSH = 9;
+        private const int ROYAL_FLUSH = 10;
 
+        // Evaluates a hand of 5-7 cards and returns a numeric value representing its strength
         public static int EvaluateHand(List<Card> cards)
         {
             if (cards.Count < 5)
-                throw new ArgumentException("Need at least 5 cards to evaluate a poker hand");
+                throw new ArgumentException("Need at least 5 cards to evaluate a hand");
 
-            // Get all possible 5-card combinations if more than 5 cards are provided
-            var combinations = GetCombinations(cards, 5);
-
-            // Evaluate each combination and return the highest rank
-            int bestRank = 0;
-            foreach (var combo in combinations)
+            // For 7-card hands (2 hole cards + 5 community), we need to find the best 5-card combination
+            if (cards.Count > 5)
             {
-                int rank = EvaluateFiveCardHand(combo.ToList());
-                if (rank > bestRank)
-                    bestRank = rank;
+                return FindBestFiveCardHand(cards);
             }
 
-            return bestRank;
+            return EvaluateFiveCardHand(cards);
+        }
+
+        private static int FindBestFiveCardHand(List<Card> cards)
+        {
+            // Generate all possible 5-card combinations from the 7 cards
+            var combinations = GetCombinations(cards, 5);
+
+            int bestHandValue = 0;
+
+            foreach (var combo in combinations)
+            {
+                var handValue = EvaluateFiveCardHand(combo.ToList());
+                if (handValue > bestHandValue)
+                {
+                    bestHandValue = handValue;
+                }
+            }
+
+            return bestHandValue;
         }
 
         private static int EvaluateFiveCardHand(List<Card> cards)
         {
-            if (cards.Count != 5)
-                throw new ArgumentException("Must have exactly 5 cards");
+            // Check for flush (all cards of the same suit)
+            bool isFlush = cards.Select(c => c.Suit).Distinct().Count() == 1;
 
-            bool isFlush = IsFlush(cards);
+            // Check for straight (consecutive card values)
             bool isStraight = IsStraight(cards);
 
-            // Check for royal flush
-            if (isFlush && isStraight && HasAce(cards) && HasKing(cards))
-                return RoyalFlush * 1000000;
+            // Get card values for evaluation
+            var values = cards.Select(c => GetCardValue(c)).OrderByDescending(v => v).ToList();
 
-            // Check for straight flush
+            // Group cards by value to find pairs, three of a kind, etc.
+            var valueGroups = cards.GroupBy(c => GetCardValue(c))
+                .OrderByDescending(g => g.Count())
+                .ThenByDescending(g => g.Key)
+                .ToList();
+
+            // Royal Flush: A, K, Q, J, 10 of the same suit
+            if (isFlush && isStraight && values.Contains(14) && values.Contains(13))
+            {
+                return ROYAL_FLUSH * 100000000;
+            }
+
+            // Straight Flush: Five consecutive cards of the same suit
             if (isFlush && isStraight)
-                return StraightFlush * 1000000 + GetHighCardValue(cards);
+            {
+                return STRAIGHT_FLUSH * 100000000 + values[0];
+            }
 
-            // Check for four of a kind
-            var groups = cards.GroupBy(c => c.Value).OrderByDescending(g => g.Count());
-            if (groups.First().Count() == 4)
-                return FourOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 +
-                       GetCardValue(groups.Skip(1).First().First()) * 100;
+            // Four of a Kind: Four cards of the same value
+            if (valueGroups[0].Count() == 4)
+            {
+                return FOUR_OF_A_KIND * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key;
+            }
 
-            // Check for full house
-            if (groups.First().Count() == 3 && groups.Skip(1).First().Count() == 2)
-                return FullHouse * 1000000 + GetCardValue(groups.First().First()) * 10000 +
-                       GetCardValue(groups.Skip(1).First().First()) * 100;
+            // Full House: Three cards of one value and two of another
+            if (valueGroups[0].Count() == 3 && valueGroups[1].Count() == 2)
+            {
+                return FULL_HOUSE * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key;
+            }
 
-            // Check for flush
+            // Flush: Five cards of the same suit
             if (isFlush)
-                return Flush * 1000000 + GetCardValue(groups.First().First()) * 10000 +
-                       GetCardValue(groups.Skip(1).First().First()) * 100
-                       + GetCardValue(groups.Skip(2).First().First()) * 50 +
-                       GetCardValue(groups.Skip(3).First().First()) * 25 + GetCardValue(groups.Skip(4).First().First());
+            {
+                return FLUSH * 100000000 + values[0] * 10000 + values[1] * 1000 + values[2] * 100 + values[3] * 10 +
+                       values[4];
+            }
 
-            // Check for straight
+            // Straight: Five consecutive cards
             if (isStraight)
-                return Straight * 1000000 + GetHighCardValue(cards) * 10000;
+            {
+                return STRAIGHT * 100000000 + values[0];
+            }
 
-            // Check for three of a kind
-            if (groups.First().Count() == 3)
-                return ThreeOfAKind * 1000000 + GetCardValue(groups.First().First()) * 10000 +
-                       GetCardValue(groups.Skip(1).First().First()) * 100
-                       + GetCardValue(groups.Skip(2).First().First());
+            // Three of a Kind: Three cards of the same value
+            if (valueGroups[0].Count() == 3)
+            {
+                return THREE_OF_A_KIND * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key * 100 +
+                       valueGroups[2].Key;
+            }
 
-            // Check for two pair
-            if (groups.First().Count() == 2 && groups.Skip(1).First().Count() == 2)
-                return TwoPair * 1000000 + Math.Max(GetCardValue(groups.First().First()),
-                                             GetCardValue(groups.Skip(1).First().First())) * 10000
-                                         + Math.Min(GetCardValue(groups.First().First()),
-                                             GetCardValue(groups.Skip(1).First().First())) * 100 +
-                                         GetCardValue(groups.Skip(2).First().First());
+            // Two Pair: Two cards of one value and two cards of another value
+            if (valueGroups[0].Count() == 2 && valueGroups[1].Count() == 2)
+            {
+                return TWO_PAIR * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key * 100 +
+                       valueGroups[2].Key;
+            }
 
-            // Check for pair
-            if (groups.First().Count() == 2)
-                return Pair * 1000000 + GetCardValue(groups.First().First()) * 10000 +
-                       GetCardValue(groups.Skip(1).First().First()) * 100
-                       + GetCardValue(groups.Skip(2).First().First()) * 50 +
-                       GetCardValue(groups.Skip(3).First().First());
+            // Pair: Two cards of the same value
+            if (valueGroups[0].Count() == 2)
+            {
+                return PAIR * 100000000 + valueGroups[0].Key * 10000 + values[2] * 1000 + values[3] * 100 +
+                       values[4] * 10;
+            }
 
-            // High card
-            return HighCard * 1000000 + GetHighCardValue(cards);
-        }
-
-        private static bool IsFlush(List<Card> cards)
-        {
-            return cards.Select(c => c.Suit).Distinct().Count() == 1;
+            // High Card: Highest value card
+            return HIGH_CARD * 100000000 + values[0] * 10000 + values[1] * 1000 + values[2] * 100 + values[3] * 10 +
+                   values[4];
         }
 
         private static bool IsStraight(List<Card> cards)
         {
             var values = cards.Select(c => GetCardValue(c)).OrderBy(v => v).ToList();
 
-            // Check for A-5 straight
+            // Check for A-5 straight (Ace can be low)
             if (values.SequenceEqual(new[] { 2, 3, 4, 5, 14 }))
                 return true;
 
-            // Check for regular straight
+            // Check for normal straight
             for (int i = 1; i < values.Count; i++)
             {
                 if (values[i] != values[i - 1] + 1)
@@ -120,16 +149,6 @@ namespace TexasHoldemPoker.API.Services
             }
 
             return true;
-        }
-
-        private static bool HasAce(List<Card> cards)
-        {
-            return cards.Any(c => c.Value == "A");
-        }
-
-        private static bool HasKing(List<Card> cards)
-        {
-            return cards.Any(c => c.Value == "K");
         }
 
         private static int GetCardValue(Card card)
@@ -151,11 +170,6 @@ namespace TexasHoldemPoker.API.Services
                 case "A": return 14;
                 default: throw new ArgumentException($"Invalid card value: {card.Value}");
             }
-        }
-
-        private static int GetHighCardValue(List<Card> cards)
-        {
-            return cards.Max(c => GetCardValue(c));
         }
 
         private static IEnumerable<IEnumerable<T>> GetCombinations<T>(IEnumerable<T> list, int length)

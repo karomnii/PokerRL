@@ -6,25 +6,27 @@ namespace TexasHoldemPoker.API.Repositories
 {
     public class GameRoundWinnerRepository : IGameRoundWinnerRepository
     {
-        private readonly PokerDbContext context;
-        private readonly IChipTransactionRepository chipTransactionRepository;
+        private readonly PokerDbContext _context;
+        private readonly IChipTransactionRepository _chipTransactionRepository;
 
-        public GameRoundWinnerRepository(PokerDbContext context, IChipTransactionRepository chipTransactionRepository)
+        public GameRoundWinnerRepository(
+            PokerDbContext context,
+            IChipTransactionRepository chipTransactionRepository)
         {
-            this.context = context;
-            this.chipTransactionRepository = chipTransactionRepository;
+            _context = context;
+            _chipTransactionRepository = chipTransactionRepository;
         }
 
         public async Task<GameRoundWinner> GetByIdAsync(int gameRoundWinnerId)
         {
-            return await context.GameRoundWinners
+            return await _context.GameRoundWinners
                 .Include(grw => grw.User)
                 .FirstOrDefaultAsync(grw => grw.GameRoundWinnerId == gameRoundWinnerId);
         }
 
         public async Task<IEnumerable<GameRoundWinner>> GetByGameRoundIdAsync(int gameRoundId)
         {
-            return await context.GameRoundWinners
+            return await _context.GameRoundWinners
                 .Include(grw => grw.User)
                 .Where(grw => grw.GameRoundId == gameRoundId)
                 .ToListAsync();
@@ -32,19 +34,19 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<GameRoundWinner> CreateAsync(GameRoundWinner gameRoundWinner)
         {
-            context.GameRoundWinners.Add(gameRoundWinner);
-            await context.SaveChangesAsync();
+            _context.GameRoundWinners.Add(gameRoundWinner);
+            await _context.SaveChangesAsync();
             return gameRoundWinner;
         }
 
         public async Task<bool> AddWinnerAsync(int gameRoundId, int userId, int amountWon)
         {
-            using var transaction = await context.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 // Get the game ID for the transaction
-                var gameRound = await context.GameRounds.FindAsync(gameRoundId);
+                var gameRound = await _context.GameRounds.FindAsync(gameRoundId);
                 if (gameRound == null)
                     return false;
 
@@ -56,13 +58,13 @@ namespace TexasHoldemPoker.API.Repositories
                     AmountWon = amountWon
                 };
 
-                context.GameRoundWinners.Add(winner);
+                _context.GameRoundWinners.Add(winner);
 
                 // Record the chip transaction
-                await chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
+                await _chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
 
                 // Update the player's chips in the game
-                var gamePlayer = await context.GamePlayers
+                var gamePlayer = await _context.GamePlayers
                     .FirstOrDefaultAsync(gp => gp.GameId == gameRound.GameId && gp.UserId == userId);
 
                 if (gamePlayer != null)
@@ -70,7 +72,7 @@ namespace TexasHoldemPoker.API.Repositories
                     gamePlayer.CurrentChips += amountWon;
                 }
 
-                await context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return true;
@@ -84,12 +86,12 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> AddMultipleWinnersAsync(int gameRoundId, Dictionary<int, int> winnerAmounts)
         {
-            using var transaction = await context.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
                 // Get the game ID for the transaction
-                var gameRound = await context.GameRounds.FindAsync(gameRoundId);
+                var gameRound = await _context.GameRounds.FindAsync(gameRoundId);
                 if (gameRound == null)
                     return false;
 
@@ -106,13 +108,13 @@ namespace TexasHoldemPoker.API.Repositories
                         AmountWon = amountWon
                     };
 
-                    context.GameRoundWinners.Add(winner);
+                    _context.GameRoundWinners.Add(winner);
 
                     // Record the chip transaction
-                    await chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
+                    await _chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
 
                     // Update the player's chips in the game
-                    var gamePlayer = await context.GamePlayers
+                    var gamePlayer = await _context.GamePlayers
                         .FirstOrDefaultAsync(gp => gp.GameId == gameRound.GameId && gp.UserId == userId);
 
                     if (gamePlayer != null)
@@ -121,7 +123,7 @@ namespace TexasHoldemPoker.API.Repositories
                     }
                 }
 
-                await context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return true;
@@ -135,7 +137,7 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> SaveChangesAsync()
         {
-            return await context.SaveChangesAsync() > 0;
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

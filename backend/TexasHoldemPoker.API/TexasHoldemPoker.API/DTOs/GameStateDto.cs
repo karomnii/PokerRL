@@ -13,10 +13,11 @@
         public List<CardDto> PlayerCards { get; set; } // Only for requesting player or after showdown
         public List<MoveDto> LastMoves { get; set; }
 
-        // --- Round-based additions ---
+        // Round-based additions
         public List<RoundWinnerDto> RoundWinners { get; set; }
         public Dictionary<int, int> PlayerRoundContributions { get; set; } // UserId -> Contribution this round
         public int CallAmount { get; set; }
         public int MinRaiseAmount { get; set; }
     }
+
 }

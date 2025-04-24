@@ -34,6 +34,8 @@ public class Program
         builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
         builder.Services.AddScoped<IChipTransactionRepository, ChipTransactionRepository>();
         builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
+        builder.Services.AddScoped<IGameRoundRepository, GameRoundRepository>();
+        builder.Services.AddScoped<IGameRoundWinnerRepository, GameRoundWinnerRepository>();
 
         // Add services
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();

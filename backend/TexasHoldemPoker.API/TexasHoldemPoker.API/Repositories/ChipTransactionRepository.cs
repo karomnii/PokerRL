@@ -28,6 +28,21 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<ChipTransaction> CreateTransactionAsync(ChipTransaction chipTransaction)
         {
+            var existingTransaction = context.Database.CurrentTransaction;
+            if (existingTransaction != null)
+            {
+                var user = await context.Users.FindAsync(chipTransaction.UserId);
+                if (user == null)
+                    throw new InvalidOperationException("User not found");
+
+                user.ChipsBalance += chipTransaction.Amount;
+
+                chipTransaction.TransactionDate = DateTime.UtcNow;
+                context.ChipTransactions.Add(chipTransaction);
+                
+                return chipTransaction;
+            }
+
             using var dbTransaction = await context.Database.BeginTransactionAsync();
 
             try

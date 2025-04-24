@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using TexasHoldemPoker.API.DTOs;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
@@ -8,18 +9,15 @@ using TexasHoldemPoker.API.Services;
 
 namespace TexasHoldemPoker.API.Controllers
 {
-    [AllowAnonymous]
+    //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
     public class GamesController : ControllerBase
     {
         private readonly IPokerGameService _gameService;
         private readonly IGameRepository _gameRepository;
 
-        public GamesController(
-            IPokerGameService gameService,
-            IGameRepository gameRepository)
+        public GamesController(IPokerGameService gameService, IGameRepository gameRepository)
         {
             _gameService = gameService;
             _gameRepository = gameRepository;
@@ -45,6 +43,7 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpGet("{id}/public")]
+        [AllowAnonymous]
         public async Task<ActionResult<GameStateDto>> GetGamePublic(int id)
         {
             var userId = 0; // 0 means public state only
@@ -67,9 +66,7 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult> JoinGame(int id, JoinGameDto joinDto)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            var result = await _gameService.JoinGameAsync(
-                id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
+            var result = await _gameService.JoinGameAsync(id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
 
             if (!result)
                 return BadRequest("Failed to join game");
@@ -81,7 +78,6 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult> LeaveGame(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
             var result = await _gameService.LeaveGameAsync(id, userId);
 
             if (!result)
@@ -105,9 +101,7 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult> MakeMove(int id, MakeMoveDto moveDto)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            var result = await _gameService.PlaceBetAsync(
-                id, userId, moveDto.ActionType, moveDto.Amount);
+            var result = await _gameService.PlaceBetAsync(id, userId, moveDto.ActionType, moveDto.Amount);
 
             if (!result)
                 return BadRequest("Invalid move or not your turn");
@@ -115,7 +109,20 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
-        [HttpGet("{id}/{userId}")]
+        [HttpPost("{id}/acknowledge-result")]
+        public async Task<ActionResult> AcknowledgeGameResult(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var result = await _gameService.AcknowledgeGameResultAsync(id, userId);
+
+            if (!result)
+                return BadRequest("Failed to acknowledge game result");
+
+            return NoContent();
+        }
+
+        // Admin endpoints for testing/debugging
+        [HttpGet("{id}/userId/{userId}")]
         public async Task<ActionResult<GameStateDto>> GetGameWithUserId(int id, int userId)
         {
             var gameStateDto = await _gameService.GetGameStateAsync(id, userId);
@@ -126,11 +133,10 @@ namespace TexasHoldemPoker.API.Controllers
             return Ok(gameStateDto);
         }
 
-        [HttpPost("{id}/join/{userid}")]
+        [HttpPost("{id}/join/{userId}")]
         public async Task<ActionResult> JoinGameWithUserId(int id, JoinGameDto joinDto, int userId)
         {
-            var result = await _gameService.JoinGameAsync(
-                id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
+            var result = await _gameService.JoinGameAsync(id, userId, joinDto.SeatPosition, joinDto.BuyInAmount);
 
             if (!result)
                 return BadRequest("Failed to join game");
@@ -138,11 +144,10 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id}/move/{userid}")]
+        [HttpPost("{id}/move/{userId}")]
         public async Task<ActionResult> MakeMoveWithUserId(int id, MakeMoveDto moveDto, int userId)
         {
-            var result = await _gameService.PlaceBetAsync(
-                id, userId, moveDto.ActionType, moveDto.Amount);
+            var result = await _gameService.PlaceBetAsync(id, userId, moveDto.ActionType, moveDto.Amount);
 
             if (!result)
                 return BadRequest("Invalid move or not your turn");
@@ -150,5 +155,26 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id}/leave/{userId}")]
+        public async Task<ActionResult> LeaveGameWithUserId(int id int userId)
+        {
+            var result = await _gameService.LeaveGameAsync(id, userId);
+
+            if (!result)
+                return BadRequest("Failed to leave game");
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/acknowledge-result/{userId}")]
+        public async Task<ActionResult> AcknowledgeGameResultWithUserId(int id, int userId)
+        {
+            var result = await _gameService.AcknowledgeGameResultAsync(id, userId);
+
+            if (!result)
+                return BadRequest("Failed to acknowledge game result");
+
+            return NoContent();
+        }
     }
 }

@@ -9,7 +9,8 @@ namespace TexasHoldemPoker.API.Models
         [Required, MaxLength(100)] public string Email { get; set; }
         [Required, MaxLength(128)] public string PasswordHash { get; set; }
         public int ChipsBalance { get; set; }
-        public string AvatarImage { get; set; }
+        public string? AvatarImage { get; set; }
+
         public DateTime RegistrationDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
         public bool IsActive { get; set; }

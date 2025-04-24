@@ -6,23 +6,23 @@ namespace TexasHoldemPoker.API.Repositories
 {
     public class GameRoundRepository : IGameRoundRepository
     {
-        private readonly PokerDbContext context;
+        private readonly PokerDbContext _context;
 
         public GameRoundRepository(PokerDbContext context)
         {
-            this.context = context;
+            _context = context;
         }
 
         public async Task<GameRound> GetByIdAsync(int gameRoundId)
         {
-            return await context.GameRounds
+            return await _context.GameRounds
                 .Include(gr => gr.Winners)
                 .FirstOrDefaultAsync(gr => gr.GameRoundId == gameRoundId);
         }
 
         public async Task<IEnumerable<GameRound>> GetByGameIdAsync(int gameId)
         {
-            return await context.GameRounds
+            return await _context.GameRounds
                 .Include(gr => gr.Winners)
                 .Where(gr => gr.GameId == gameId)
                 .ToListAsync();
@@ -30,7 +30,7 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<GameRound> GetCurrentRoundAsync(int gameId)
         {
-            return await context.GameRounds
+            return await _context.GameRounds
                 .Where(gr => gr.GameId == gameId && gr.EndTime == null)
                 .FirstOrDefaultAsync();
         }
@@ -38,15 +38,15 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<GameRound> CreateAsync(GameRound gameRound)
         {
             gameRound.StartTime = DateTime.UtcNow;
-            context.GameRounds.Add(gameRound);
-            await context.SaveChangesAsync();
+            _context.GameRounds.Add(gameRound);
+            await _context.SaveChangesAsync();
             return gameRound;
         }
 
         public async Task<GameRound> StartNewRoundAsync(int gameId)
         {
             // Get the last round number for this game
-            var lastRound = await context.GameRounds
+            var lastRound = await _context.GameRounds
                 .Where(gr => gr.GameId == gameId)
                 .OrderByDescending(gr => gr.RoundNumber)
                 .FirstOrDefaultAsync();
@@ -61,39 +61,39 @@ namespace TexasHoldemPoker.API.Repositories
                 PotSize = 0
             };
 
-            context.GameRounds.Add(newRound);
-            await context.SaveChangesAsync();
+            _context.GameRounds.Add(newRound);
+            await _context.SaveChangesAsync();
 
             return newRound;
         }
 
         public async Task<bool> EndRoundAsync(int gameRoundId)
         {
-            var round = await context.GameRounds.FindAsync(gameRoundId);
+            var round = await _context.GameRounds.FindAsync(gameRoundId);
             if (round == null)
                 return false;
 
             round.EndTime = DateTime.UtcNow;
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<bool> UpdatePotSizeAsync(int gameRoundId, int potSize)
         {
-            var round = await context.GameRounds.FindAsync(gameRoundId);
+            var round = await _context.GameRounds.FindAsync(gameRoundId);
             if (round == null)
                 return false;
 
             round.PotSize = potSize;
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<bool> SaveChangesAsync()
         {
-            return await context.SaveChangesAsync() > 0;
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

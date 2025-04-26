@@ -45,12 +45,10 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                // Get the game ID for the transaction
                 var gameRound = await _context.GameRounds.FindAsync(gameRoundId);
                 if (gameRound == null)
                     return false;
 
-                // Create the winner record
                 var winner = new GameRoundWinner
                 {
                     GameRoundId = gameRoundId,
@@ -60,10 +58,6 @@ namespace TexasHoldemPoker.API.Repositories
 
                 _context.GameRoundWinners.Add(winner);
 
-                // Record the chip transaction
-                await _chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
-
-                // Update the player's chips in the game
                 var gamePlayer = await _context.GamePlayers
                     .FirstOrDefaultAsync(gp => gp.GameId == gameRound.GameId && gp.UserId == userId);
 
@@ -90,7 +84,6 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                // Get the game ID for the transaction
                 var gameRound = await _context.GameRounds.FindAsync(gameRoundId);
                 if (gameRound == null)
                     return false;
@@ -100,7 +93,6 @@ namespace TexasHoldemPoker.API.Repositories
                     int userId = entry.Key;
                     int amountWon = entry.Value;
 
-                    // Create the winner record
                     var winner = new GameRoundWinner
                     {
                         GameRoundId = gameRoundId,
@@ -110,10 +102,6 @@ namespace TexasHoldemPoker.API.Repositories
 
                     _context.GameRoundWinners.Add(winner);
 
-                    // Record the chip transaction
-                    await _chipTransactionRepository.RecordGameWinningsAsync(userId, gameRound.GameId, amountWon);
-
-                    // Update the player's chips in the game
                     var gamePlayer = await _context.GamePlayers
                         .FirstOrDefaultAsync(gp => gp.GameId == gameRound.GameId && gp.UserId == userId);
 

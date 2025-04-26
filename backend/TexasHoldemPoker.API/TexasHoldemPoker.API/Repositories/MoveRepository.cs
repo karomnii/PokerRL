@@ -13,16 +13,16 @@ namespace TexasHoldemPoker.API.Repositories
             _context = context;
         }
 
-        public async Task<Move> RecordMoveAsync(int gameId, int playerId, string actionType, int amount, string round)
+        public async Task<Move> RecordMoveAsync(int gameId, int gameRoundId, int playerId, string actionType, int amount, string round)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // Create the move record
                 var move = new Move
                 {
                     GameId = gameId,
+                    GameRoundId = gameRoundId,
                     PlayerId = playerId,
                     ActionType = actionType,
                     Amount = amount,
@@ -32,14 +32,11 @@ namespace TexasHoldemPoker.API.Repositories
 
                 _context.Moves.Add(move);
 
-                // Update game pot and player chips if needed
                 if (actionType == "Bet" || actionType == "Call" || actionType == "Raise" || actionType == "AllIn")
                 {
-                    // Update pot size
                     var game = await _context.Games.FindAsync(gameId);
                     game.PotSize += amount;
 
-                    // Update player's current chips
                     var gamePlayer = await _context.GamePlayers
                         .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == playerId);
                     gamePlayer.CurrentChips -= amount;
@@ -65,18 +62,18 @@ namespace TexasHoldemPoker.API.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Move>> GetLastRoundMovesAsync(int gameId, string round)
+        public async Task<IEnumerable<Move>> GetLastRoundMovesAsync(int gameId, int gameRoundId, string round)
         {
             return await _context.Moves
-                .Where(m => m.GameId == gameId && m.Round == round)
+                .Where(m => m.GameId == gameId && m.Round == round && m.GameRoundId == gameRoundId)
                 .OrderBy(m => m.MoveTime)
                 .ToListAsync();
         }
 
-        public async Task<Dictionary<int, int>> GetPlayerContributionsForRoundAsync(int gameId, string round)
+        public async Task<Dictionary<int, int>> GetPlayerContributionsForRoundAsync(int gameId, int gameRoundId, string round)
         {
             var moves = await _context.Moves
-                .Where(m => m.GameId == gameId && m.Round == round)
+                .Where(m => m.GameId == gameId && m.Round == round && m.GameRoundId == gameRoundId)
                 .ToListAsync();
 
             var contributions = new Dictionary<int, int>();
@@ -104,16 +101,16 @@ namespace TexasHoldemPoker.API.Repositories
             return contributions;
         }
 
-        public async Task<int> GetHighestContributionForRoundAsync(int gameId, string round)
+        public async Task<int> GetHighestContributionForRoundAsync(int gameId, int gameRoundId, string round)
         {
-            var contributions = await GetPlayerContributionsForRoundAsync(gameId, round);
+            var contributions = await GetPlayerContributionsForRoundAsync(gameId, gameRoundId, round);
             return contributions.Any() ? contributions.Values.Max() : 0;
         }
 
-        public async Task<bool> HasPlayerActedInRoundAsync(int gameId, int playerId, string round)
+        public async Task<bool> HasPlayerActedInRoundAsync(int gameId, int gameRoundId, int playerId, string round)
         {
             return await _context.Moves
-                .AnyAsync(m => m.GameId == gameId && m.PlayerId == playerId && m.Round == round);
+                .AnyAsync(m => m.GameId == gameId && m.PlayerId == playerId && m.Round == round && m.GameRoundId == gameRoundId);
         }
 
         public async Task<Move> GetLastMoveAsync(int gameId)
@@ -122,6 +119,14 @@ namespace TexasHoldemPoker.API.Repositories
                 .Where(m => m.GameId == gameId)
                 .OrderByDescending(m => m.MoveTime)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<Move>> GetMovesByGameRoundAsync(int gameId, int gameRoundId)
+        {
+            return await _context.Moves
+                .Where(m => m.GameId == gameId && m.GameRoundId == gameRoundId)
+                .OrderByDescending(m => m.MoveTime)
+                .ToListAsync();
         }
     }
 }

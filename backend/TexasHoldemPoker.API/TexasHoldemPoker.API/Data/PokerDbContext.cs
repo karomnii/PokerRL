@@ -29,15 +29,7 @@ namespace TexasHoldemPoker.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure view for leaderboard
             modelBuilder.Entity<LeaderboardEntry>().HasNoKey().ToView("LeaderboardView");
-
-            // Remove WinnerId relationship (no longer exists)
-            // modelBuilder.Entity<Game>()
-            //     .HasOne(g => g.Winner)
-            //     .WithMany(u => u.WonGames)
-            //     .HasForeignKey(g => g.WinnerId)
-            //     .IsRequired(false);
 
             // Game <-> PokerTable
             modelBuilder.Entity<Game>()

@@ -1,26 +1,27 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿// PokerGameService.cs
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TexasHoldemPoker.API.DTOs;
-using TexasHoldemPoker.API.Hubs;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
+using TexasHoldemPoker.API.Services;
 
 namespace TexasHoldemPoker.API.Services
 {
     public class PokerGameService : IPokerGameService
     {
-        private readonly IGameRepository _gameRepository;
-        private readonly IGamePlayerRepository _gamePlayerRepository;
-        private readonly ICardRepository _cardRepository;
-        private readonly IMoveRepository _moveRepository;
-        private readonly IChipTransactionRepository _chipTransactionRepository;
-        private readonly IGameRoundRepository _gameRoundRepository;
-        private readonly IGameRoundWinnerRepository _gameRoundWinnerRepository;
-        private readonly IHubContext<GameHub> _hubContext;
-        private readonly Random _random = new Random();
-        private Dictionary<int, HashSet<int>> _gameResultAcknowledgments = new Dictionary<int, HashSet<int>>();
+        private readonly IGameRepository gameRepository;
+        private readonly IGamePlayerRepository gamePlayerRepository;
+        private readonly ICardRepository cardRepository;
+        private readonly IMoveRepository moveRepository;
+        private readonly IChipTransactionRepository chipTransactionRepository;
+        private readonly IGameRoundRepository gameRoundRepository;
+        private readonly IGameRoundWinnerRepository gameRoundWinnerRepository;
+        private readonly Random random = new Random();
+        private Dictionary<int, HashSet<int>> completedRoundAcknowledgments = new Dictionary<int, HashSet<int>>();
 
         public PokerGameService(
             IGameRepository gameRepository,
@@ -29,39 +30,34 @@ namespace TexasHoldemPoker.API.Services
             IMoveRepository moveRepository,
             IChipTransactionRepository chipTransactionRepository,
             IGameRoundRepository gameRoundRepository,
-            IGameRoundWinnerRepository gameRoundWinnerRepository,
-            IHubContext<GameHub> hubContext)
+            IGameRoundWinnerRepository gameRoundWinnerRepository)
         {
-            _gameRepository = gameRepository;
-            _gamePlayerRepository = gamePlayerRepository;
-            _cardRepository = cardRepository;
-            _moveRepository = moveRepository;
-            _chipTransactionRepository = chipTransactionRepository;
-            _gameRoundRepository = gameRoundRepository;
-            _gameRoundWinnerRepository = gameRoundWinnerRepository;
-            _hubContext = hubContext;
+            this.gameRepository = gameRepository;
+            this.gamePlayerRepository = gamePlayerRepository;
+            this.cardRepository = cardRepository;
+            this.moveRepository = moveRepository;
+            this.chipTransactionRepository = chipTransactionRepository;
+            this.gameRoundRepository = gameRoundRepository;
+            this.gameRoundWinnerRepository = gameRoundWinnerRepository;
         }
 
         public async Task<Game> CreateGameAsync(int tableId)
         {
-            var game = await _gameRepository.CreateGameAsync(new Game
-            {
-                TableId = tableId,
-                CurrentState = "Waiting"
-            });
-
+            var game = await gameRepository.CreateGameAsync(new Game { TableId = tableId, CurrentState = "Waiting" });
             return game;
         }
 
         public async Task<bool> JoinGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null || game.CurrentState != "Waiting")
+            {
                 return false;
+            }
 
             try
             {
-                await _gamePlayerRepository.AddPlayerToGameAsync(gameId, userId, seatPosition, buyInAmount);
+                await gamePlayerRepository.AddPlayerToGameAsync(gameId, userId, seatPosition, buyInAmount);
                 return true;
             }
             catch
@@ -72,81 +68,80 @@ namespace TexasHoldemPoker.API.Services
 
         public async Task<bool> LeaveGameAsync(int gameId, int userId)
         {
-            var gamePlayer = await _gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+            var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
             if (gamePlayer == null)
+            {
                 return false;
+            }
 
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null)
+            var game = await gameRepository.GetByIdAsync(gameId);
+            if (game == null) return false;
+
+            if (game.CurrentState != "Waiting" && game.CurrentState != "Completed")
+            {
+                // Potentially allow leaving during 'Completed' state? Needs clarification.
+                // For now, only allow leaving before game start or after completion acknowledgement phase.
                 return false;
+            }
 
-            // Only allow leaving if game is in Waiting state
-            if (game.CurrentState != "Waiting")
-                return false;
+            // If leaving during completed state, remove from acknowledgements if present
+            if (game.CurrentState == "Completed" && completedRoundAcknowledgments.ContainsKey(gameId))
+            {
+                completedRoundAcknowledgments[gameId].Remove(userId);
+                // Check if this triggers the next round start
+                var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+                var remainingPlayers =
+                    playersInGame.Where(p => p.UserId != userId).ToList(); // Players remaining after leave
+                if (remainingPlayers.Any() &&
+                    remainingPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
+                {
+                    completedRoundAcknowledgments.Remove(gameId);
+                    await StartNewHandAsync(gameId);
+                }
+            }
 
-            var result = await _gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
 
+            var result = await gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
             return result;
         }
 
         public async Task<bool> StartGameAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null || game.CurrentState != "Waiting")
+            {
                 return false;
+            }
 
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
 
-            // Need at least 2 players to start
             if (activePlayers.Count < 2)
+            {
                 return false;
+            }
 
-            // Clear any cards from previous games
-            await _cardRepository.ClearGameCardsAsync(gameId);
-
-            // Set dealer and blinds
+            await cardRepository.ClearGameCardsAsync(gameId);
             await SetInitialDealerAndBlindsAsync(gameId, activePlayers);
-
-            // Deal cards to players
-            await DealCardsAsync(gameId);
-
-            // Create a new game round
-            var gameRound = await _gameRoundRepository.StartNewRoundAsync(gameId);
-
-            // Set game state to PreFlop
-            await _gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
-
-            // Collect blinds
+            await DealInitialCardsAsync(gameId);
+            var gameRound = await gameRoundRepository.StartNewRoundAsync(gameId);
+            await gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
             await CollectBlindsAsync(gameId, activePlayers);
-
-            // Set first player to act (after big blind)
-            await SetFirstPlayerToActAsync(gameId);
-
-            // Notify all clients about game start
-            await _hubContext.Clients.Group($"Game{gameId}")
-                .SendAsync("ReceiveGameUpdate", await GetGameStateAsync(gameId, 0));
+            await SetFirstPlayerToActAsync(gameId, "PreFlop");
 
             return true;
         }
 
         private async Task SetInitialDealerAndBlindsAsync(int gameId, List<GamePlayer> activePlayers)
         {
-            // Randomly select dealer for first game
-            int dealerIndex = _random.Next(activePlayers.Count);
+            int dealerIndex = random.Next(activePlayers.Count);
             var dealer = activePlayers[dealerIndex];
+            await gamePlayerRepository.SetDealerPositionAsync(gameId, dealer.GamePlayerId);
 
-            // Set dealer position
-            await _gamePlayerRepository.SetDealerPositionAsync(gameId, dealer.GamePlayerId);
-
-            // Set small blind (next player after dealer)
             int sbIndex = (dealerIndex + 1) % activePlayers.Count;
-
-            // Set big blind (next player after small blind)
             int bbIndex = (dealerIndex + 2) % activePlayers.Count;
 
-            // Set blind positions
-            await _gamePlayerRepository.SetBlindPositionsAsync(
+            await gamePlayerRepository.SetBlindPositionsAsync(
                 gameId,
                 activePlayers[sbIndex].GamePlayerId,
                 activePlayers[bbIndex].GamePlayerId);
@@ -154,1055 +149,798 @@ namespace TexasHoldemPoker.API.Services
 
         private async Task CollectBlindsAsync(int gameId, List<GamePlayer> activePlayers)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return;
-
-            var table = await _gameRepository.GetGameTableAsync(gameId);
+            var table = await gameRepository.GetGameTableAsync(gameId);
             if (table == null) return;
+            var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+            if (currentRound == null) return;
 
-            // Find small blind player
+
             var sbPlayer = activePlayers.FirstOrDefault(p => p.IsSmallBlind);
             if (sbPlayer != null)
             {
                 int sbAmount = Math.Min(table.SmallBlind, sbPlayer.CurrentChips);
-
-                // Record small blind move
-                await _moveRepository.RecordMoveAsync(
-                    gameId,
-                    sbPlayer.UserId,
-                    "Bet",
-                    sbAmount,
-                    "PreFlop");
-
-                // Update player chips
-                await _gamePlayerRepository.UpdatePlayerChipsAsync(
-                    sbPlayer.GamePlayerId,
-                    sbPlayer.CurrentChips - sbAmount);
-
-                // Update pot size
-                await _gameRepository.UpdatePotSizeAsync(gameId, game.PotSize + sbAmount);
-
-                // Update round pot size
-                var currentRound = await _gameRoundRepository.GetCurrentRoundAsync(gameId);
-                if (currentRound != null)
+                if (sbAmount > 0)
                 {
-                    await _gameRoundRepository.UpdatePotSizeAsync(currentRound.GameRoundId,
-                        currentRound.PotSize + sbAmount);
+                    await moveRepository.RecordMoveAsync(gameId, currentRound.GameRoundId, sbPlayer.UserId, "Blind",
+                        sbAmount, "PreFlop");
                 }
             }
 
-            // Find big blind player
             var bbPlayer = activePlayers.FirstOrDefault(p => p.IsBigBlind);
             if (bbPlayer != null)
             {
                 int bbAmount = Math.Min(table.BigBlind, bbPlayer.CurrentChips);
-
-                // Record big blind move
-                await _moveRepository.RecordMoveAsync(
-                    gameId,
-                    bbPlayer.UserId,
-                    "Bet",
-                    bbAmount,
-                    "PreFlop");
-
-                // Update player chips
-                await _gamePlayerRepository.UpdatePlayerChipsAsync(
-                    bbPlayer.GamePlayerId,
-                    bbPlayer.CurrentChips - bbAmount);
-
-                // Update pot size
-                await _gameRepository.UpdatePotSizeAsync(gameId, game.PotSize + bbAmount);
-
-                // Update round pot size
-                var currentRound = await _gameRoundRepository.GetCurrentRoundAsync(gameId);
-                if (currentRound != null)
+                if (bbAmount > 0)
                 {
-                    await _gameRoundRepository.UpdatePotSizeAsync(currentRound.GameRoundId,
-                        currentRound.PotSize + bbAmount);
-                }
-            }
-        }
-
-        private async Task SetFirstPlayerToActAsync(int gameId)
-        {
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayers = players.Where(p => p.IsActive).OrderBy(p => p.SeatPosition).ToList();
-
-            if (activePlayers.Count <= 2)
-            {
-                // In heads-up (2 players), small blind acts first pre-flop
-                var smallBlind = activePlayers.FirstOrDefault(p => p.IsSmallBlind);
-                if (smallBlind != null)
-                {
-                    await _gameRepository.SetCurrentTurnAsync(gameId, smallBlind.UserId);
-                    await _hubContext.Clients.User(smallBlind.UserId.ToString()).SendAsync("YourTurn", gameId);
-                    return;
+                    await moveRepository.RecordMoveAsync(gameId, currentRound.GameRoundId, bbPlayer.UserId, "Blind",
+                        bbAmount, "PreFlop");
                 }
             }
 
-            // Find big blind player
-            var bbPlayer = activePlayers.FirstOrDefault(p => p.IsBigBlind);
-            if (bbPlayer == null) return;
-
-            // Find the player after big blind
-            int bbIndex = activePlayers.IndexOf(bbPlayer);
-            int nextPlayerIndex = (bbIndex + 1) % activePlayers.Count;
-
-            var nextPlayer = activePlayers[nextPlayerIndex];
-
-            // Set next player as current turn
-            await _gameRepository.SetCurrentTurnAsync(gameId, nextPlayer.UserId);
+            await gameRepository.SaveChangesAsync();
         }
 
-        public async Task<bool> DealCardsAsync(int gameId)
+        private async Task DealInitialCardsAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "Waiting")
-                return false;
-
-            // Clear any existing cards
-            await _cardRepository.ClearGameCardsAsync(gameId);
-
-            // Get all cards
-            var allCards = await _cardRepository.GetAllCardsAsync();
-
-            // Shuffle cards
-            var shuffledCards = ShuffleCards(allCards.ToList());
-
-            // Get all active players
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
+            if (!activePlayers.Any()) return;
 
+            var allCards = await cardRepository.GetAllCardsAsync();
+            var shuffledCards = ShuffleCards(allCards.ToList());
             int cardIndex = 0;
 
-            // Deal two cards to each player
-            foreach (var player in activePlayers)
+            for (int i = 0; i < 2; i++)
             {
-                await _cardRepository.DealPlayerCardAsync(player.GamePlayerId, shuffledCards[cardIndex++].CardId, 1);
-                await _cardRepository.DealPlayerCardAsync(player.GamePlayerId, shuffledCards[cardIndex++].CardId, 2);
+                foreach (var player in activePlayers)
+                {
+                    if (cardIndex < shuffledCards.Count)
+                    {
+                        await cardRepository.DealPlayerCardAsync(player.GamePlayerId, shuffledCards[cardIndex].CardId,
+                            i + 1);
+                        cardIndex++;
+                    }
+                }
             }
-
-            return true;
         }
 
-        private List<Card> ShuffleCards(List<Card> cards)
+        private async Task SetFirstPlayerToActAsync(int gameId, string round)
         {
-            Random rng = new Random();
-            int n = cards.Count;
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive && p.CurrentChips > 0).OrderBy(p => p.SeatPosition)
+                .ToList();
 
-            // Fisher-Yates shuffle algorithm
-            while (n > 1)
+            if (!activePlayers.Any()) return;
+
+            GamePlayer firstToAct = null;
+
+            if (round == "PreFlop")
             {
-                n--;
-                int k = rng.Next(n + 1);
-                Card temp = cards[k];
-                cards[k] = cards[n];
-                cards[n] = temp;
+                if (activePlayers.Count == 2)
+                {
+                    firstToAct = activePlayers.FirstOrDefault(p => p.IsDealer);
+                }
+                else
+                {
+                    var bbPlayer = activePlayers.FirstOrDefault(p => p.IsBigBlind);
+                    if (bbPlayer != null)
+                    {
+                        int bbIndex = activePlayers.IndexOf(bbPlayer);
+                        firstToAct = activePlayers[(bbIndex + 1) % activePlayers.Count];
+                    }
+                }
+            }
+            else
+            {
+                if (activePlayers.Count == 2)
+                {
+                    firstToAct = activePlayers.FirstOrDefault(p => p.IsBigBlind);
+                }
+                else
+                {
+                    var dealer = activePlayers.FirstOrDefault(p => p.IsDealer);
+                    if (dealer != null)
+                    {
+                        int dealerIndex = activePlayers.IndexOf(dealer);
+                        for (int i = 1; i <= activePlayers.Count; i++)
+                        {
+                            var nextPlayer = activePlayers[(dealerIndex + i) % activePlayers.Count];
+                            if (nextPlayer.IsActive && nextPlayer.CurrentChips > 0)
+                            {
+                                firstToAct = nextPlayer;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
-            return cards;
+            if (firstToAct == null && activePlayers.Any())
+            {
+                firstToAct = activePlayers.First();
+            }
+
+
+            if (firstToAct != null)
+            {
+                await gameRepository.SetCurrentTurnAsync(gameId, firstToAct.UserId);
+            }
+            else
+            {
+                await gameRepository.SetCurrentTurnAsync(gameId, null);
+            }
         }
+
 
         public async Task<bool> PlaceBetAsync(int gameId, int userId, string actionType, int amount)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentTurnUserId != userId)
-                return false;
+            var game = await gameRepository.GetByIdAsync(gameId);
+            if (game == null) return false;
 
-            var gamePlayer = await _gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
-            if (gamePlayer == null || !gamePlayer.IsActive)
-                return false;
+            // Handle acknowledgement in "Completed" state
+            if (game.CurrentState == "Completed")
+            {
+                if (actionType != "Check")
+                {
+                    return false;
+                }
 
-            // Get current round
-            var currentRound = await _gameRoundRepository.GetCurrentRoundAsync(gameId);
-            if (currentRound == null)
-                return false;
+                if (!completedRoundAcknowledgments.ContainsKey(gameId))
+                {
+                    completedRoundAcknowledgments[gameId] = new HashSet<int>();
+                }
 
-            // Get table for blinds info
-            var table = await _gameRepository.GetGameTableAsync(gameId);
-            if (table == null)
-                return false;
+                completedRoundAcknowledgments[gameId].Add(userId);
 
-            // Get all players' contributions in current round
+                var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+                // Check against players who are still part of the game (not left)
+                var relevantPlayers = playersInGame.ToList();
+
+
+                if (relevantPlayers.Any() &&
+                    relevantPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
+                {
+                    completedRoundAcknowledgments.Remove(gameId);
+                    await StartNewHandAsync(gameId);
+                }
+
+                return true;
+            }
+
+
+            if (game.CurrentTurnUserId != userId || game.CurrentState == "Waiting" || game.CurrentState == "Showdown" ||
+                game.CurrentState == "Completed")
+            {
+                return false;
+            }
+
+            var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+            if (gamePlayer == null || !gamePlayer.IsActive ||
+                gamePlayer.CurrentChips == 0 && actionType != "Check") // Can check even with 0 chips if no bet faced
+            {
+                return false;
+            }
+
+            var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+            if (currentRound == null) return false;
+
+
             var playerContributions =
-                await _moveRepository.GetPlayerContributionsForRoundAsync(gameId, game.CurrentState);
-
-            // Calculate how much this player has contributed so far
+                await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId, game.CurrentState);
             int currentPlayerContribution = playerContributions.GetValueOrDefault(userId, 0);
+            int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
+            int callAmount = highestContributionInRound - currentPlayerContribution;
 
-            // Get highest contribution in the round
-            int highestContributionInRound =
-                await _moveRepository.GetHighestContributionForRoundAsync(gameId, game.CurrentState);
-
-            // Calculate how much player needs to call
-            int amountToCall = highestContributionInRound - currentPlayerContribution;
-
-            // Get active players
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayers = players.Where(p => p.IsActive).ToList();
-
-            // Find the size of the last raise/bet for minimum raise calculation
-            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
-            var lastAggressiveMove = roundMoves
-                .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
-                .OrderByDescending(m => m.MoveTime)
-                .FirstOrDefault();
-
-            int minRaiseAmount = lastAggressiveMove?.Amount ?? table.BigBlind; // Default to BB if no prior aggression
-
-            // Validate the move based on action type
             bool isValidMove = false;
-            int effectiveAmount = amount;
+            int effectiveAmount = 0;
 
             switch (actionType)
             {
                 case "Fold":
-                    // Fold is always allowed
                     isValidMove = true;
                     effectiveAmount = 0;
                     break;
-
                 case "Check":
-                    // Check is only allowed if there's nothing to call
-                    if (amountToCall == 0)
+                    isValidMove = (callAmount == 0);
+                    effectiveAmount = 0;
+                    break;
+                case "Call":
+                    if (callAmount == 0)
                     {
                         isValidMove = true;
                         effectiveAmount = 0;
+                        actionType = "Check";
                     }
-
-                    break;
-
-                case "Call":
-                    // Call is only allowed if there's something to call
-                    if (amountToCall > 0)
+                    else if (callAmount == gamePlayer.CurrentChips)
                     {
-                        // Adjust for all-in situations
-                        int callAmount = Math.Min(amountToCall, gamePlayer.CurrentChips);
-
-                        // Allow the call if amount matches or player is all-in
-                        if (amount == callAmount || callAmount == gamePlayer.CurrentChips)
-                        {
-                            isValidMove = true;
-                            effectiveAmount = callAmount;
-                        }
-                    }
-
-                    break;
-
-                case "Bet":
-                    // Bet is only allowed if no one has bet yet
-                    if (highestContributionInRound == 0)
-                    {
-                        // Bet must be at least the big blind
-                        if (amount >= table.BigBlind && amount <= gamePlayer.CurrentChips)
-                        {
-                            isValidMove = true;
-                            effectiveAmount = amount;
-                        }
-                    }
-
-                    break;
-
-                case "Raise":
-                    // Raise is only allowed if there was a prior bet/raise
-                    if (highestContributionInRound > 0)
-                    {
-                        // Calculate total amount player would be putting in
-                        int totalBetSize = currentPlayerContribution + amount;
-
-                        // Calculate minimum required total bet size
-                        int requiredTotalSize = highestContributionInRound + minRaiseAmount;
-
-                        // Ensure raise is sufficient or player is all-in
-                        if (totalBetSize >= requiredTotalSize || amount == gamePlayer.CurrentChips)
-                        {
-                            isValidMove = true;
-                            effectiveAmount = amount;
-                        }
-                    }
-
-                    break;
-
-                case "AllIn":
-                    // All-in is always allowed if player has chips
-                    if (gamePlayer.CurrentChips > 0)
-                    {
-                        isValidMove = true;
                         effectiveAmount = gamePlayer.CurrentChips;
+                        actionType = "AllIn";
+                        isValidMove = true;
+                    }
+                    else if (callAmount > 0 && callAmount < gamePlayer.CurrentChips)
+                    {
+                        effectiveAmount = callAmount;
+                        isValidMove = true;
                     }
 
                     break;
+                case "Bet":
+                    isValidMove = (callAmount == 0 &&
+                                   amount > (await gameRepository.GetGameTableAsync(gameId)).BigBlind &&
+                                   amount <= gamePlayer.CurrentChips);
+                    if (isValidMove) effectiveAmount = amount;
+                    break;
+                case "Raise":
+                    int minRaiseAmount = 2 * callAmount;
+                    minRaiseAmount = Math.Max(minRaiseAmount,
+                        (await gameRepository.GetGameTableAsync(gameId)).BigBlind);
+
+                    isValidMove = (callAmount > 0 || highestContributionInRound == 0) &&
+                                  amount >= minRaiseAmount &&
+                                  (currentPlayerContribution + amount) <= gamePlayer.CurrentChips;
+
+                    if (isValidMove) effectiveAmount = amount;
+                    break;
+                case "AllIn":
+                    isValidMove = gamePlayer.CurrentChips > 0;
+                    if (isValidMove) effectiveAmount = gamePlayer.CurrentChips;
+                    break;
+                default:
+                    return false;
             }
 
-            if (!isValidMove)
-                return false;
 
-            // Execute the move
+            if (!isValidMove)
+            {
+                return false;
+            }
+
             if (actionType == "Fold")
             {
-                // Mark player as inactive
-                await _gamePlayerRepository.SetPlayerStatusAsync(gamePlayer.GamePlayerId, false);
-
-                // Record the fold move
-                await _moveRepository.RecordMoveAsync(gameId, userId, actionType, 0, game.CurrentState);
+                await gamePlayerRepository.SetPlayerStatusAsync(gamePlayer.GamePlayerId, false);
+                await moveRepository.RecordMoveAsync(gameId, currentRound.GameRoundId, userId, actionType, 0,
+                    game.CurrentState);
             }
             else
             {
-                // For all other actions, update chips and pot
-                if (effectiveAmount > 0)
-                {
-                    // Update player chips
-                    await _gamePlayerRepository.UpdatePlayerChipsAsync(gamePlayer.GamePlayerId,
-                        gamePlayer.CurrentChips - effectiveAmount);
-
-                    // Update pot size
-                    await _gameRepository.UpdatePotSizeAsync(gameId, game.PotSize + effectiveAmount);
-
-                    // Update round pot size
-                    await _gameRoundRepository.UpdatePotSizeAsync(currentRound.GameRoundId,
-                        currentRound.PotSize + effectiveAmount);
-                }
-
-                // Record the move
-                await _moveRepository.RecordMoveAsync(gameId, userId, actionType, effectiveAmount, game.CurrentState);
+                int amountForRecord =
+                    (actionType == "Call" || actionType == "Raise" || actionType == "Bet" || actionType == "AllIn")
+                        ? effectiveAmount
+                        : 0;
+                await moveRepository.RecordMoveAsync(gameId, currentRound.GameRoundId, userId, actionType,
+                    amountForRecord, game.CurrentState);
             }
 
-            // Check if round is complete after this move
+            await gameRepository.SaveChangesAsync();
+
             bool roundComplete = await CheckRoundCompleteAsync(gameId);
 
             if (roundComplete)
             {
-                // Advance to next stage
                 await AdvanceGameStateAsync(gameId);
             }
             else
             {
-                // Find next active player
                 await SetNextPlayerTurnAsync(gameId);
             }
 
             return true;
         }
 
+        private async Task SetNextPlayerTurnAsync(int gameId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+            if (game?.CurrentTurnUserId == null) return;
+
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayersWithChips = players
+                .Where(p => p.CurrentChips > 0)
+                .Where(p => p.IsActive)
+                .OrderBy(p => p.SeatPosition)
+                .ToList();
+
+            if (activePlayersWithChips.Count <= 1)
+            {
+                await gameRepository.SetCurrentTurnAsync(gameId, null);
+                return;
+            }
+
+            var currentPlayer = activePlayersWithChips.FirstOrDefault(p => p.UserId == game.CurrentTurnUserId);
+            if (currentPlayer == null)
+            {
+                var originalPlayer = players.FirstOrDefault(p => p.UserId == game.CurrentTurnUserId);
+                int searchStartIndex = originalPlayer != null
+                    ? players.OrderBy(p => p.SeatPosition).ToList().IndexOf(originalPlayer)
+                    : -1;
+
+                if (searchStartIndex != -1)
+                {
+                    var orderedPlayers = players.OrderBy(p => p.SeatPosition).ToList();
+                    for (int i = 1; i <= orderedPlayers.Count; i++)
+                    {
+                        var potentialNextPlayer = orderedPlayers[(searchStartIndex + i) % orderedPlayers.Count];
+                        if (potentialNextPlayer.IsActive && potentialNextPlayer.CurrentChips > 0)
+                        {
+                            await gameRepository.SetCurrentTurnAsync(gameId, potentialNextPlayer.UserId);
+                            return;
+                        }
+                    }
+                }
+
+                await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips.First().UserId);
+                return;
+            }
+
+            int currentIndex = activePlayersWithChips.IndexOf(currentPlayer);
+            var nextPlayer = activePlayersWithChips[(currentIndex + 1) % activePlayersWithChips.Count];
+
+            await gameRepository.SetCurrentTurnAsync(gameId, nextPlayer.UserId);
+        }
+
+
         private async Task<bool> CheckRoundCompleteAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return false;
 
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
+            var activePlayersWithChips = activePlayers.Where(p => p.CurrentChips > 0).ToList();
 
-            // If only one active player remains, round is complete
-            if (activePlayers.Count <= 1)
+
+            if (activePlayersWithChips.Count <= 1)
+            {
                 return true;
+            }
 
-            // Get all moves in the current round
-            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
-
-            // Get player contributions
+            var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
             var playerContributions =
-                await _moveRepository.GetPlayerContributionsForRoundAsync(gameId, game.CurrentState);
+                await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId,
+                    game.CurrentState);
+            var movesThisRound = await moveRepository.GetMovesByGameRoundAsync(gameId, currentRound.GameRoundId);
 
-            // Get highest contribution
-            int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
+            int highestContribution = playerContributions.Any() ? playerContributions.Values.Max() : 0;
 
-            // Find the last aggressive action (bet or raise)
-            var lastAggressiveMove = roundMoves
+            bool allBetsMatched = true;
+            bool allPlayersActed = true;
+
+            var lastAggressiveAction = movesThisRound
                 .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
                 .OrderByDescending(m => m.MoveTime)
                 .FirstOrDefault();
 
-            int lastAggressivePlayerId = lastAggressiveMove?.PlayerId ?? 0;
-            bool hasAggressiveAction = lastAggressiveMove != null;
+            DateTime actionCutoff = lastAggressiveAction?.MoveTime ?? DateTime.MinValue;
 
-            // Check if all active players have acted at least once since the last aggressive action
-            bool allPlayersActed = true;
 
-            if (hasAggressiveAction)
+            foreach (var player in activePlayersWithChips)
             {
-                // Get all moves that happened after the last aggressive action
-                var movesAfterLastAggressive = roundMoves
-                    .Where(m => m.MoveTime > lastAggressiveMove.MoveTime)
-                    .ToList();
-
-                // Check if each active player has acted since the last aggressive action
-                foreach (var player in activePlayers)
-                {
-                    // Skip the player who made the last aggressive action
-                    if (player.UserId == lastAggressivePlayerId)
-                        continue;
-
-                    // Check if this player has acted since the last aggressive action
-                    bool hasActed = movesAfterLastAggressive.Any(m => m.PlayerId == player.UserId);
-
-                    if (!hasActed)
-                    {
-                        allPlayersActed = false;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                // If no aggressive action, check if all players have acted at least once
-                foreach (var player in activePlayers)
-                {
-                    bool hasActed = roundMoves.Any(m => m.PlayerId == player.UserId);
-
-                    if (!hasActed)
-                    {
-                        allPlayersActed = false;
-                        break;
-                    }
-                }
-            }
-
-            // Check if all active players have matched the highest bet or folded
-            bool allBetsMatched = true;
-            foreach (var player in activePlayers)
-            {
-                // Get this player's contribution
                 int contribution = playerContributions.GetValueOrDefault(player.UserId, 0);
 
-                // If this player's contribution is less than the highest, the bets are not matched
-                if (contribution < highestContributionInRound)
+                if (contribution < highestContribution && player.CurrentChips > 0)
                 {
                     allBetsMatched = false;
-                    break;
+                }
+
+                bool actedSinceCutoff = movesThisRound.Any(m =>
+                    m.PlayerId == player.UserId && m.MoveTime >= actionCutoff && m.ActionType != "Blind");
+                bool isBBPreflopCheckOption = game.CurrentState == "PreFlop" && player.IsBigBlind &&
+                                              highestContribution == (await gameRepository.GetGameTableAsync(gameId))
+                                              .BigBlind && !actedSinceCutoff;
+
+
+                if (!actedSinceCutoff && !isBBPreflopCheckOption)
+                {
+                    if (player.CurrentChips > 0)
+                    {
+                        allPlayersActed = false;
+                    }
+                }
+
+                if (!allBetsMatched && !allPlayersActed) break;
+            }
+
+            if (game.CurrentState == "PreFlop")
+            {
+                var bbPlayer = activePlayersWithChips.FirstOrDefault(p => p.IsBigBlind);
+                if (bbPlayer != null &&
+                    highestContribution == (await gameRepository.GetGameTableAsync(gameId)).BigBlind)
+                {
+                    bool bbActed = movesThisRound.Any(m => m.PlayerId == bbPlayer.UserId && m.ActionType != "Blind");
+                    if (!bbActed)
+                    {
+                        allPlayersActed = false;
+                    }
                 }
             }
 
-            // Round is complete if all players have acted and all bets are matched
-            return allPlayersActed && allBetsMatched;
+
+            return allBetsMatched && allPlayersActed;
         }
 
         private async Task AdvanceGameStateAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return;
 
-            // Get active players
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
 
-            // If only one player remains active, they win the pot
-            if (activePlayers.Count == 1)
+            if (activePlayers.Count <= 1 && game.CurrentState != "Completed")
             {
                 await DetermineWinnerAsync(gameId);
                 return;
             }
 
-            // Advance to next stage based on current state
+            string nextState = "";
+            bool requireNextRoundActions = true;
+
             switch (game.CurrentState)
             {
                 case "PreFlop":
-                    await DealFlopAsync(gameId);
+                    await DealCommunityCardsAsync(gameId, 3);
+                    nextState = "Flop";
                     break;
                 case "Flop":
-                    await DealTurnAsync(gameId);
+                    await DealCommunityCardsAsync(gameId, 1);
+                    nextState = "Turn";
                     break;
                 case "Turn":
-                    await DealRiverAsync(gameId);
+                    await DealCommunityCardsAsync(gameId, 1);
+                    nextState = "River";
                     break;
                 case "River":
-                    await DetermineWinnerAsync(gameId);
+                    nextState = "Showdown";
+                    requireNextRoundActions = false;
                     break;
+                case "Showdown":
+                case "Completed":
+                    requireNextRoundActions = false;
+                    return;
             }
 
-            // Set first player to act in the new round
-            if (game.CurrentState != "Completed")
+            if (!string.IsNullOrEmpty(nextState))
             {
-                await SetFirstPlayerInRoundAsync(gameId);
+                await gameRepository.UpdateGameStateAsync(gameId, nextState);
+                if (requireNextRoundActions)
+                {
+                    await SetFirstPlayerToActAsync(gameId, nextState);
+                }
+                else if (nextState == "Showdown")
+                {
+                    await gameRepository.SetCurrentTurnAsync(gameId, null);
+                    await DetermineWinnerAsync(gameId);
+                }
             }
         }
 
-        private async Task SetFirstPlayerInRoundAsync(int gameId)
+        private async Task DealCommunityCardsAsync(int gameId, int count)
         {
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayers = players.Where(p => p.IsActive).OrderBy(p => p.SeatPosition).ToList();
-
-            if (activePlayers.Count == 0) return;
-
-            // Find dealer
-            var dealer = activePlayers.FirstOrDefault(p => p.IsDealer);
-            if (dealer == null) return;
-
-            // First active player after dealer acts first
-            int dealerIndex = activePlayers.IndexOf(dealer);
-            int firstToActIndex = (dealerIndex + 1) % activePlayers.Count;
-
-            // Set first player to act
-            var firstToActPlayer = activePlayers[firstToActIndex];
-            await _gameRepository.SetCurrentTurnAsync(gameId, firstToActPlayer.UserId);
-        }
-
-        private async Task SetNextPlayerTurnAsync(int gameId)
-        {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return;
 
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayers = players.Where(p => p.IsActive).OrderBy(p => p.SeatPosition).ToList();
-
-            if (activePlayers.Count == 0) return;
-
-            // Find current player
-            var currentPlayer = activePlayers.FirstOrDefault(p => p.UserId == game.CurrentTurnUserId);
-            if (currentPlayer == null)
-            {
-                // If no current player, set first active player
-                await _gameRepository.SetCurrentTurnAsync(gameId, activePlayers.First().UserId);
-                return;
-            }
-
-            // Find next active player
-            int currentIndex = activePlayers.IndexOf(currentPlayer);
-            int nextIndex = (currentIndex + 1) % activePlayers.Count;
-
-            var nextPlayer = activePlayers[nextIndex];
-
-            // Set next player as current turn
-            await _gameRepository.SetCurrentTurnAsync(gameId, nextPlayer.UserId);
-        }
-
-        public async Task<bool> DealFlopAsync(int gameId)
-        {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "PreFlop")
-                return false;
-
-            // Get all cards
-            var allCards = await _cardRepository.GetAllCardsAsync();
-
-            // Get cards already in use
+            var allCards = await cardRepository.GetAllCardsAsync();
             var usedCardIds = new HashSet<int>();
 
-            // Get community cards (should be empty at this point)
-            var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-            foreach (var card in communityCards)
-            {
-                usedCardIds.Add(card.CardId);
-            }
+            var communityCards = await cardRepository.GetCommunityCardsByGameIdAsync(gameId);
+            foreach (var card in communityCards) usedCardIds.Add(card.CardId);
 
-            // Get player cards
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             foreach (var player in players)
             {
-                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
-                foreach (var card in playerCards)
-                {
-                    usedCardIds.Add(card.CardId);
-                }
+                var playerCards = await cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
+                foreach (var card in playerCards) usedCardIds.Add(card.CardId);
             }
 
-            // Get available cards
             var availableCards = allCards.Where(c => !usedCardIds.Contains(c.CardId)).ToList();
+            var shuffledAvailableCards = ShuffleCards(availableCards);
 
-            // Shuffle available cards
-            availableCards = ShuffleCards(availableCards);
-
-            // Deal 3 cards for the flop
-            for (int i = 0; i < 3; i++)
+            int currentCommunityCardCount = communityCards.Count();
+            for (int i = 0; i < count && i < shuffledAvailableCards.Count; i++)
             {
-                await _cardRepository.DealCommunityCardAsync(gameId, availableCards[i].CardId, i + 1);
+                await cardRepository.DealCommunityCardAsync(gameId, shuffledAvailableCards[i].CardId,
+                    currentCommunityCardCount + i + 1);
             }
-
-            // Update game state
-            await _gameRepository.UpdateGameStateAsync(gameId, "Flop");
-
-            // Notify all clients
-            await _hubContext.Clients.Group($"Game{gameId}")
-                .SendAsync("ReceiveGameUpdate", await GetGameStateAsync(gameId, 0));
-
-            return true;
-        }
-
-        public async Task<bool> DealTurnAsync(int gameId)
-        {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "Flop")
-                return false;
-
-            // Get all cards
-            var allCards = await _cardRepository.GetAllCardsAsync();
-
-            // Get cards already in use
-            var usedCardIds = new HashSet<int>();
-
-            // Get community cards
-            var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-            foreach (var card in communityCards)
-            {
-                usedCardIds.Add(card.CardId);
-            }
-
-            // Get player cards
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            foreach (var player in players)
-            {
-                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
-                foreach (var card in playerCards)
-                {
-                    usedCardIds.Add(card.CardId);
-                }
-            }
-
-            // Get available cards
-            var availableCards = allCards.Where(c => !usedCardIds.Contains(c.CardId)).ToList();
-
-            // Shuffle available cards
-            availableCards = ShuffleCards(availableCards);
-
-            // Deal turn card (4th community card)
-            await _cardRepository.DealCommunityCardAsync(gameId, availableCards[0].CardId, 4);
-
-            // Update game state
-            await _gameRepository.UpdateGameStateAsync(gameId, "Turn");
-
-            // Notify all clients
-            await _hubContext.Clients.Group($"Game{gameId}")
-                .SendAsync("ReceiveGameUpdate", await GetGameStateAsync(gameId, 0));
-
-            return true;
-        }
-
-        public async Task<bool> DealRiverAsync(int gameId)
-        {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "Turn")
-                return false;
-
-            // Get all cards
-            var allCards = await _cardRepository.GetAllCardsAsync();
-
-            // Get cards already in use
-            var usedCardIds = new HashSet<int>();
-
-            // Get community cards
-            var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-            foreach (var card in communityCards)
-            {
-                usedCardIds.Add(card.CardId);
-            }
-
-            // Get player cards
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            foreach (var player in players)
-            {
-                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
-                foreach (var card in playerCards)
-                {
-                    usedCardIds.Add(card.CardId);
-                }
-            }
-
-            // Get available cards
-            var availableCards = allCards.Where(c => !usedCardIds.Contains(c.CardId)).ToList();
-
-            // Shuffle available cards
-            availableCards = ShuffleCards(availableCards);
-
-            // Deal river card (5th community card)
-            await _cardRepository.DealCommunityCardAsync(gameId, availableCards[0].CardId, 5);
-
-            // Update game state
-            await _gameRepository.UpdateGameStateAsync(gameId, "River");
-
-            // Notify all clients
-            await _hubContext.Clients.Group($"Game{gameId}")
-                .SendAsync("ReceiveGameUpdate", await GetGameStateAsync(gameId, 0));
-
-            return true;
         }
 
         public async Task<bool> DetermineWinnerAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null) return false;
+            var game = await gameRepository.GetByIdAsync(gameId);
+            if (game == null || (game.CurrentState != "Showdown" && game.CurrentState != "River" &&
+                                 game.CurrentState != "Turn" && game.CurrentState != "Flop" &&
+                                 game.CurrentState !=
+                                 "PreFlop")) // Winner can be determined if only one active player remains
+            {
+                if (game?.CurrentState != "Showdown")
+                {
+                    var activePlayersCheck = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+                    if (activePlayersCheck.Count(p => p.IsActive) > 1) return false;
+                }
+                else if (game?.CurrentState != "Showdown")
+                {
+                    return false;
+                }
+            }
 
-            // Get current round
-            var currentRound = await _gameRoundRepository.GetCurrentRoundAsync(gameId);
+            var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
             if (currentRound == null) return false;
 
-            // Get all players
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
 
-            // If only one player is active, they win automatically
+
+            List<int> winnerIds = new List<int>();
+            int totalPot = await gameRepository.GetPotSizeAsync(gameId);
+
+
             if (activePlayers.Count == 1)
             {
-                var winner = activePlayers.First();
-
-                // Award pot to the winner
-                await _gameRoundWinnerRepository.AddWinnerAsync(currentRound.GameRoundId, winner.UserId,
-                    currentRound.PotSize);
-
-                // End the round
-                await _gameRoundRepository.EndRoundAsync(currentRound.GameRoundId);
-
-                // Update game state to showdown (to show cards)
-                await _gameRepository.UpdateGameStateAsync(gameId, "Showdown");
-
-                // Start a new hand after a delay
-                await Task.Delay(5000);
-                await StartNewHandAsync(gameId);
-
-                return true;
+                winnerIds.Add(activePlayers.Single().UserId);
             }
-
-            // Get community cards
-            var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-
-            // Evaluate each player's hand and determine winner(s)
-            var playerHandRankings = new Dictionary<int, int>(); // UserId -> Hand Rank
-
-            foreach (var player in activePlayers)
+            else // Multiple players
             {
-                var playerCards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
-
-                // Combine player's cards with community cards
-                var allCards = new List<Card>();
-                allCards.AddRange(playerCards);
-                allCards.AddRange(communityCards);
-
-                // Evaluate hand
-                int handRank = PokerHandEvaluator.EvaluateHand(allCards);
-
-                playerHandRankings[player.UserId] = handRank;
-            }
-
-            // Find the highest hand rank
-            int highestRank = playerHandRankings.Values.Max();
-
-            // Find all players with the highest rank (could be multiple in case of a tie)
-            var winners = playerHandRankings
-                .Where(kvp => kvp.Value == highestRank)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            // Update game state to showdown
-            await _gameRepository.UpdateGameStateAsync(gameId, "Showdown");
-
-            // Handle pot distribution
-            if (winners.Count == 1)
-            {
-                // Single winner gets the whole pot
-                await _gameRoundWinnerRepository.AddWinnerAsync(currentRound.GameRoundId, winners[0],
-                    currentRound.PotSize);
-            }
-            else
-            {
-                // Split pot among winners
-                int potPerWinner = currentRound.PotSize / winners.Count;
-                int remainingChips = currentRound.PotSize % winners.Count;
-
-                // Create a dictionary to hold winner amounts
-                var winnerAmounts = new Dictionary<int, int>();
-
-                foreach (var winnerId in winners)
+                if (game.CurrentState != "Showdown")
                 {
-                    winnerAmounts[winnerId] = potPerWinner;
+                    // If winner determined before Showdown (everyone else folded), ensure state is updated
+                    await gameRepository.UpdateGameStateAsync(gameId, "Showdown");
                 }
 
-                // Distribute remaining chips based on position relative to dealer
-                if (remainingChips > 0)
+                var communityCards = await cardRepository.GetCommunityCardsByGameIdAsync(gameId);
+                var playerHandRanks = new List<Tuple<int, int>>(); // UserId, HandRank
+
+                foreach (var player in activePlayers)
                 {
-                    // Find dealer
-                    var dealer = players.FirstOrDefault(p => p.IsDealer);
-                    if (dealer != null)
+                    var playerCards = await cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
+                    var allCards = communityCards.Concat(playerCards).ToList();
+
+                    int handRank = PokerHandEvaluator.EvaluateHand(allCards);
+                    playerHandRanks.Add(Tuple.Create(player.UserId, handRank));
+                }
+
+                playerHandRanks.Sort((p1, p2) => p2.Item2.CompareTo(p1.Item2));
+
+                int bestRank = playerHandRanks.First().Item2;
+                winnerIds = playerHandRanks.Where(p => p.Item2 == bestRank).Select(p => p.Item1).ToList();
+            }
+
+            if (winnerIds.Any())
+            {
+                if (winnerIds.Count == 1)
+                {
+                    await gameRoundWinnerRepository.AddWinnerAsync(currentRound.GameRoundId, winnerIds.First(),
+                        totalPot);
+                }
+                else
+                {
+                    int potPerWinner = totalPot / winnerIds.Count;
+                    int remainder = totalPot % winnerIds.Count;
+                    var winnerAmounts = winnerIds.ToDictionary(id => id, id => potPerWinner);
+
+                    if (remainder > 0)
                     {
-                        // Sort winners by seat position relative to dealer (clockwise)
-                        var orderedWinners = new List<(int UserId, int RelativePosition)>();
+                        var dealer = players.FirstOrDefault(p => p.IsDealer);
+                        int dealerPos = dealer?.SeatPosition ?? 0;
 
-                        foreach (var winnerId in winners)
-                        {
-                            var winnerPlayer = players.FirstOrDefault(p => p.UserId == winnerId);
-                            if (winnerPlayer != null)
-                            {
-                                // Calculate relative position from dealer (clockwise)
-                                int relativePos = (winnerPlayer.SeatPosition - dealer.SeatPosition + players.Count()) %
-                                                  players.Count();
-                                orderedWinners.Add((winnerId, relativePos));
-                            }
-                        }
+                        var orderedWinners = winnerIds
+                            .Select(id => players.First(p => p.UserId == id))
+                            .OrderBy(p => (p.SeatPosition - dealerPos + players.Count()) % players.Count())
+                            .ToList();
 
-                        // Sort by relative position
-                        orderedWinners = orderedWinners.OrderBy(w => w.RelativePosition).ToList();
-
-                        // Distribute odd chips to the first N winners
-                        for (int i = 0; i < remainingChips && i < orderedWinners.Count; i++)
+                        for (int i = 0; i < remainder; i++)
                         {
                             winnerAmounts[orderedWinners[i].UserId]++;
                         }
                     }
-                }
 
-                // Record all winners with their amounts
-                await _gameRoundWinnerRepository.AddMultipleWinnersAsync(currentRound.GameRoundId, winnerAmounts);
+                    await gameRoundWinnerRepository.AddMultipleWinnersAsync(currentRound.GameRoundId, winnerAmounts);
+                }
             }
 
-            // End the round
-            await _gameRoundRepository.EndRoundAsync(currentRound.GameRoundId);
 
-            // Notify all clients
-            await _hubContext.Clients.Group($"Game{gameId}")
-                .SendAsync("ReceiveGameUpdate", await GetGameStateAsync(gameId, 0));
-
-            // Start a new hand after a delay
-            await Task.Delay(5000);
-            await StartNewHandAsync(gameId);
+            await gameRoundRepository.EndRoundAsync(currentRound.GameRoundId);
+            await gameRepository.UpdateGameStateAsync(gameId, "Completed");
+            await gameRepository.SetCurrentTurnAsync(gameId, null);
 
             return true;
         }
+
 
         private async Task<bool> StartNewHandAsync(int gameId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return false;
 
-            // Get all players
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-
-            // Check if we have enough players to continue
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var playersWithChips = players.Where(p => p.CurrentChips > 0).ToList();
+
             if (playersWithChips.Count < 2)
             {
-                // End the game if not enough players
-                await _gameRepository.EndGameAsync(gameId);
-
+                await gameRepository.EndGameAsync(gameId);
                 return false;
             }
 
-            // Reset all players to active state
             foreach (var player in playersWithChips)
             {
-                await _gamePlayerRepository.SetPlayerStatusAsync(player.GamePlayerId, true);
+                await gamePlayerRepository.SetPlayerStatusAsync(player.GamePlayerId, true);
             }
 
-            // Rotate dealer position
-            await RotateDealerPositionAsync(gameId);
+            foreach (var player in players.Where(p => p.CurrentChips <= 0))
+            {
+                await gamePlayerRepository.SetPlayerStatusAsync(player.GamePlayerId, false);
+            }
 
-            // Clear any cards from the previous hand
-            await _cardRepository.ClearGameCardsAsync(gameId);
+            await RotateDealerAndSetBlindsAsync(gameId);
+            await cardRepository.ClearGameCardsAsync(gameId);
+            await gameRepository.UpdatePotSizeAsync(gameId, 0);
+            var newRound = await gameRoundRepository.StartNewRoundAsync(gameId);
 
-            // Reset pot size
-            await _gameRepository.UpdatePotSizeAsync(gameId, 0);
+            await DealInitialCardsAsync(gameId);
+            await gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
 
-            // Create a new game round
-            await _gameRoundRepository.StartNewRoundAsync(gameId);
-
-            // Update game state to PreFlop
-            await _gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
-
-            // Deal new cards
-            await DealCardsAsync(gameId);
-
-            // Collect blinds
-            await CollectBlindsAsync(gameId, playersWithChips);
-
-            // Set first player to act
-            await SetFirstPlayerToActAsync(gameId);
+            var currentPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            await CollectBlindsAsync(gameId, currentPlayers.Where(p => p.IsActive).ToList());
+            await SetFirstPlayerToActAsync(gameId, "PreFlop");
 
             return true;
         }
 
-        private async Task RotateDealerPositionAsync(int gameId)
+        private async Task RotateDealerAndSetBlindsAsync(int gameId)
         {
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayers = players.Where(p => p.CurrentChips > 0).OrderBy(p => p.SeatPosition).ToList();
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
 
-            if (activePlayers.Count < 2) return;
+            var activePlayersWithChips = players.Where(p => p.CurrentChips > 0).OrderBy(p => p.SeatPosition).ToList();
 
-            // Find current dealer
-            var currentDealer = activePlayers.FirstOrDefault(p => p.IsDealer);
+            if (activePlayersWithChips.Count < 2) return;
 
-            // If no dealer set, set the first player as dealer
-            if (currentDealer == null)
+            var currentDealer = activePlayersWithChips.FirstOrDefault(p => p.IsDealer);
+            int currentDealerIndex = currentDealer != null ? activePlayersWithChips.IndexOf(currentDealer) : -1;
+
+            GamePlayer nextDealer = null;
+            if (currentDealerIndex != -1)
             {
-                await _gamePlayerRepository.SetDealerPositionAsync(gameId, activePlayers[0].GamePlayerId);
+                for (int i = 1; i <= activePlayersWithChips.Count; i++)
+                {
+                    var potentialDealer =
+                        activePlayersWithChips[(currentDealerIndex + i) % activePlayersWithChips.Count];
+                    if (potentialDealer.CurrentChips > 0)
+                    {
+                        nextDealer = potentialDealer;
+                        break;
+                    }
+                }
+            }
 
-                // Set blinds
-                int sbIndex = 1 % activePlayers.Count;
-                int bbIndex = 2 % activePlayers.Count;
+            if (nextDealer == null)
+            {
+                nextDealer = activePlayersWithChips.First();
+            }
 
-                await _gamePlayerRepository.SetBlindPositionsAsync(
-                    gameId,
-                    activePlayers[sbIndex].GamePlayerId,
-                    activePlayers[bbIndex].GamePlayerId);
+
+            await gamePlayerRepository.SetDealerPositionAsync(gameId, nextDealer.GamePlayerId);
+
+            int newDealerIndex = activePlayersWithChips.IndexOf(nextDealer);
+            GamePlayer sbPlayer = null;
+            GamePlayer bbPlayer = null;
+
+            if (activePlayersWithChips.Count == 2)
+            {
+                sbPlayer = nextDealer;
+                bbPlayer = activePlayersWithChips[(newDealerIndex + 1) % activePlayersWithChips.Count];
             }
             else
             {
-                // Find the next active player after the current dealer
-                int currentDealerPosition = currentDealer.SeatPosition;
-
-                // Find the next active player clockwise
-                GamePlayer nextDealer = null;
-
-                // First try to find a player with higher seat position
-                nextDealer = activePlayers.FirstOrDefault(p => p.SeatPosition > currentDealerPosition);
-
-                // If not found, wrap around to the lowest seat position
-                if (nextDealer == null)
+                for (int i = 1; i <= activePlayersWithChips.Count; i++)
                 {
-                    nextDealer = activePlayers.FirstOrDefault();
+                    var potentialSB = activePlayersWithChips[(newDealerIndex + i) % activePlayersWithChips.Count];
+                    if (potentialSB.CurrentChips > 0)
+                    {
+                        sbPlayer = potentialSB;
+                        break;
+                    }
                 }
 
-                if (nextDealer != null)
+                if (sbPlayer != null)
                 {
-                    // Set the new dealer
-                    await _gamePlayerRepository.SetDealerPositionAsync(gameId, nextDealer.GamePlayerId);
-
-                    // Find the next two active players for small blind and big blind
-                    int dealerIndex = activePlayers.FindIndex(p => p.GamePlayerId == nextDealer.GamePlayerId);
-                    int sbIndex = (dealerIndex + 1) % activePlayers.Count;
-                    int bbIndex = (dealerIndex + 2) % activePlayers.Count;
-
-                    await _gamePlayerRepository.SetBlindPositionsAsync(
-                        gameId,
-                        activePlayers[sbIndex].GamePlayerId,
-                        activePlayers[bbIndex].GamePlayerId);
+                    int sbIndex = activePlayersWithChips.IndexOf(sbPlayer);
+                    for (int i = 1; i <= activePlayersWithChips.Count; i++)
+                    {
+                        var potentialBB = activePlayersWithChips[(sbIndex + i) % activePlayersWithChips.Count];
+                        if (potentialBB.CurrentChips > 0)
+                        {
+                            bbPlayer = potentialBB;
+                            break;
+                        }
+                    }
                 }
+            }
+
+            if (sbPlayer == null || bbPlayer == null)
+            {
+                // Handle error - maybe assign to first two players? Log warning?
+                // For now, proceed with potentially null blinds if logic failed.
+                await gamePlayerRepository.SetBlindPositionsAsync(gameId, sbPlayer?.GamePlayerId ?? 0,
+                    bbPlayer?.GamePlayerId ?? 0);
+            }
+            else
+            {
+                await gamePlayerRepository.SetBlindPositionsAsync(gameId, sbPlayer.GamePlayerId, bbPlayer.GamePlayerId);
             }
         }
 
+
         public async Task<GameStateDto> GetGameStateAsync(int gameId, int userId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
+            var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return null;
 
-            var table = await _gameRepository.GetGameTableAsync(gameId);
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var communityCards = await _cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-            var moves = await _moveRepository.GetMovesByGameIdAsync(gameId);
-            var rounds = await _gameRoundRepository.GetByGameIdAsync(gameId);
+            var table = await gameRepository.GetGameTableAsync(gameId);
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var communityCards = await cardRepository.GetCommunityCardsByGameIdAsync(gameId);
+            var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+            var lastMoves = await moveRepository.GetMovesByGameIdAsync(gameId);
+            var roundWinners = currentRound != null
+                ? await gameRoundWinnerRepository.GetByGameRoundIdAsync(currentRound.GameRoundId)
+                : new List<GameRoundWinner>();
+            var playerContributions = currentRound != null
+                ? await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId,
+                    game.CurrentState)
+                : new Dictionary<int, int>();
 
-            // Get current round
-            var currentRound = await _gameRoundRepository.GetCurrentRoundAsync(gameId);
+            List<CardDto> requestingPlayerCards = new List<CardDto>();
+            var requestingPlayer = players.FirstOrDefault(p => p.UserId == userId);
 
-            // Get player contributions for the current round
-            var playerContributions = new Dictionary<int, int>();
-            if (currentRound != null)
+            if (requestingPlayer != null)
             {
-                playerContributions =
-                    await _moveRepository.GetPlayerContributionsForRoundAsync(gameId, game.CurrentState);
+                var playerCardsRaw =
+                    await cardRepository.GetPlayerCardsByGamePlayerIdAsync(requestingPlayer.GamePlayerId);
+                requestingPlayerCards =
+                    playerCardsRaw.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
             }
-
-            // Calculate call amount and min raise
-            int highestContribution = playerContributions.Any() ? playerContributions.Values.Max() : 0;
-            int currentPlayerContribution = playerContributions.GetValueOrDefault(userId, 0);
-            int callAmount = highestContribution - currentPlayerContribution;
-
-            // Find the size of the last raise/bet for minimum raise calculation
-            var roundMoves = await _moveRepository.GetLastRoundMovesAsync(gameId, game.CurrentState);
-            var lastAggressiveMove = roundMoves
-                .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
-                .OrderByDescending(m => m.MoveTime)
-                .FirstOrDefault();
-
-            int minRaiseAmount =
-                lastAggressiveMove?.Amount ?? (table?.BigBlind ?? 20); // Default to BB if no prior aggression
-
-            // Build player state DTOs
-            var playerStateDtos = new List<PlayerStateDto>();
-            var playerCards = new List<CardDto>(); // Cards for the requesting player
 
             bool showAllCards = game.CurrentState == "Showdown" || game.CurrentState == "Completed";
 
-            foreach (var player in players)
+            int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
+            int requestingPlayerContribution = userId > 0 ? playerContributions.GetValueOrDefault(userId, 0) : 0;
+            int callAmount = highestContributionInRound - requestingPlayerContribution;
+            callAmount = Math.Max(0, callAmount);
+
+            int minRaiseAmount = 2 * Math.Max(callAmount, (await gameRepository.GetGameTableAsync(gameId)).BigBlind);
+
+            var gameStateDto = new GameStateDto
             {
-                var playerStateDto = new PlayerStateDto
+                GameId = game.GameId,
+                TableId = game.TableId,
+                TableName = table?.Name ?? "Unknown Table",
+                CurrentState = game.CurrentState,
+                PotSize = game.PotSize,
+                CurrentTurnUserId = game.CurrentTurnUserId,
+                CommunityCards = communityCards.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList(),
+                Players = players.Select(p => new PlayerStateDto
                 {
-                    UserId = player.UserId,
-                    Username = player.User?.Username ?? $"Player {player.UserId}",
-                    CurrentChips = player.CurrentChips,
-                    IsActive = player.IsActive,
-                    IsDealer = player.IsDealer,
-                    IsSmallBlind = player.IsSmallBlind,
-                    IsBigBlind = player.IsBigBlind,
-                    SeatPosition = player.SeatPosition
-                };
-
-                // Include cards if:
-                // 1. This is the requesting player, OR
-                // 2. It's showdown/completed state AND the player was active at the end
-                if (player.UserId == userId || (showAllCards && player.IsActive))
-                {
-                    var cards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
-                    playerStateDto.Cards = cards.Select(c => new CardDto
-                    {
-                        Suit = c.Suit,
-                        Value = c.Value
-                    }).ToList();
-                }
-                else
-                {
-                    playerStateDto.Cards = new List<CardDto>(); // Empty by default
-                }
-
-                playerStateDtos.Add(playerStateDto);
-            }
-
-            // Get the requesting player's cards
-            if (userId > 0)
-            {
-                var userGamePlayer = players.FirstOrDefault(p => p.UserId == userId);
-                if (userGamePlayer != null)
-                {
-                    var cards = await _cardRepository.GetPlayerCardsByGamePlayerIdAsync(userGamePlayer.GamePlayerId);
-                    playerCards = cards.Select(c => new CardDto
-                    {
-                        Suit = c.Suit,
-                        Value = c.Value
-                    }).ToList();
-                }
-            }
-
-            // Get last few moves for context
-            var lastMoves = moves
-                .OrderByDescending(m => m.MoveTime)
-                .Take(10)
-                .Select(m => new MoveDto
+                    UserId = p.UserId,
+                    Username = p.User?.Username ?? "Unknown",
+                    CurrentChips = p.CurrentChips,
+                    IsActive = p.IsActive,
+                    IsDealer = p.IsDealer,
+                    IsSmallBlind = p.IsSmallBlind,
+                    IsBigBlind = p.IsBigBlind,
+                    SeatPosition = p.SeatPosition,
+                    Cards = (showAllCards || p.UserId == userId)
+                        ? (cardRepository.GetPlayerCardsByGamePlayerIdAsync(p.GamePlayerId).Result ?? new List<Card>())
+                        .Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList()
+                        : new List<CardDto>()
+                }).ToList(),
+                PlayerCards = requestingPlayerCards,
+                LastMoves = lastMoves.Select(m => new MoveDto
                 {
                     PlayerId = m.PlayerId,
                     ActionType = m.ActionType,
                     Amount = m.Amount,
                     MoveTime = m.MoveTime
-                })
-                .ToList();
-
-            // Get round winners
-            var roundWinners = new List<RoundWinnerDto>();
-            foreach (var round in rounds.Where(r => r.EndTime.HasValue))
-            {
-                foreach (var winner in round.Winners)
-                {
-                    roundWinners.Add(new RoundWinnerDto
-                    {
-                        UserId = winner.UserId,
-                        Username = winner.User?.Username ?? $"Player {winner.UserId}",
-                        AmountWon = winner.AmountWon
-                    });
-                }
-            }
-
-            // Build the game state DTO
-            var gameStateDto = new GameStateDto
-            {
-                GameId = game.GameId,
-                TableId = game.TableId,
-                TableName = table?.Name,
-                CurrentState = game.CurrentState,
-                PotSize = game.PotSize,
-                CurrentTurnUserId = game.CurrentTurnUserId,
-                CommunityCards = communityCards.Select(c => new CardDto
-                {
-                    Suit = c.Suit,
-                    Value = c.Value
                 }).ToList(),
-                Players = playerStateDtos,
-                PlayerCards = playerCards,
-                LastMoves = lastMoves,
-                RoundWinners = roundWinners,
+                RoundWinners = roundWinners.Select(rw => new RoundWinnerDto
+                    { UserId = rw.UserId, Username = rw.User.Username, AmountWon = rw.AmountWon }).ToList(),
                 PlayerRoundContributions = playerContributions,
                 CallAmount = callAmount,
                 MinRaiseAmount = minRaiseAmount
@@ -1211,28 +949,19 @@ namespace TexasHoldemPoker.API.Services
             return gameStateDto;
         }
 
-        public async Task<bool> AcknowledgeGameResultAsync(int gameId, int userId)
+        private List<Card> ShuffleCards(List<Card> cards)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "Showdown")
-                return false;
-
-            if (!_gameResultAcknowledgments.ContainsKey(gameId))
+            int n = cards.Count;
+            while (n > 1)
             {
-                _gameResultAcknowledgments[gameId] = new HashSet<int>();
+                n--;
+                int k = random.Next(n + 1);
+                Card value = cards[k];
+                cards[k] = cards[n];
+                cards[n] = value;
             }
 
-            _gameResultAcknowledgments[gameId].Add(userId);
-
-            var players = await _gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-
-            if (players.All(p => _gameResultAcknowledgments[gameId].Contains(p.UserId)))
-            {
-                _gameResultAcknowledgments.Remove(gameId);
-                await StartNewHandAsync(gameId);
-            }
-
-            return true;
+            return cards;
         }
     }
 }

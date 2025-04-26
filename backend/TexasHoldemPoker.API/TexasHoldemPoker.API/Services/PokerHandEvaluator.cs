@@ -85,7 +85,7 @@ namespace TexasHoldemPoker.API.Services
             // Four of a Kind: Four cards of the same value
             if (valueGroups[0].Count() == 4)
             {
-                return FOUR_OF_A_KIND * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key;
+                return FOUR_OF_A_KIND * 100000000 + valueGroups[0].Key;
             }
 
             // Full House: Three cards of one value and two of another
@@ -97,8 +97,7 @@ namespace TexasHoldemPoker.API.Services
             // Flush: Five cards of the same suit
             if (isFlush)
             {
-                return FLUSH * 100000000 + values[0] * 10000 + values[1] * 1000 + values[2] * 100 + values[3] * 10 +
-                       values[4];
+                return FLUSH * 100000000;
             }
 
             // Straight: Five consecutive cards
@@ -110,27 +109,23 @@ namespace TexasHoldemPoker.API.Services
             // Three of a Kind: Three cards of the same value
             if (valueGroups[0].Count() == 3)
             {
-                return THREE_OF_A_KIND * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key * 100 +
-                       valueGroups[2].Key;
+                return THREE_OF_A_KIND * 100000000 + valueGroups[0].Key;
             }
 
             // Two Pair: Two cards of one value and two cards of another value
             if (valueGroups[0].Count() == 2 && valueGroups[1].Count() == 2)
             {
-                return TWO_PAIR * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key * 100 +
-                       valueGroups[2].Key;
+                return TWO_PAIR * 100000000 + valueGroups[0].Key * 10000 + valueGroups[1].Key;
             }
 
             // Pair: Two cards of the same value
             if (valueGroups[0].Count() == 2)
             {
-                return PAIR * 100000000 + valueGroups[0].Key * 10000 + values[2] * 1000 + values[3] * 100 +
-                       values[4] * 10;
+                return PAIR * 100000000 + valueGroups[0].Key;
             }
 
             // High Card: Highest value card
-            return HIGH_CARD * 100000000 + values[0] * 10000 + values[1] * 1000 + values[2] * 100 + values[3] * 10 +
-                   values[4];
+            return HIGH_CARD * 100000000 + values[0];
         }
 
         private static bool IsStraight(List<Card> cards)

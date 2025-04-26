@@ -109,20 +109,8 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id}/acknowledge-result")]
-        public async Task<ActionResult> AcknowledgeGameResult(int id)
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            var result = await _gameService.AcknowledgeGameResultAsync(id, userId);
-
-            if (!result)
-                return BadRequest("Failed to acknowledge game result");
-
-            return NoContent();
-        }
-
         // Admin endpoints for testing/debugging
-        [HttpGet("{id}/userId/{userId}")]
+        [HttpGet("{id}/{userId}")]
         public async Task<ActionResult<GameStateDto>> GetGameWithUserId(int id, int userId)
         {
             var gameStateDto = await _gameService.GetGameStateAsync(id, userId);
@@ -156,23 +144,12 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpPost("{id}/leave/{userId}")]
-        public async Task<ActionResult> LeaveGameWithUserId(int id int userId)
+        public async Task<ActionResult> LeaveGameWithUserId(int id, int userId)
         {
             var result = await _gameService.LeaveGameAsync(id, userId);
 
             if (!result)
                 return BadRequest("Failed to leave game");
-
-            return NoContent();
-        }
-
-        [HttpPost("{id}/acknowledge-result/{userId}")]
-        public async Task<ActionResult> AcknowledgeGameResultWithUserId(int id, int userId)
-        {
-            var result = await _gameService.AcknowledgeGameResultAsync(id, userId);
-
-            if (!result)
-                return BadRequest("Failed to acknowledge game result");
 
             return NoContent();
         }

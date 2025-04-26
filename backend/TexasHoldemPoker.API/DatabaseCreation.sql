@@ -39,7 +39,7 @@ CREATE TABLE PokerTables (
 );
 GO
 
--- Games Table (WinnerId removed)
+-- Games Table
 CREATE TABLE Games (
     GameId INT IDENTITY(1,1) PRIMARY KEY,
     TableId INT NOT NULL FOREIGN KEY REFERENCES PokerTables(TableId),
@@ -128,12 +128,14 @@ GO
 CREATE TABLE Moves (
     MoveId INT IDENTITY(1,1) PRIMARY KEY,
     GameId INT NOT NULL,
+    GameRoundId INT NOT NULL,
     PlayerId INT NOT NULL,
     ActionType NVARCHAR(20) NOT NULL CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn')),
     Amount INT NOT NULL DEFAULT 0,
     MoveTime DATETIME NOT NULL DEFAULT GETDATE(),
     Round NVARCHAR(20) NOT NULL CHECK (Round IN ('PreFlop', 'Flop', 'Turn', 'River')),
     CONSTRAINT FKMovesGames FOREIGN KEY (GameId) REFERENCES Games(GameId),
+    CONSTRAINT FKMovesGameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId),
     CONSTRAINT FKMovesUsers FOREIGN KEY (PlayerId) REFERENCES Users(UserId)
 );
 GO

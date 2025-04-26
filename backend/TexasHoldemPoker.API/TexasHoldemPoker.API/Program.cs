@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TexasHoldemPoker.API.Data;
-using TexasHoldemPoker.API.Hubs;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using TexasHoldemPoker.API.Services;
@@ -55,9 +54,6 @@ public class Program
                     ValidateAudience = false
                 };
             });
-
-        // Add SignalR for real-time communication
-        builder.Services.AddSignalR();
         
         // Add JSON options
         builder.Services.AddControllers().AddJsonOptions(options =>
@@ -66,17 +62,17 @@ public class Program
         });
 
 
-        // Add CORS
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("CorsPolicy", policy =>
-            {
-                policy.AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
-                    .AllowCredentials();
-            });
-        });
+        //// Add CORS
+        //builder.Services.AddCors(options =>
+        //{
+        //    options.AddPolicy("CorsPolicy", policy =>
+        //    {
+        //        policy.AllowAnyHeader()
+        //            .AllowAnyMethod()
+        //            .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
+        //            .AllowCredentials();
+        //    });
+        //});
 
         var app = builder.Build();
 
@@ -94,7 +90,6 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
-        app.MapHub<GameHub>("/gamehub");
 
         app.Run();
     }

@@ -905,7 +905,7 @@ namespace TexasHoldemPoker.API.Services
             int callAmount = highestContributionInRound - requestingPlayerContribution;
             callAmount = Math.Max(0, callAmount);
 
-            int minRaiseAmount = 2 * Math.Max(callAmount, (await gameRepository.GetGameTableAsync(gameId)).BigBlind);
+            int minRaiseAmount = Math.Max(2 * callAmount, (await gameRepository.GetGameTableAsync(gameId)).BigBlind);
 
             var gameStateDto = new GameStateDto
             {

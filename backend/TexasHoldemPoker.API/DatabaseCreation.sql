@@ -130,7 +130,7 @@ CREATE TABLE Moves (
     GameId INT NOT NULL,
     GameRoundId INT NOT NULL,
     PlayerId INT NOT NULL,
-    ActionType NVARCHAR(20) NOT NULL CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn')),
+    ActionType NVARCHAR(20) NOT NULL CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn', 'Blind')),
     Amount INT NOT NULL DEFAULT 0,
     MoveTime DATETIME NOT NULL DEFAULT GETDATE(),
     Round NVARCHAR(20) NOT NULL CHECK (Round IN ('PreFlop', 'Flop', 'Turn', 'River')),

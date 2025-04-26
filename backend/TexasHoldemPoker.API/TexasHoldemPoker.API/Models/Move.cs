@@ -9,7 +9,8 @@ namespace TexasHoldemPoker.API.Models
 
         [ForeignKey("Game")] public int GameId { get; set; }
         public Game Game { get; set; }
-
+        [ForeignKey("GameRound")] public int GameRoundId { get; set; }
+        public GameRound GameRound{ get; set; }
         [ForeignKey("Player")] public int PlayerId { get; set; }
         public User Player { get; set; }
 

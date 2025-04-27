@@ -40,7 +40,7 @@ namespace TexasHoldemPoker.API.Controllers
             {
                 Username = registerDto.Username,
                 Email = registerDto.Email,
-                ChipsBalance = 1000, // Starting chips
+                ChipsBalance = 1000,
                 RegistrationDate = DateTime.UtcNow,
                 IsActive = true
             };
@@ -74,7 +74,6 @@ namespace TexasHoldemPoker.API.Controllers
             if (result != PasswordVerificationResult.Success)
                 return Unauthorized("Invalid password");
 
-            // Update last login date
             user.LastLoginDate = DateTime.UtcNow;
             await _userRepository.UpdateUserAsync(user);
 
@@ -119,7 +118,6 @@ namespace TexasHoldemPoker.API.Controllers
             if (user == null)
                 return NotFound();
 
-            // Update user properties
             if (!string.IsNullOrEmpty(updateDto.Email))
                 user.Email = updateDto.Email;
 

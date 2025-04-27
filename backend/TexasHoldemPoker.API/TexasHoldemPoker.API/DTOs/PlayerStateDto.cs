@@ -10,6 +10,6 @@
         public bool IsSmallBlind { get; set; }
         public bool IsBigBlind { get; set; }
         public int SeatPosition { get; set; }
-        public List<CardDto> Cards { get; set; } // Will be empty unless it's the player's own cards or showdown
+        public List<CardDto> Cards { get; set; }
     }
 }

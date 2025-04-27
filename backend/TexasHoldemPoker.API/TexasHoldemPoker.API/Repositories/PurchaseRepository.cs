@@ -30,7 +30,8 @@ namespace TexasHoldemPoker.API.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Purchase> CreatePurchaseAsync(int userId, int itemId, string paymentMethod, string transactionId)
+        public async Task<Purchase> CreatePurchaseAsync(int userId, int itemId, string paymentMethod,
+            string transactionId)
         {
             using var transaction = await context.Database.BeginTransactionAsync();
 
@@ -44,7 +45,6 @@ namespace TexasHoldemPoker.API.Repositories
                 if (user == null)
                     throw new InvalidOperationException("User not found");
 
-                // Create the purchase record
                 var purchase = new Purchase
                 {
                     UserId = userId,
@@ -57,14 +57,11 @@ namespace TexasHoldemPoker.API.Repositories
 
                 context.Purchases.Add(purchase);
 
-                // If purchasing chips, update user's chip balance
                 if (item.ItemType == "Chips")
                 {
-                    // Parse the chip amount from the item name or description
                     int chipAmount = ParseChipAmount(item.Name, item.Description);
                     user.ChipsBalance += chipAmount;
 
-                    // Log the chip transaction
                     var chipTransaction = new ChipTransaction
                     {
                         UserId = userId,
@@ -92,9 +89,6 @@ namespace TexasHoldemPoker.API.Repositories
 
         private int ParseChipAmount(string name, string description)
         {
-            // This is a simplified implementation
-            // In a real app, you might store the chip amount directly in the database
-            // or have a more sophisticated parsing logic
             string textToSearch = name + " " + description;
             var match = Regex.Match(textToSearch, @"(\d{1,3}(,\d{3})*)\s*chips", RegexOptions.IgnoreCase);
 
@@ -105,7 +99,6 @@ namespace TexasHoldemPoker.API.Repositories
                     return amount;
             }
 
-            // Default fallback value if parsing fails
             return 1000;
         }
     }

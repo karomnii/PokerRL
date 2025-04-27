@@ -10,14 +10,11 @@
         public int? CurrentTurnUserId { get; set; }
         public List<CardDto> CommunityCards { get; set; }
         public List<PlayerStateDto> Players { get; set; }
-        public List<CardDto> PlayerCards { get; set; } // Only for requesting player or after showdown
+        public List<CardDto> PlayerCards { get; set; }
         public List<MoveDto> LastMoves { get; set; }
-
-        // Round-based additions
         public List<RoundWinnerDto> RoundWinners { get; set; }
-        public Dictionary<int, int> PlayerRoundContributions { get; set; } // UserId -> Contribution this round
+        public Dictionary<int, int> PlayerRoundContributions { get; set; }
         public int CallAmount { get; set; }
         public int MinRaiseAmount { get; set; }
     }
-
 }

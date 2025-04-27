@@ -18,11 +18,11 @@ namespace TexasHoldemPoker.API.Repositories
             return await context.Games
                 .Include(g => g.Table)
                 .Include(g => g.GamePlayers)
-                    .ThenInclude(gp => gp.User)
+                .ThenInclude(gp => gp.User)
                 .Include(g => g.CommunityCards)
-                    .ThenInclude(cc => cc.Card)
+                .ThenInclude(cc => cc.Card)
                 .Include(g => g.GameRounds)
-                    .ThenInclude(gr => gr.Winners)
+                .ThenInclude(gr => gr.Winners)
                 .FirstOrDefaultAsync(g => g.GameId == gameId);
         }
 
@@ -71,9 +71,16 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<bool> UpdatePotSizeAsync(int gameId, int amount)
         {
             var game = await context.Games.FindAsync(gameId);
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
             if (game == null)
                 return false;
+            if (gameRound == null)
+                return false;
 
+            gameRound.PotSize = amount;
             game.PotSize = amount;
             await context.SaveChangesAsync();
             return true;

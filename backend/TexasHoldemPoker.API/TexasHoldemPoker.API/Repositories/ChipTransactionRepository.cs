@@ -39,7 +39,7 @@ namespace TexasHoldemPoker.API.Repositories
 
                 chipTransaction.TransactionDate = DateTime.UtcNow;
                 context.ChipTransactions.Add(chipTransaction);
-                
+
                 return chipTransaction;
             }
 
@@ -51,10 +51,8 @@ namespace TexasHoldemPoker.API.Repositories
                 if (user == null)
                     throw new InvalidOperationException("User not found");
 
-                // Update user's chip balance
                 user.ChipsBalance += chipTransaction.Amount;
 
-                // Add transaction record
                 chipTransaction.TransactionDate = DateTime.UtcNow;
                 context.ChipTransactions.Add(chipTransaction);
 
@@ -104,7 +102,7 @@ namespace TexasHoldemPoker.API.Repositories
             var chipTransaction = new ChipTransaction
             {
                 UserId = userId,
-                Amount = -amount, // Negative amount for loss
+                Amount = -amount,
                 TransactionType = "GameLoss",
                 ReferenceId = gameId,
                 TransactionDate = DateTime.UtcNow,
@@ -119,7 +117,7 @@ namespace TexasHoldemPoker.API.Repositories
             var chipTransaction = new ChipTransaction
             {
                 UserId = userId,
-                Amount = -amount, // Negative amount for buy-in
+                Amount = -amount,
                 TransactionType = "GameLoss",
                 ReferenceId = gameId,
                 TransactionDate = DateTime.UtcNow,

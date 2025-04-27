@@ -20,7 +20,7 @@ namespace TexasHoldemPoker.API.Repositories
             return await context.GamePlayers
                 .Include(gp => gp.User)
                 .Include(gp => gp.PlayerCards)
-                    .ThenInclude(pc => pc.Card)
+                .ThenInclude(pc => pc.Card)
                 .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
         }
 
@@ -37,7 +37,7 @@ namespace TexasHoldemPoker.API.Repositories
         {
             return await context.GamePlayers
                 .Include(gp => gp.PlayerCards)
-                    .ThenInclude(pc => pc.Card)
+                .ThenInclude(pc => pc.Card)
                 .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
         }
 
@@ -47,22 +47,18 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                // Check if user has enough chips
                 var user = await context.Users.FindAsync(userId);
                 if (user == null || user.ChipsBalance < buyInAmount)
                     throw new InvalidOperationException("User doesn't have enough chips for buy-in");
 
-                // Check if seat is available
                 var seatTaken = await context.GamePlayers
                     .AnyAsync(gp => gp.GameId == gameId && gp.SeatPosition == seatPosition);
 
                 if (seatTaken)
                     throw new InvalidOperationException("Seat position is already taken");
 
-                // Deduct chips from user balance
                 user.ChipsBalance -= buyInAmount;
 
-                // Add player to game
                 var gamePlayer = new GamePlayer
                 {
                     GameId = gameId,
@@ -78,7 +74,6 @@ namespace TexasHoldemPoker.API.Repositories
 
                 context.GamePlayers.Add(gamePlayer);
 
-                // Log transaction
                 await chipTransactionRepository.RecordGameBuyInAsync(userId, gameId, buyInAmount);
 
                 await context.SaveChangesAsync();
@@ -121,7 +116,6 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                // Reset all dealer positions for this game
                 var players = await context.GamePlayers
                     .Where(gp => gp.GameId == gameId)
                     .ToListAsync();
@@ -131,7 +125,6 @@ namespace TexasHoldemPoker.API.Repositories
                     player.IsDealer = false;
                 }
 
-                // Set new dealer
                 var newDealer = players.FirstOrDefault(p => p.GamePlayerId == gamePlayerId);
                 if (newDealer == null)
                     return false;
@@ -156,7 +149,6 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                // Reset all blind positions for this game
                 var players = await context.GamePlayers
                     .Where(gp => gp.GameId == gameId)
                     .ToListAsync();
@@ -167,14 +159,12 @@ namespace TexasHoldemPoker.API.Repositories
                     player.IsBigBlind = false;
                 }
 
-                // Set new small blind
                 var smallBlindPlayer = players.FirstOrDefault(p => p.GamePlayerId == smallBlindPlayerId);
                 if (smallBlindPlayer == null)
                     return false;
 
                 smallBlindPlayer.IsSmallBlind = true;
 
-                // Set new big blind
                 var bigBlindPlayer = players.FirstOrDefault(p => p.GamePlayerId == bigBlindPlayerId);
                 if (bigBlindPlayer == null)
                     return false;
@@ -202,22 +192,19 @@ namespace TexasHoldemPoker.API.Repositories
             if (gamePlayer == null)
                 return false;
 
-            // Only allow removal if game is in "Waiting" state
-            if (gamePlayer.Game.CurrentState != "Waiting")
+            if (gamePlayer.Game.CurrentState != "Waiting" && gamePlayer.Game.CurrentState != "Completed")
                 return false;
 
             using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
-                // Return chips to user
                 var user = await context.Users.FindAsync(gamePlayer.UserId);
                 user.ChipsBalance += gamePlayer.InitialChips;
 
-                // Log transaction
-                await chipTransactionRepository.RecordGameRefundAsync(gamePlayer.UserId, gamePlayer.GameId, gamePlayer.InitialChips);
+                await chipTransactionRepository.RecordGameRefundAsync(gamePlayer.UserId, gamePlayer.GameId,
+                    gamePlayer.InitialChips);
 
-                // Remove player from game
                 context.GamePlayers.Remove(gamePlayer);
 
                 await context.SaveChangesAsync();
@@ -240,12 +227,10 @@ namespace TexasHoldemPoker.API.Repositories
                 .ToListAsync();
 
             if (players.Count <= 1)
-                return -1; // No next player or only one player
+                return -1;
 
-            // Find the player with position greater than current
             var nextPlayer = players.FirstOrDefault(p => p.SeatPosition > currentPosition);
 
-            // If no player found, wrap around to the first player
             if (nextPlayer == null)
                 return players.First().SeatPosition;
 

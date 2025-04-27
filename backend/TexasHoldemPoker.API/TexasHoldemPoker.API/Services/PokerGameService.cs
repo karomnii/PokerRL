@@ -21,7 +21,9 @@ namespace TexasHoldemPoker.API.Services
         private readonly IGameRoundRepository gameRoundRepository;
         private readonly IGameRoundWinnerRepository gameRoundWinnerRepository;
         private readonly Random random = new Random();
-        private Dictionary<int, HashSet<int>> completedRoundAcknowledgments = new Dictionary<int, HashSet<int>>();
+
+        private static Dictionary<int, HashSet<int>>
+            completedRoundAcknowledgments = new Dictionary<int, HashSet<int>>();
 
         public PokerGameService(
             IGameRepository gameRepository,
@@ -295,7 +297,6 @@ namespace TexasHoldemPoker.API.Services
                 completedRoundAcknowledgments[gameId].Add(userId);
 
                 var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                // Check against players who are still part of the game (not left)
                 var relevantPlayers = playersInGame.ToList();
 
 
@@ -328,7 +329,8 @@ namespace TexasHoldemPoker.API.Services
 
 
             var playerContributions =
-                await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId, game.CurrentState);
+                await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId,
+                    game.CurrentState);
             int currentPlayerContribution = playerContributions.GetValueOrDefault(userId, 0);
             int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
             int callAmount = highestContributionInRound - currentPlayerContribution;
@@ -499,7 +501,8 @@ namespace TexasHoldemPoker.API.Services
             var playerContributions =
                 await moveRepository.GetPlayerContributionsForRoundAsync(gameId, currentRound.GameRoundId,
                     game.CurrentState);
-            var movesThisRound = await moveRepository.GetMovesByGameRoundAsync(gameId, currentRound.GameRoundId);
+            var movesThisRound =
+                await moveRepository.GetMovesByGameRoundAsync(gameId, currentRound.GameRoundId, game.CurrentState);
 
             int highestContribution = playerContributions.Any() ? playerContributions.Values.Max() : 0;
 
@@ -525,20 +528,17 @@ namespace TexasHoldemPoker.API.Services
 
                 bool actedSinceCutoff = movesThisRound.Any(m =>
                     m.PlayerId == player.UserId && m.MoveTime >= actionCutoff && m.ActionType != "Blind");
-                bool isBBPreflopCheckOption = game.CurrentState == "PreFlop" && player.IsBigBlind &&
-                                              highestContribution == (await gameRepository.GetGameTableAsync(gameId))
-                                              .BigBlind && !actedSinceCutoff;
+                //bool isBBPreflopCheckOption = game.CurrentState == "PreFlop" && player.IsBigBlind &&
+                //                              highestContribution == (await gameRepository.GetGameTableAsync(gameId))
+                //                              .BigBlind && !actedSinceCutoff;
 
 
-                if (!actedSinceCutoff && !isBBPreflopCheckOption)
+                if (!actedSinceCutoff && player.CurrentChips > 0)
                 {
-                    if (player.CurrentChips > 0)
-                    {
-                        allPlayersActed = false;
-                    }
+                    allPlayersActed = false;
                 }
 
-                if (!allBetsMatched && !allPlayersActed) break;
+                if (!allBetsMatched || !allPlayersActed) break;
             }
 
             if (game.CurrentState == "PreFlop")
@@ -756,6 +756,7 @@ namespace TexasHoldemPoker.API.Services
 
             if (playersWithChips.Count < 2)
             {
+                // TODO: Change game state to "Waiting" if not enough players
                 await gameRepository.EndGameAsync(gameId);
                 return false;
             }
@@ -932,7 +933,7 @@ namespace TexasHoldemPoker.API.Services
                         : new List<CardDto>()
                 }).ToList(),
                 PlayerCards = requestingPlayerCards,
-                LastMoves = lastMoves.Select(m => new MoveDto
+                LastMoves = lastMoves.OrderByDescending(m => m.MoveTime).Take(10).Select(m => new MoveDto
                 {
                     PlayerId = m.PlayerId,
                     ActionType = m.ActionType,

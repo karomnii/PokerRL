@@ -31,7 +31,8 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<GameRound> GetCurrentRoundAsync(int gameId)
         {
             return await _context.GameRounds
-                .Where(gr => gr.GameId == gameId && gr.EndTime == null)
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.GameRoundId)
                 .FirstOrDefaultAsync();
         }
 

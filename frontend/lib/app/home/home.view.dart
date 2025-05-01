@@ -85,14 +85,16 @@ class HomePageView extends GetView<HomePageController> {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () {},
+                      onPressed: () =>
+                          Get.offNamed('/auth/login', preventDuplicates: false),
                       icon: const Icon(Icons.person),
                       label: const Text('Sign In'),
                     ),
                   ),
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () {},
+                      onPressed: () => Get.offNamed('/auth/register',
+                          preventDuplicates: false),
                       icon: const Icon(Icons.person_add),
                       label: const Text('Sign up'),
                     ),

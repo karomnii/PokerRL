@@ -1,21 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class Purchase
 {
-    public class Purchase
-    {
-        [Key] public int PurchaseId { get; set; }
+    public int PurchaseId { get; set; }
 
-        [ForeignKey("User")] public int UserId { get; set; }
-        public User User { get; set; }
+    public int UserId { get; set; }
 
-        [ForeignKey("ShopItem")] public int ItemId { get; set; }
-        public ShopItem ShopItem { get; set; }
+    public int ItemId { get; set; }
 
-        public DateTime PurchaseDate { get; set; }
-        public decimal Price { get; set; }
-        public string PaymentMethod { get; set; }
-        public string TransactionId { get; set; }
-    }
+    public DateTime PurchaseDate { get; set; }
+
+    public decimal Price { get; set; }
+
+    public string? PaymentMethod { get; set; }
+
+    public string? TransactionId { get; set; }
+
+    public virtual ShopItem Item { get; set; } = null!;
+
+    public virtual User User { get; set; } = null!;
 }

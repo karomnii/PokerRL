@@ -1,23 +1,39 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class User
 {
-    public class User
-    {
-        [Key] public int UserId { get; set; }
-        [Required, MaxLength(50)] public string Username { get; set; }
-        [Required, MaxLength(100)] public string Email { get; set; }
-        [Required, MaxLength(128)] public string PasswordHash { get; set; }
-        public int ChipsBalance { get; set; }
-        public string? AvatarImage { get; set; }
+    public int UserId { get; set; }
 
-        public DateTime RegistrationDate { get; set; }
-        public DateTime? LastLoginDate { get; set; }
-        public bool IsActive { get; set; }
+    public string Username { get; set; } = null!;
 
-        public ICollection<GamePlayer> GamePlayers { get; set; }
-        public ICollection<Purchase> Purchases { get; set; }
-        public ICollection<ChipTransaction> ChipTransactions { get; set; }
-        public ICollection<GameRoundWinner> GameRoundWinners { get; set; }
-    }
+    public string Email { get; set; } = null!;
+
+    public string PasswordHash { get; set; } = null!;
+
+    public int ChipsBalance { get; set; }
+
+    public string? AvatarImage { get; set; }
+
+    public DateTime RegistrationDate { get; set; }
+
+    public DateTime? LastLoginDate { get; set; }
+
+    public bool IsActive { get; set; }
+
+    public bool? IsBot { get; set; }
+
+    public virtual ICollection<ChipTransaction> ChipTransactions { get; set; } = new List<ChipTransaction>();
+
+    public virtual ICollection<GamePlayer> GamePlayers { get; set; } = new List<GamePlayer>();
+
+    public virtual ICollection<GameRoundWinner> GameRoundWinners { get; set; } = new List<GameRoundWinner>();
+
+    public virtual ICollection<Move> Moves { get; set; } = new List<Move>();
+
+    public virtual ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
+
+    public virtual ICollection<UserModel> UserModels { get; set; } = new List<UserModel>();
 }

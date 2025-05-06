@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using TexasHoldemPoker.API.Services;
@@ -20,7 +19,7 @@ public class Program
         builder.Services.AddSwaggerGen();
 
         // Add database context
-        builder.Services.AddDbContext<PokerDbContext>(options =>
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         // Add repositories
@@ -62,17 +61,17 @@ public class Program
         });
 
 
-        //// Add CORS
-        //builder.Services.AddCors(options =>
-        //{
-        //    options.AddPolicy("CorsPolicy", policy =>
-        //    {
-        //        policy.AllowAnyHeader()
-        //            .AllowAnyMethod()
-        //            .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
-        //            .AllowCredentials();
-        //    });
-        //});
+        // Add CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("CorsPolicy", policy =>
+            {
+                policy.AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
+                    .AllowCredentials();
+            });
+        });
 
         var app = builder.Build();
 

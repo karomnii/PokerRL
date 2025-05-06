@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TexasHoldemPoker.API.DTOs;
+using TexasHoldemPoker.API.Helpers;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
-using TexasHoldemPoker.API.Services;
 
 namespace TexasHoldemPoker.API.Services
 {

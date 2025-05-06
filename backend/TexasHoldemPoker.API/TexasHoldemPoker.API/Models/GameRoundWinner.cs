@@ -1,18 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class GameRoundWinner
 {
-    public class GameRoundWinner
-    {
-        [Key] public int GameRoundWinnerId { get; set; }
+    public int GameRoundWinnerId { get; set; }
 
-        [ForeignKey("GameRound")] public int GameRoundId { get; set; }
-        public GameRound GameRound { get; set; }
+    public int GameRoundId { get; set; }
 
-        [ForeignKey("User")] public int UserId { get; set; }
-        public User User { get; set; }
+    public int UserId { get; set; }
 
-        public int AmountWon { get; set; }
-    }
+    public int AmountWon { get; set; }
+
+    public virtual GameRound GameRound { get; set; } = null!;
+
+    public virtual User User { get; set; } = null!;
 }

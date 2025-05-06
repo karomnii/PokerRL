@@ -91,7 +91,89 @@ namespace TexasHoldemPoker.API.Controllers
                 Token = _tokenService.CreateToken(user)
             };
         }
+        
 
+        /*
+         *Logic of social-login 
+         * Front -> POST /social-login
+         * new user -> returns 202
+         * Front -> POST /choose-username
+         * full registerd new user returns 200
+         */
+        
+        [HttpPost("social-login")]
+        public async Task<ActionResult<UserDto>> SocialLogin([FromBody] SocialLoginDto loginDto)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(loginDto.Token))
+                return BadRequest("Provider and token are required.");
+
+            var info = await _tokenService.ValidateSocialTokenAsync(loginDto.Provider, loginDto.Token);
+            if (info is null) return Unauthorized("Invalid social token");
+
+
+            var user = await _userRepository.GetByEmailAsync(info.Email);
+            if (user is null)
+            {
+                user = new User
+                {
+                    Email = info.Email,
+                    RegistrationDate = DateTime.UtcNow,
+                    ChipsBalance = 1_000,
+                    IsActive = true,
+                    AvatarImage = "/images/default.png",
+                    Username = null
+                };
+                await _userRepository.CreateAsync(user);
+            }
+            if (string.IsNullOrWhiteSpace(user.Username))
+            {
+                return Accepted(new
+                {
+                    RequiresUsername = true,
+                    UserId   = user.UserId,
+                    Email    = user.Email
+                });
+            }
+            return Ok(new UserDto
+            {
+                UserId       = user.UserId,
+                Username     = user.Username,
+                Email        = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage  = user.AvatarImage,
+                Token        = _tokenService.CreateToken(user)
+            });
+        }
+        
+        
+        [Authorize]
+        [HttpPost("choose-username")]
+        public async Task<ActionResult<UserDto>> ChooseUsername([FromBody] ChooseUsernameDto dto)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(dto.Username))
+                return BadRequest("Username is required.");
+
+            if (await _userRepository.GetByUsernameAsync(dto.Username) != null)
+                return BadRequest("Username is taken.");
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var user   = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            user.Username = dto.Username;
+            await _userRepository.UpdateAsync(user);
+
+            return Ok(new UserDto
+            {
+                UserId       = user.UserId,
+                Username     = user.Username,
+                Email        = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage  = user.AvatarImage,
+                Token        = _tokenService.CreateToken(user)
+            });
+        }
+        
         [Authorize]
         [HttpGet("profile")]
         public async Task<ActionResult<UserDto>> GetProfile()

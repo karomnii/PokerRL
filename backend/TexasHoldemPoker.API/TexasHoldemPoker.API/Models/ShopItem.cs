@@ -13,6 +13,8 @@ public partial class ShopItem
 
     public decimal Price { get; set; }
 
+    public string Currency { get; set; }
+
     public string ItemType { get; set; } = null!;
 
     public bool IsActive { get; set; }

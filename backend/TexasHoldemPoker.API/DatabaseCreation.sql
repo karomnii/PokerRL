@@ -20,6 +20,7 @@ CREATE TABLE Users (
     PasswordHash NVARCHAR(128) NOT NULL,
     ChipsBalance INT NOT NULL DEFAULT 5000,
     AvatarImage NVARCHAR(255),
+    AvatarType NVARCHAR(20) NOT NULL DEFAULT 'Standard',
     RegistrationDate DATETIME NOT NULL DEFAULT GETDATE(),
     LastLoginDate DATETIME,
     IsActive BIT NOT NULL DEFAULT 1,
@@ -127,6 +128,7 @@ GO
 CREATE TABLE PlayerCards (
     PlayerCardId INT IDENTITY(1,1),
     GamePlayerId INT NOT NULL,
+	UserId INT NOT NULL,
 	GameRoundId INT NOT NULL,
     CardId INT NOT NULL,
     Position INT NOT NULL
@@ -151,6 +153,7 @@ CREATE TABLE ShopItems (
     Name NVARCHAR(100) NOT NULL,
     Description NVARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
+    Currency NVARCHAR(10) NOT NULL
     ItemType NVARCHAR(50) NOT NULL,
     IsActive BIT NOT NULL DEFAULT 1
 );
@@ -211,6 +214,7 @@ ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_GameRounds FOREIGN K
 ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GamePlayers FOREIGN KEY (GamePlayerId) REFERENCES GamePlayers(GamePlayerId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
 ALTER TABLE Moves ADD CONSTRAINT FK_Moves_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
 ALTER TABLE Moves ADD CONSTRAINT FK_Moves_Users FOREIGN KEY (PlayerId) REFERENCES Users(UserId);
@@ -236,6 +240,7 @@ ALTER TABLE PlayerCards ADD CONSTRAINT CK_PlayerCards_Position CHECK (Position I
 ALTER TABLE Moves ADD CONSTRAINT CK_Moves_ActionType CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn', 'Blind'));
 ALTER TABLE Moves ADD CONSTRAINT CK_Moves_Round CHECK (Round IN ('PreFlop', 'Flop', 'Turn', 'River'));
 ALTER TABLE ShopItems ADD CONSTRAINT CK_ShopItems_ItemType CHECK (ItemType IN ('Chips', 'Avatar', 'TableTheme', 'CardDeck', 'Emote'));
+ALTER TABLE ShopItems ADD CONSTRAINT CK_ShopItems_Currency CHECK (Currency IN ('PLN', 'CHIPS')) DEFAULT 'PLN';
 ALTER TABLE ChipTransactions ADD CONSTRAINT CK_ChipTransactions_TransactionType CHECK (TransactionType IN ('Purchase', 'GameWin', 'GameLoss', 'Bonus', 'Gift', 'Refund'));
 
 -- Indexes
@@ -263,6 +268,139 @@ SELECT
     (SELECT COUNT(*) FROM GamePlayers gp WHERE gp.UserId = u.UserId) AS GamesPlayed
 FROM Users u
 WHERE u.IsActive = 1;
+CREATE OR ALTER VIEW LeaderboardView AS
+SELECT 
+    u.UserId,
+    u.Username,
+    u.ChipsBalance,
+    u.AvatarImage,
+    (SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS GamesWon,
+    (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS GamesPlayed,
+    CASE 
+        WHEN (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) = 0 THEN 0
+        ELSE CAST((SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS FLOAT) /
+             CAST((SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS FLOAT)
+    END AS WinRatio
+FROM Users u
+WHERE u.IsActive = 1;
+
+-- Indexes for better performance
+CREATE INDEX IX_Games_TableId ON Games(TableId);
+CREATE INDEX IX_Games_WinnerId ON Games(WinnerId);
+CREATE INDEX IX_GamePlayers_GameId ON GamePlayers(GameId);
+CREATE INDEX IX_GamePlayers_UserId ON GamePlayers(UserId);
+CREATE INDEX IX_Moves_GameId ON Moves(GameId);
+CREATE INDEX IX_Moves_PlayerId ON Moves(PlayerId);
+CREATE INDEX IX_Purchases_UserId ON Purchases(UserId);
+CREATE INDEX IX_ChipTransactions_UserId ON ChipTransactions(UserId);
+GO
+
+-- Create a new game
+CREATE PROCEDURE CreateGame
+    @TableId INT,
+    @CurrentState NVARCHAR(20) = 'Waiting'
+AS
+BEGIN
+    INSERT INTO Games (TableId, CurrentState)
+    VALUES (@TableId, @CurrentState);
+    
+    RETURN SCOPE_IDENTITY();
+END;
+GO
+
+-- Add player to game
+CREATE PROCEDURE AddPlayerToGame
+    @GameId INT,
+    @UserId INT,
+    @SeatPosition INT,
+    @BuyInAmount INT
+AS
+BEGIN
+    -- Check if user has enough chips
+    DECLARE @UserChips INT;
+    SELECT @UserChips = ChipsBalance FROM Users WHERE UserId = @UserId;
+    
+    IF @UserChips < @BuyInAmount
+    BEGIN
+        RAISERROR('Not enough chips for buy-in', 16, 1);
+        RETURN;
+    END
+    
+    BEGIN TRANSACTION;
+    
+    -- Deduct chips from user balance
+    UPDATE Users
+    SET ChipsBalance = ChipsBalance - @BuyInAmount
+    WHERE UserId = @UserId;
+    
+    -- Add player to game
+    INSERT INTO GamePlayers (GameId, UserId, SeatPosition, InitialChips, CurrentChips)
+    VALUES (@GameId, @UserId, @SeatPosition, @BuyInAmount, @BuyInAmount);
+    
+    -- Log transaction
+    INSERT INTO ChipTransactions (UserId, Amount, TransactionType, ReferenceId, Description)
+    VALUES (@UserId, -@BuyInAmount, 'GameLoss', @GameId, 'Buy-in for game');
+    
+    COMMIT TRANSACTION;
+END;
+GO
+
+-- Record player move
+CREATE PROCEDURE RecordMove
+    @GameId INT,
+    @PlayerId INT,
+    @ActionType NVARCHAR(20),
+    @Amount INT,
+    @Round NVARCHAR(20)
+AS
+BEGIN
+    INSERT INTO Moves (GameId, PlayerId, ActionType, Amount, Round)
+    VALUES (@GameId, @PlayerId, @ActionType, @Amount, @Round);
+    
+    -- Update pot size
+    IF @ActionType IN ('Bet', 'Call', 'Raise', 'AllIn')
+    BEGIN
+        UPDATE Games
+        SET PotSize = PotSize + @Amount
+        WHERE GameId = @GameId;
+        
+        -- Update player's current chips
+        UPDATE GamePlayers
+        SET CurrentChips = CurrentChips - @Amount
+        WHERE GameId = @GameId AND UserId = @PlayerId;
+    END
+END;
+GO
+
+-- End game and distribute winnings
+CREATE PROCEDURE EndGame
+    @GameId INT,
+    @WinnerId INT
+AS
+BEGIN
+    DECLARE @PotSize INT;
+    SELECT @PotSize = PotSize FROM Games WHERE GameId = @GameId;
+    
+    BEGIN TRANSACTION;
+    
+    -- Update game
+    UPDATE Games
+    SET EndTime = GETDATE(),
+        CurrentState = 'Completed',
+        WinnerId = @WinnerId
+    WHERE GameId = @GameId;
+    
+    -- Add chips to winner
+    UPDATE Users
+    SET ChipsBalance = ChipsBalance + @PotSize
+    WHERE UserId = @WinnerId;
+    
+    -- Log transaction
+    INSERT INTO ChipTransactions (UserId, Amount, TransactionType, ReferenceId, Description)
+    VALUES (@WinnerId, @PotSize, 'GameWin', @GameId, 'Winnings from game');
+    
+    COMMIT TRANSACTION;
+END;
 GO
 
 -- Populate Cards Table
@@ -281,9 +419,11 @@ INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlin
 GO
 
 -- Populate ShopItems Table
-INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive) VALUES
-('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1),
-('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1),
-('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1),
-('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1);
-GO
+INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) VALUES 
+('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1, 'PLN'),
+('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1, 'PLN'),
+('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1, 'PLN'),
+('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1, 'CHIPS'),
+('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 1, 'PLN'),
+('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 1, 'PLN'),
+('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 1, 'CHIPS');

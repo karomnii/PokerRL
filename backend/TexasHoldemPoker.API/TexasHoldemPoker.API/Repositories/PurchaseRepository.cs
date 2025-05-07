@@ -1,15 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class PurchaseRepository : IPurchaseRepository
     {
-        private readonly PokerDbContext context;
+        private readonly ApplicationDbContext context;
 
-        public PurchaseRepository(PokerDbContext context)
+        public PurchaseRepository(ApplicationDbContext context)
         {
             this.context = context;
         }

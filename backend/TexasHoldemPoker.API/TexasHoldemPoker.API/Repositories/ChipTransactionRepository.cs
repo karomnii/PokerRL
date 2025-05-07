@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Models;
 
+// TODO: change TransactionType = "Refund", "GameLoss", "GameWin" to some other transaction types, it needs to be changed in database constraints(buy-in, pull-out?)
 namespace TexasHoldemPoker.API.Repositories
 {
     public class ChipTransactionRepository : IChipTransactionRepository
     {
-        private readonly PokerDbContext context;
+        private readonly ApplicationDbContext context;
 
-        public ChipTransactionRepository(PokerDbContext context)
+        public ChipTransactionRepository(ApplicationDbContext context)
         {
             this.context = context;
         }

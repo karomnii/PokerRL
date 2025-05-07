@@ -1,15 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class GamePlayerRepository : IGamePlayerRepository
     {
-        private readonly PokerDbContext context;
+        private readonly ApplicationDbContext context;
         private readonly IChipTransactionRepository chipTransactionRepository;
 
-        public GamePlayerRepository(PokerDbContext context, IChipTransactionRepository chipTransactionRepository)
+        public GamePlayerRepository(ApplicationDbContext context, IChipTransactionRepository chipTransactionRepository)
         {
             this.context = context;
             this.chipTransactionRepository = chipTransactionRepository;
@@ -86,6 +86,23 @@ namespace TexasHoldemPoker.API.Repositories
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        // TODO: create logic for adding a model
+        public async Task<GamePlayer> AddModelToGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
+        {
+            return new GamePlayer
+            {
+                GameId = gameId,
+                UserId = userId,
+                SeatPosition = seatPosition,
+                InitialChips = buyInAmount,
+                CurrentChips = buyInAmount,
+                IsActive = true,
+                IsDealer = false,
+                IsSmallBlind = false,
+                IsBigBlind = false
+            };
         }
 
         public async Task<bool> UpdatePlayerChipsAsync(int gamePlayerId, int amount)
@@ -186,13 +203,17 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<bool> RemovePlayerFromGameAsync(int gamePlayerId)
         {
             var gamePlayer = await context.GamePlayers
-                .Include(gp => gp.Game)
                 .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
+
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gamePlayer.GameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
 
             if (gamePlayer == null)
                 return false;
 
-            if (gamePlayer.Game.CurrentState != "Waiting" && gamePlayer.Game.CurrentState != "Completed")
+            if (gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
                 return false;
 
             using var transaction = await context.Database.BeginTransactionAsync();
@@ -219,10 +240,39 @@ namespace TexasHoldemPoker.API.Repositories
             }
         }
 
+        // TODO: create logic for removing a model
+
+        public async Task<bool> RemoveModelFromGameAsync(int gamePlayerId)
+        {
+            return true;
+        }
+
+        // TODO: might need to change logic to skip models
+
         public async Task<int> GetNextActivePlayerPositionAsync(int gameId, int currentPosition)
         {
             var players = await context.GamePlayers
                 .Where(gp => gp.GameId == gameId && gp.IsActive)
+                .OrderBy(gp => gp.SeatPosition)
+                .ToListAsync();
+
+            if (players.Count <= 1)
+                return -1;
+
+            var nextPlayer = players.FirstOrDefault(p => p.SeatPosition > currentPosition);
+
+            if (nextPlayer == null)
+                return players.First().SeatPosition;
+
+            return nextPlayer.SeatPosition;
+        }
+
+        public async Task<int> GetNextActiveHumanPlayerPositionAsync(int gameId, int currentPosition)
+        {
+            var players = await context.GamePlayers
+                .Include(gp => gp.User)
+                .Where(gp => gp.GameId == gameId && gp.IsActive)
+                .Where(gp => gp.User.IsBot != true)
                 .OrderBy(gp => gp.SeatPosition)
                 .ToListAsync();
 

@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class MoveRepository : IMoveRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public MoveRepository(PokerDbContext context)
+        public MoveRepository(ApplicationDbContext context)
         {
             _context = context;
         }

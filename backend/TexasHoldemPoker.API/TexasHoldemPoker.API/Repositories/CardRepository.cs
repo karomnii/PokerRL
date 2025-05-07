@@ -1,14 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class CardRepository : ICardRepository
     {
-        private readonly PokerDbContext context;
+        private readonly ApplicationDbContext context;
 
-        public CardRepository(PokerDbContext context)
+        public CardRepository(ApplicationDbContext context)
         {
             this.context = context;
         }
@@ -25,8 +24,16 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<IEnumerable<Card>> GetCommunityCardsByGameIdAsync(int gameId)
         {
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return Enumerable.Empty<Card>();
+
             return await context.CommunityCards
-                .Where(cc => cc.GameId == gameId)
+                .Where(cc => cc.GameRoundId == gameRound.GameRoundId)
                 .Include(cc => cc.Card)
                 .OrderBy(cc => cc.Position)
                 .Select(cc => cc.Card)
@@ -45,14 +52,22 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> DealCommunityCardAsync(int gameId, int cardId, int position)
         {
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return false;
+
             var existingCard = await context.CommunityCards
-                .FirstOrDefaultAsync(cc => cc.GameId == gameId && cc.Position == position);
+                .FirstOrDefaultAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.Position == position);
 
             if (existingCard != null)
                 return false;
 
             var cardUsed = await context.CommunityCards
-                .AnyAsync(cc => cc.GameId == gameId && cc.CardId == cardId);
+                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
 
             if (cardUsed)
                 return false;
@@ -66,7 +81,7 @@ namespace TexasHoldemPoker.API.Repositories
 
             var communityCard = new CommunityCard
             {
-                GameId = gameId,
+                GameRoundId = gameRound.GameRoundId,
                 CardId = cardId,
                 Position = position
             };
@@ -78,6 +93,7 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> DealPlayerCardAsync(int gamePlayerId, int cardId, int position)
         {
+
             var existingCard = await context.PlayerCards
                 .FirstOrDefaultAsync(pc => pc.GamePlayerId == gamePlayerId && pc.Position == position);
 
@@ -88,15 +104,23 @@ namespace TexasHoldemPoker.API.Repositories
             if (gamePlayer == null)
                 return false;
 
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gamePlayer.GameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return false;
+
             var cardUsedInCommunity = await context.CommunityCards
-                .AnyAsync(cc => cc.GameId == gamePlayer.GameId && cc.CardId == cardId);
+                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
 
             if (cardUsedInCommunity)
                 return false;
 
             var cardUsedByOtherPlayer = await context.PlayerCards
                 .Include(pc => pc.GamePlayer)
-                .AnyAsync(pc => pc.GamePlayer.GameId == gamePlayer.GameId &&
+                .AnyAsync(pc => pc.GameRoundId == gameRound.GameRoundId &&
                                 pc.CardId == cardId &&
                                 pc.GamePlayer.GamePlayerId != gamePlayerId);
 
@@ -105,6 +129,7 @@ namespace TexasHoldemPoker.API.Repositories
 
             var playerCard = new PlayerCard
             {
+                GameRoundId = gameRound.GameRoundId,
                 GamePlayerId = gamePlayerId,
                 CardId = cardId,
                 Position = position
@@ -115,29 +140,29 @@ namespace TexasHoldemPoker.API.Repositories
             return true;
         }
 
-        public async Task<bool> ClearGameCardsAsync(int gameId)
-        {
-            var communityCards = await context.CommunityCards
-                .Where(cc => cc.GameId == gameId)
-                .ToListAsync();
+        //public async Task<bool> ClearGameCardsAsync(int gameId)
+        //{
+        //    var communityCards = await context.CommunityCards
+        //        .Where(cc => cc.GameId == gameId)
+        //        .ToListAsync();
 
-            context.CommunityCards.RemoveRange(communityCards);
+        //    context.CommunityCards.RemoveRange(communityCards);
 
-            var gamePlayers = await context.GamePlayers
-                .Where(gp => gp.GameId == gameId)
-                .ToListAsync();
+        //    var gamePlayers = await context.GamePlayers
+        //        .Where(gp => gp.GameId == gameId)
+        //        .ToListAsync();
 
-            foreach (var gamePlayer in gamePlayers)
-            {
-                var playerCards = await context.PlayerCards
-                    .Where(pc => pc.GamePlayerId == gamePlayer.GamePlayerId)
-                    .ToListAsync();
+        //    foreach (var gamePlayer in gamePlayers)
+        //    {
+        //        var playerCards = await context.PlayerCards
+        //            .Where(pc => pc.GamePlayerId == gamePlayer.GamePlayerId)
+        //            .ToListAsync();
 
-                context.PlayerCards.RemoveRange(playerCards);
-            }
+        //        context.PlayerCards.RemoveRange(playerCards);
+        //    }
 
-            await context.SaveChangesAsync();
-            return true;
-        }
+        //    await context.SaveChangesAsync();
+        //    return true;
+        //}
     }
 }

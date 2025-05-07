@@ -118,7 +118,7 @@ namespace TexasHoldemPoker.API.Controllers
                 {
                     Email = info.Email,
                     RegistrationDate = DateTime.UtcNow,
-                    ChipsBalance = 1_000,
+                    ChipsBalance = 1000,
                     IsActive = true,
                     AvatarImage = "/images/default.png",
                     Username = null

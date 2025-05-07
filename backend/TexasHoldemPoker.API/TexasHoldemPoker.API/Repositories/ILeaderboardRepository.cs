@@ -7,5 +7,6 @@ namespace TexasHoldemPoker.API.Repositories
         Task<IEnumerable<LeaderboardEntry>> GetTopPlayersAsync(int count);
         Task<LeaderboardEntry> GetPlayerRankingAsync(int userId);
         Task<int> GetPlayerRankPositionAsync(int userId);
+        Task<IEnumerable<LeaderboardEntry>> GetTopPlayersSortedAsync(int count);
     }
 }

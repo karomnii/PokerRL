@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      swagger_dart_code_generator:
+        options:
+          input_folder: 'lib/swagger'
+          output_folder: 'lib/api'
+          separate_models: true
+          enums_case_sensitive: true

@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class GameRoundRepository : IGameRoundRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public GameRoundRepository(PokerDbContext context)
+        public GameRoundRepository(ApplicationDbContext context)
         {
             _context = context;
         }

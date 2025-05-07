@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public UserRepository(PokerDbContext context)
+        public UserRepository(ApplicationDbContext context)
         {
             _context = context;
         }

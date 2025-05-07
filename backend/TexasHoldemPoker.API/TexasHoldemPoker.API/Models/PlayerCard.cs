@@ -9,6 +9,8 @@ public partial class PlayerCard
 
     public int GamePlayerId { get; set; }
 
+    public int UserId { get; set; }
+
     public int GameRoundId { get; set; }
 
     public int CardId { get; set; }
@@ -20,4 +22,6 @@ public partial class PlayerCard
     public virtual GamePlayer GamePlayer { get; set; } = null!;
 
     public virtual GameRound GameRound { get; set; } = null!;
+
+    public virtual User User { get; set; } = null!;
 }

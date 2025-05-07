@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class GameRepository : IGameRepository
     {
-        private readonly PokerDbContext context;
+        private readonly ApplicationDbContext context;
 
-        public GameRepository(PokerDbContext context)
+        public GameRepository(ApplicationDbContext context)
         {
             this.context = context;
         }
@@ -19,18 +19,21 @@ namespace TexasHoldemPoker.API.Repositories
                 .Include(g => g.Table)
                 .Include(g => g.GamePlayers)
                 .ThenInclude(gp => gp.User)
-                .Include(g => g.CommunityCards)
-                .ThenInclude(cc => cc.Card)
-                .Include(g => g.GameRounds)
-                .ThenInclude(gr => gr.Winners)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
+                .ThenInclude(gr => gr.CommunityCards)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
+                .ThenInclude(gr => gr.GameRoundWinners) // Include winners of the most recent round
                 .FirstOrDefaultAsync(g => g.GameId == gameId);
         }
 
         public async Task<IEnumerable<Game>> GetActiveGamesAsync()
         {
             return await context.Games
-                .Where(g => g.CurrentState != "Completed")
                 .Include(g => g.Table)
+                .Include(g => g.GameRounds)
+                .Where(g => g.GameRounds
+                    .OrderByDescending(gr => gr.RoundNumber)
+                    .FirstOrDefault().CurrentState == "Waiting")
                 .ToListAsync();
         }
 
@@ -39,6 +42,7 @@ namespace TexasHoldemPoker.API.Repositories
             return await context.Games
                 .Where(g => g.TableId == tableId)
                 .Include(g => g.GamePlayers)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
                 .ToListAsync();
         }
 
@@ -53,7 +57,7 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<Game> CreateGameAsync(Game game)
         {
             game.StartTime = DateTime.UtcNow;
-            game.CurrentState = "Waiting";
+            //game.CurrentState = "Waiting";
             game.PotSize = 0;
 
             context.Games.Add(game);
@@ -62,6 +66,7 @@ namespace TexasHoldemPoker.API.Repositories
             return game;
         }
 
+        // TODO: Check if it works with GameRound modifications
         public async Task UpdateGameAsync(Game game)
         {
             context.Entry(game).State = EntityState.Modified;

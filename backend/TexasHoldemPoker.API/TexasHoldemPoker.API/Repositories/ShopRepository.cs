@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class ShopRepository : IShopRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public ShopRepository(PokerDbContext context)
+        public ShopRepository(ApplicationDbContext context)
         {
             _context = context;
         }

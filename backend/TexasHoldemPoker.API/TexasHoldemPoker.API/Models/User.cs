@@ -15,7 +15,9 @@ public partial class User
 
     public int ChipsBalance { get; set; }
 
-    public string? AvatarImage { get; set; }
+    public string? AvatarImage { get; set; } = "/images/default.png"; 
+
+    public string AvatarType { get; set; }
 
     public DateTime RegistrationDate { get; set; }
 

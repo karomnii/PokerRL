@@ -127,6 +127,7 @@ GO
 CREATE TABLE PlayerCards (
     PlayerCardId INT IDENTITY(1,1),
     GamePlayerId INT NOT NULL,
+	UserId INT NOT NULL,
 	GameRoundId INT NOT NULL,
     CardId INT NOT NULL,
     Position INT NOT NULL
@@ -211,6 +212,7 @@ ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_GameRounds FOREIGN K
 ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GamePlayers FOREIGN KEY (GamePlayerId) REFERENCES GamePlayers(GamePlayerId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
 ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
 ALTER TABLE Moves ADD CONSTRAINT FK_Moves_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
 ALTER TABLE Moves ADD CONSTRAINT FK_Moves_Users FOREIGN KEY (PlayerId) REFERENCES Users(UserId);
@@ -287,3 +289,5 @@ INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive) VALUES
 ('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1),
 ('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1);
 GO
+
+ALTER TABLE PlayerCards ADD UserId INT NOT NULL; 

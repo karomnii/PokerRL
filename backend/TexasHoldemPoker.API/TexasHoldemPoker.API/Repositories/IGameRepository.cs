@@ -4,7 +4,7 @@ namespace TexasHoldemPoker.API.Repositories
 {
     public interface IGameRepository
     {
-        Task<Game?> GetByIdAsync(int gameId);
+        Task<Game> GetByIdAsync(int gameId);
         Task<IEnumerable<Game>> GetActiveGamesAsync();
         Task<IEnumerable<Game>> GetGamesByTableIdAsync(int tableId);
         Task<IEnumerable<Game>> GetGamesByUserIdAsync(int userId);

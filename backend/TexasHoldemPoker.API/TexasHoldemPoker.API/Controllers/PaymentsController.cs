@@ -1,10 +1,9 @@
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
-
-namespace TexasHoldemPoker.API.Controllers;
-
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
+
+namespace TexasHoldemPoker.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -12,11 +11,15 @@ public class PaymentsController : ControllerBase
 {
     private readonly StripePaymentService _paymentService;
     private readonly ApplicationDbContext _context;
+    private readonly IPurchaseRepository _purchaseRepository;
 
-    public PaymentsController(StripePaymentService paymentService, ApplicationDbContext context)
+    public PaymentsController(StripePaymentService paymentService
+        , ApplicationDbContext context
+        , IPurchaseRepository purchaseRepository)
     {
         _paymentService = paymentService;
         _context = context;
+        _purchaseRepository = purchaseRepository;
     }
     
     private async Task<bool> ProcessPurchaseAsync(int userId, ShopItem item, string paymentMethod, string transactionId = null)
@@ -131,10 +134,8 @@ public class PaymentsController : ControllerBase
 
     
     [HttpGet("cancel")]
-    public IActionResult Cancel()
-    {
-        return Ok(new { Message = "Payment cancelled." });
-    }
+    public IActionResult Cancel() =>
+         Ok(new { Message = "Payment cancelled." });
     
     
 }

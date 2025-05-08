@@ -7,8 +7,7 @@ namespace TexasHoldemPoker.API.Repositories
     public class GameRepository : IGameRepository
     {
         private readonly ApplicationDbContext context;
-
-        public GameRepository(ApplicationDbContext context)
+       public GameRepository(ApplicationDbContext context)
         {
             this.context = context;
         }

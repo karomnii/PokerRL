@@ -16,14 +16,18 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<GameRound> GetByIdAsync(int gameRoundId)
         {
             return await _context.GameRounds
-                .Include(gr => gr.Winners)
+                .Include(gr => gr.CommunityCards)
+                .Include(gr => gr.PlayerCards)
+                .Include(gr => gr.GameRoundWinners)
                 .FirstOrDefaultAsync(gr => gr.GameRoundId == gameRoundId);
         }
 
         public async Task<IEnumerable<GameRound>> GetByGameIdAsync(int gameId)
         {
             return await _context.GameRounds
-                .Include(gr => gr.Winners)
+                .Include(gr => gr.CommunityCards)
+                .Include(gr => gr.PlayerCards)
+                .Include(gr => gr.GameRoundWinners)
                 .Where(gr => gr.GameId == gameId)
                 .ToListAsync();
         }
@@ -31,6 +35,9 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<GameRound> GetCurrentRoundAsync(int gameId)
         {
             return await _context.GameRounds
+                .Include(gr => gr.CommunityCards)
+                .Include(gr => gr.PlayerCards)
+                .Include(gr => gr.GameRoundWinners)
                 .Where(gr => gr.GameId == gameId)
                 .OrderByDescending(gr => gr.GameRoundId)
                 .FirstOrDefaultAsync();
@@ -46,13 +53,17 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<GameRound> StartNewRoundAsync(int gameId)
         {
-            // Get the last round number for this game
             var lastRound = await _context.GameRounds
                 .Where(gr => gr.GameId == gameId)
                 .OrderByDescending(gr => gr.RoundNumber)
                 .FirstOrDefaultAsync();
 
             int roundNumber = (lastRound?.RoundNumber ?? 0) + 1;
+            if (lastRound != null && lastRound.EndTime == null && lastRound.CurrentState == "Waiting")
+            {
+                lastRound.EndTime = DateTime.UtcNow;
+                lastRound.CurrentState = "Completed";
+            }
 
             var newRound = new GameRound
             {

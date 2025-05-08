@@ -2,10 +2,8 @@ using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
-// using TexasHoldemPoker.API.Data;
 
 namespace TexasHoldemPoker.API.Controllers;
-
 
 [ApiController]
 [Route("api/[controller]")]

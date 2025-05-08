@@ -9,7 +9,7 @@ public class ModelRepository : IModelRepository
     public ModelRepository(ApplicationDbContext context) =>
                                             _context = context;
 
-    public async Task<Model> AddAsync(string name, string? path, string? difficulty)
+    public async Task<Model> AddAsync(string name, string path, string? difficulty)
     {
         if(await ExistsAsync(name))
             throw new InvalidOperationException($"Model with name '{name}' already exists.");

@@ -216,7 +216,7 @@ namespace TexasHoldemPoker.API.Controllers
         
         
         [HttpGet("leaderboard/top")]
-        public async Task<ActionResult<IEnumerable<LeaderboardEntry>>> GetTopPlayers([FromQuery] int count = 10)
+        public async Task<ActionResult<IEnumerable<LeaderboardView>>> GetTopPlayers([FromQuery] int count = 10)
         {
             var topPlayers = await _leaderboardRepository.GetTopPlayersSortedAsync(count);
             return Ok(topPlayers);

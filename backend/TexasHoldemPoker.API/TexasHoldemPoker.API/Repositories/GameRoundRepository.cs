@@ -59,6 +59,11 @@ namespace TexasHoldemPoker.API.Repositories
                 .FirstOrDefaultAsync();
 
             int roundNumber = (lastRound?.RoundNumber ?? 0) + 1;
+            if (lastRound != null && lastRound.EndTime == null && lastRound.CurrentState == "Waiting")
+            {
+                lastRound.EndTime = DateTime.UtcNow;
+                lastRound.CurrentState = "Completed";
+            }
 
             var newRound = new GameRound
             {

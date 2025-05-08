@@ -5,16 +5,15 @@ namespace TexasHoldemPoker.API.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using Stripe.Checkout;
-using TexasHoldemPoker.API.Data;
 
 [ApiController]
 [Route("api/[controller]")]
 public class PaymentsController : ControllerBase
 {
     private readonly StripePaymentService _paymentService;
-    private readonly PokerDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public PaymentsController(StripePaymentService paymentService, PokerDbContext context)
+    public PaymentsController(StripePaymentService paymentService, ApplicationDbContext context)
     {
         _paymentService = paymentService;
         _context = context;

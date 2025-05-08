@@ -7,44 +7,34 @@ namespace TexasHoldemPoker.API.Repositories
 {
     public class PurchaseRepository : IPurchaseRepository
     {
-        private readonly ApplicationDbContext context;
+        private readonly ApplicationDbContext _context;
+        public PurchaseRepository(ApplicationDbContext context) => _context = context;
 
-        public PurchaseRepository(ApplicationDbContext context)
-        {
-            this.context = context;
-        }
-
-        public async Task<Purchase> GetByIdAsync(int purchaseId)
-        {
-            return await context.Purchases
-                .Include(p => p.ShopItem)
+        public async Task<Purchase?> GetByIdAsync(int purchaseId) =>
+            await _context.Purchases
+                .Include(p => p.Item)
                 .FirstOrDefaultAsync(p => p.PurchaseId == purchaseId);
-        }
 
         public async Task<IEnumerable<Purchase>> GetPurchasesByUserIdAsync(int userId)
-        {
-            return await context.Purchases
+        => await _context.Purchases
                 .Where(p => p.UserId == userId)
-                .Include(p => p.ShopItem)
+                .Include(p => p.Item)
                 .OrderByDescending(p => p.PurchaseDate)
                 .ToListAsync();
-        }
+        
 
         public async Task<Purchase> CreatePurchaseAsync(int userId, int itemId, string paymentMethod,
             string transactionId)
         {
-            using var transaction = await context.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                var item = await context.ShopItems.FindAsync(itemId);
-                if (item == null)
-                    throw new InvalidOperationException("Item not found");
-
-                var user = await context.Users.FindAsync(userId);
-                if (user == null)
-                    throw new InvalidOperationException("User not found");
-
+                var item = await _context.ShopItems.FindAsync(itemId) 
+                           ?? throw new InvalidOperationException($"Item id = {itemId} not found");
+                var user = await _context.Users.FindAsync(userId) 
+                           ?? throw new InvalidOperationException($"User with id = {userId}not found");
+                
                 var purchase = new Purchase
                 {
                     UserId = userId,
@@ -55,7 +45,7 @@ namespace TexasHoldemPoker.API.Repositories
                     TransactionId = transactionId
                 };
 
-                context.Purchases.Add(purchase);
+                _context.Purchases.Add(purchase);
 
                 if (item.ItemType == "Chips")
                 {
@@ -72,10 +62,10 @@ namespace TexasHoldemPoker.API.Repositories
                         Description = $"Purchased {chipAmount} chips"
                     };
 
-                    context.ChipTransactions.Add(chipTransaction);
+                    _context.ChipTransactions.Add(chipTransaction);
                 }
 
-                await context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return purchase;

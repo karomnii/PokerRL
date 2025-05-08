@@ -8,77 +8,76 @@ part of 'swagger.models.swagger.dart';
 
 Card _$CardFromJson(Map<String, dynamic> json) => Card(
       cardId: (json['cardId'] as num?)?.toInt(),
-      suit: json['suit'] as String?,
-      $value: json['value'] as String?,
-      communityCards: (json['communityCards'] as List<dynamic>?)
-              ?.map((e) => CommunityCard.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      playerCards: (json['playerCards'] as List<dynamic>?)
-              ?.map((e) => PlayerCard.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      suit: json['suit'] as String,
+      $value: json['value'] as String,
     );
 
 Map<String, dynamic> _$CardToJson(Card instance) => <String, dynamic>{
       'cardId': instance.cardId,
       'suit': instance.suit,
       'value': instance.$value,
-      'communityCards':
-          instance.communityCards?.map((e) => e.toJson()).toList(),
-      'playerCards': instance.playerCards?.map((e) => e.toJson()).toList(),
+    };
+
+CardDto _$CardDtoFromJson(Map<String, dynamic> json) => CardDto(
+      suit: json['suit'] as String?,
+      $value: json['value'] as String?,
+    );
+
+Map<String, dynamic> _$CardDtoToJson(CardDto instance) => <String, dynamic>{
+      'suit': instance.suit,
+      'value': instance.$value,
     };
 
 ChipTransaction _$ChipTransactionFromJson(Map<String, dynamic> json) =>
     ChipTransaction(
       transactionId: (json['transactionId'] as num?)?.toInt(),
       userId: (json['userId'] as num?)?.toInt(),
+      user: json['user'] == null
+          ? null
+          : User.fromJson(json['user'] as Map<String, dynamic>),
       amount: (json['amount'] as num?)?.toInt(),
-      transactionType: json['transactionType'] as String?,
+      transactionType: json['transactionType'] as String,
       referenceId: (json['referenceId'] as num?)?.toInt(),
       transactionDate: json['transactionDate'] == null
           ? null
           : DateTime.parse(json['transactionDate'] as String),
       description: json['description'] as String?,
-      user: json['user'] == null
-          ? null
-          : User.fromJson(json['user'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$ChipTransactionToJson(ChipTransaction instance) =>
     <String, dynamic>{
       'transactionId': instance.transactionId,
       'userId': instance.userId,
+      'user': instance.user?.toJson(),
       'amount': instance.amount,
       'transactionType': instance.transactionType,
       'referenceId': instance.referenceId,
       'transactionDate': instance.transactionDate?.toIso8601String(),
       'description': instance.description,
-      'user': instance.user?.toJson(),
     };
 
 CommunityCard _$CommunityCardFromJson(Map<String, dynamic> json) =>
     CommunityCard(
       communityCardId: (json['communityCardId'] as num?)?.toInt(),
       gameId: (json['gameId'] as num?)?.toInt(),
-      cardId: (json['cardId'] as num?)?.toInt(),
-      position: (json['position'] as num?)?.toInt(),
       game: json['game'] == null
           ? null
           : Game.fromJson(json['game'] as Map<String, dynamic>),
+      cardId: (json['cardId'] as num?)?.toInt(),
       card: json['card'] == null
           ? null
           : Card.fromJson(json['card'] as Map<String, dynamic>),
+      position: (json['position'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CommunityCardToJson(CommunityCard instance) =>
     <String, dynamic>{
       'communityCardId': instance.communityCardId,
       'gameId': instance.gameId,
-      'cardId': instance.cardId,
-      'position': instance.position,
       'game': instance.game?.toJson(),
+      'cardId': instance.cardId,
       'card': instance.card?.toJson(),
+      'position': instance.position,
     };
 
 CreateGameDto _$CreateGameDtoFromJson(Map<String, dynamic> json) =>
@@ -94,21 +93,21 @@ Map<String, dynamic> _$CreateGameDtoToJson(CreateGameDto instance) =>
 Game _$GameFromJson(Map<String, dynamic> json) => Game(
       gameId: (json['gameId'] as num?)?.toInt(),
       tableId: (json['tableId'] as num?)?.toInt(),
+      table: json['table'] == null
+          ? null
+          : PokerTable.fromJson(json['table'] as Map<String, dynamic>),
       startTime: json['startTime'] == null
           ? null
           : DateTime.parse(json['startTime'] as String),
       endTime: json['endTime'] == null
           ? null
           : DateTime.parse(json['endTime'] as String),
-      currentState: json['currentState'] as String?,
+      currentState: json['currentState'] as String,
       potSize: (json['potSize'] as num?)?.toInt(),
-      winnerId: (json['winnerId'] as num?)?.toInt(),
-      table: json['table'] == null
+      currentTurnUserId: (json['currentTurnUserId'] as num?)?.toInt(),
+      currentTurnUser: json['currentTurnUser'] == null
           ? null
-          : PokerTable.fromJson(json['table'] as Map<String, dynamic>),
-      winner: json['winner'] == null
-          ? null
-          : User.fromJson(json['winner'] as Map<String, dynamic>),
+          : User.fromJson(json['currentTurnUser'] as Map<String, dynamic>),
       gamePlayers: (json['gamePlayers'] as List<dynamic>?)
               ?.map((e) => GamePlayer.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -121,28 +120,39 @@ Game _$GameFromJson(Map<String, dynamic> json) => Game(
               ?.map((e) => CommunityCard.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      gameRounds: (json['gameRounds'] as List<dynamic>?)
+              ?.map((e) => GameRound.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$GameToJson(Game instance) => <String, dynamic>{
       'gameId': instance.gameId,
       'tableId': instance.tableId,
+      'table': instance.table?.toJson(),
       'startTime': instance.startTime?.toIso8601String(),
       'endTime': instance.endTime?.toIso8601String(),
       'currentState': instance.currentState,
       'potSize': instance.potSize,
-      'winnerId': instance.winnerId,
-      'table': instance.table?.toJson(),
-      'winner': instance.winner?.toJson(),
+      'currentTurnUserId': instance.currentTurnUserId,
+      'currentTurnUser': instance.currentTurnUser?.toJson(),
       'gamePlayers': instance.gamePlayers?.map((e) => e.toJson()).toList(),
       'moves': instance.moves?.map((e) => e.toJson()).toList(),
       'communityCards':
           instance.communityCards?.map((e) => e.toJson()).toList(),
+      'gameRounds': instance.gameRounds?.map((e) => e.toJson()).toList(),
     };
 
 GamePlayer _$GamePlayerFromJson(Map<String, dynamic> json) => GamePlayer(
       gamePlayerId: (json['gamePlayerId'] as num?)?.toInt(),
       gameId: (json['gameId'] as num?)?.toInt(),
+      game: json['game'] == null
+          ? null
+          : Game.fromJson(json['game'] as Map<String, dynamic>),
       userId: (json['userId'] as num?)?.toInt(),
+      user: json['user'] == null
+          ? null
+          : User.fromJson(json['user'] as Map<String, dynamic>),
       seatPosition: (json['seatPosition'] as num?)?.toInt(),
       initialChips: (json['initialChips'] as num?)?.toInt(),
       currentChips: (json['currentChips'] as num?)?.toInt(),
@@ -150,12 +160,6 @@ GamePlayer _$GamePlayerFromJson(Map<String, dynamic> json) => GamePlayer(
       isDealer: json['isDealer'] as bool?,
       isSmallBlind: json['isSmallBlind'] as bool?,
       isBigBlind: json['isBigBlind'] as bool?,
-      game: json['game'] == null
-          ? null
-          : Game.fromJson(json['game'] as Map<String, dynamic>),
-      user: json['user'] == null
-          ? null
-          : User.fromJson(json['user'] as Map<String, dynamic>),
       playerCards: (json['playerCards'] as List<dynamic>?)
               ?.map((e) => PlayerCard.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -166,7 +170,9 @@ Map<String, dynamic> _$GamePlayerToJson(GamePlayer instance) =>
     <String, dynamic>{
       'gamePlayerId': instance.gamePlayerId,
       'gameId': instance.gameId,
+      'game': instance.game?.toJson(),
       'userId': instance.userId,
+      'user': instance.user?.toJson(),
       'seatPosition': instance.seatPosition,
       'initialChips': instance.initialChips,
       'currentChips': instance.currentChips,
@@ -174,48 +180,114 @@ Map<String, dynamic> _$GamePlayerToJson(GamePlayer instance) =>
       'isDealer': instance.isDealer,
       'isSmallBlind': instance.isSmallBlind,
       'isBigBlind': instance.isBigBlind,
-      'game': instance.game?.toJson(),
-      'user': instance.user?.toJson(),
       'playerCards': instance.playerCards?.map((e) => e.toJson()).toList(),
     };
 
-GameState _$GameStateFromJson(Map<String, dynamic> json) => GameState(
+GameRound _$GameRoundFromJson(Map<String, dynamic> json) => GameRound(
+      gameRoundId: (json['gameRoundId'] as num?)?.toInt(),
+      gameId: (json['gameId'] as num?)?.toInt(),
+      game: json['game'] == null
+          ? null
+          : Game.fromJson(json['game'] as Map<String, dynamic>),
+      roundNumber: (json['roundNumber'] as num?)?.toInt(),
+      startTime: json['startTime'] == null
+          ? null
+          : DateTime.parse(json['startTime'] as String),
+      endTime: json['endTime'] == null
+          ? null
+          : DateTime.parse(json['endTime'] as String),
+      potSize: (json['potSize'] as num?)?.toInt(),
+      winners: (json['winners'] as List<dynamic>?)
+              ?.map((e) => GameRoundWinner.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+
+Map<String, dynamic> _$GameRoundToJson(GameRound instance) => <String, dynamic>{
+      'gameRoundId': instance.gameRoundId,
+      'gameId': instance.gameId,
+      'game': instance.game?.toJson(),
+      'roundNumber': instance.roundNumber,
+      'startTime': instance.startTime?.toIso8601String(),
+      'endTime': instance.endTime?.toIso8601String(),
+      'potSize': instance.potSize,
+      'winners': instance.winners?.map((e) => e.toJson()).toList(),
+    };
+
+GameRoundWinner _$GameRoundWinnerFromJson(Map<String, dynamic> json) =>
+    GameRoundWinner(
+      gameRoundWinnerId: (json['gameRoundWinnerId'] as num?)?.toInt(),
+      gameRoundId: (json['gameRoundId'] as num?)?.toInt(),
+      gameRound: json['gameRound'] == null
+          ? null
+          : GameRound.fromJson(json['gameRound'] as Map<String, dynamic>),
+      userId: (json['userId'] as num?)?.toInt(),
+      user: json['user'] == null
+          ? null
+          : User.fromJson(json['user'] as Map<String, dynamic>),
+      amountWon: (json['amountWon'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$GameRoundWinnerToJson(GameRoundWinner instance) =>
+    <String, dynamic>{
+      'gameRoundWinnerId': instance.gameRoundWinnerId,
+      'gameRoundId': instance.gameRoundId,
+      'gameRound': instance.gameRound?.toJson(),
+      'userId': instance.userId,
+      'user': instance.user?.toJson(),
+      'amountWon': instance.amountWon,
+    };
+
+GameStateDto _$GameStateDtoFromJson(Map<String, dynamic> json) => GameStateDto(
       gameId: (json['gameId'] as num?)?.toInt(),
       tableId: (json['tableId'] as num?)?.toInt(),
       tableName: json['tableName'] as String?,
       currentState: json['currentState'] as String?,
       potSize: (json['potSize'] as num?)?.toInt(),
+      currentTurnUserId: (json['currentTurnUserId'] as num?)?.toInt(),
       communityCards: (json['communityCards'] as List<dynamic>?)
-              ?.map((e) => Card.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      playerCards: (json['playerCards'] as List<dynamic>?)
-              ?.map((e) => Card.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => CardDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       players: (json['players'] as List<dynamic>?)
-              ?.map((e) => PlayerState.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => PlayerStateDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      playerCards: (json['playerCards'] as List<dynamic>?)
+              ?.map((e) => CardDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       lastMoves: (json['lastMoves'] as List<dynamic>?)
-              ?.map((e) => Move.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => MoveDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      winnerId: (json['winnerId'] as num?)?.toInt(),
+      roundWinners: (json['roundWinners'] as List<dynamic>?)
+              ?.map((e) => RoundWinnerDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      playerRoundContributions:
+          json['playerRoundContributions'] as Map<String, dynamic>?,
+      callAmount: (json['callAmount'] as num?)?.toInt(),
+      minRaiseAmount: (json['minRaiseAmount'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$GameStateToJson(GameState instance) => <String, dynamic>{
+Map<String, dynamic> _$GameStateDtoToJson(GameStateDto instance) =>
+    <String, dynamic>{
       'gameId': instance.gameId,
       'tableId': instance.tableId,
       'tableName': instance.tableName,
       'currentState': instance.currentState,
       'potSize': instance.potSize,
+      'currentTurnUserId': instance.currentTurnUserId,
       'communityCards':
           instance.communityCards?.map((e) => e.toJson()).toList(),
-      'playerCards': instance.playerCards?.map((e) => e.toJson()).toList(),
       'players': instance.players?.map((e) => e.toJson()).toList(),
+      'playerCards': instance.playerCards?.map((e) => e.toJson()).toList(),
       'lastMoves': instance.lastMoves?.map((e) => e.toJson()).toList(),
-      'winnerId': instance.winnerId,
+      'roundWinners': instance.roundWinners?.map((e) => e.toJson()).toList(),
+      'playerRoundContributions': instance.playerRoundContributions,
+      'callAmount': instance.callAmount,
+      'minRaiseAmount': instance.minRaiseAmount,
     };
 
 JoinGameDto _$JoinGameDtoFromJson(Map<String, dynamic> json) => JoinGameDto(
@@ -227,28 +299,6 @@ Map<String, dynamic> _$JoinGameDtoToJson(JoinGameDto instance) =>
     <String, dynamic>{
       'seatPosition': instance.seatPosition,
       'buyInAmount': instance.buyInAmount,
-    };
-
-LeaderboardEntry _$LeaderboardEntryFromJson(Map<String, dynamic> json) =>
-    LeaderboardEntry(
-      userId: (json['userId'] as num?)?.toInt(),
-      username: json['username'] as String?,
-      chipsBalance: (json['chipsBalance'] as num?)?.toInt(),
-      avatarImage: json['avatarImage'] as String?,
-      gamesWon: (json['gamesWon'] as num?)?.toInt(),
-      gamesPlayed: (json['gamesPlayed'] as num?)?.toInt(),
-      winRatio: (json['winRatio'] as num?)?.toDouble(),
-    );
-
-Map<String, dynamic> _$LeaderboardEntryToJson(LeaderboardEntry instance) =>
-    <String, dynamic>{
-      'userId': instance.userId,
-      'username': instance.username,
-      'chipsBalance': instance.chipsBalance,
-      'avatarImage': instance.avatarImage,
-      'gamesWon': instance.gamesWon,
-      'gamesPlayed': instance.gamesPlayed,
-      'winRatio': instance.winRatio,
     };
 
 LoginDto _$LoginDtoFromJson(Map<String, dynamic> json) => LoginDto(
@@ -275,94 +325,117 @@ Map<String, dynamic> _$MakeMoveDtoToJson(MakeMoveDto instance) =>
 Move _$MoveFromJson(Map<String, dynamic> json) => Move(
       moveId: (json['moveId'] as num?)?.toInt(),
       gameId: (json['gameId'] as num?)?.toInt(),
+      game: json['game'] == null
+          ? null
+          : Game.fromJson(json['game'] as Map<String, dynamic>),
+      gameRoundId: (json['gameRoundId'] as num?)?.toInt(),
+      gameRound: json['gameRound'] == null
+          ? null
+          : GameRound.fromJson(json['gameRound'] as Map<String, dynamic>),
+      playerId: (json['playerId'] as num?)?.toInt(),
+      player: json['player'] == null
+          ? null
+          : User.fromJson(json['player'] as Map<String, dynamic>),
+      actionType: json['actionType'] as String,
+      amount: (json['amount'] as num?)?.toInt(),
+      moveTime: json['moveTime'] == null
+          ? null
+          : DateTime.parse(json['moveTime'] as String),
+      round: json['round'] as String,
+    );
+
+Map<String, dynamic> _$MoveToJson(Move instance) => <String, dynamic>{
+      'moveId': instance.moveId,
+      'gameId': instance.gameId,
+      'game': instance.game?.toJson(),
+      'gameRoundId': instance.gameRoundId,
+      'gameRound': instance.gameRound?.toJson(),
+      'playerId': instance.playerId,
+      'player': instance.player?.toJson(),
+      'actionType': instance.actionType,
+      'amount': instance.amount,
+      'moveTime': instance.moveTime?.toIso8601String(),
+      'round': instance.round,
+    };
+
+MoveDto _$MoveDtoFromJson(Map<String, dynamic> json) => MoveDto(
       playerId: (json['playerId'] as num?)?.toInt(),
       actionType: json['actionType'] as String?,
       amount: (json['amount'] as num?)?.toInt(),
       moveTime: json['moveTime'] == null
           ? null
           : DateTime.parse(json['moveTime'] as String),
-      round: json['round'] as String?,
-      game: json['game'] == null
-          ? null
-          : Game.fromJson(json['game'] as Map<String, dynamic>),
-      player: json['player'] == null
-          ? null
-          : User.fromJson(json['player'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MoveToJson(Move instance) => <String, dynamic>{
-      'moveId': instance.moveId,
-      'gameId': instance.gameId,
+Map<String, dynamic> _$MoveDtoToJson(MoveDto instance) => <String, dynamic>{
       'playerId': instance.playerId,
       'actionType': instance.actionType,
       'amount': instance.amount,
       'moveTime': instance.moveTime?.toIso8601String(),
-      'round': instance.round,
-      'game': instance.game?.toJson(),
-      'player': instance.player?.toJson(),
     };
 
 PlayerCard _$PlayerCardFromJson(Map<String, dynamic> json) => PlayerCard(
       playerCardId: (json['playerCardId'] as num?)?.toInt(),
       gamePlayerId: (json['gamePlayerId'] as num?)?.toInt(),
-      cardId: (json['cardId'] as num?)?.toInt(),
-      position: (json['position'] as num?)?.toInt(),
       gamePlayer: json['gamePlayer'] == null
           ? null
           : GamePlayer.fromJson(json['gamePlayer'] as Map<String, dynamic>),
+      cardId: (json['cardId'] as num?)?.toInt(),
       card: json['card'] == null
           ? null
           : Card.fromJson(json['card'] as Map<String, dynamic>),
+      position: (json['position'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$PlayerCardToJson(PlayerCard instance) =>
     <String, dynamic>{
       'playerCardId': instance.playerCardId,
       'gamePlayerId': instance.gamePlayerId,
-      'cardId': instance.cardId,
-      'position': instance.position,
       'gamePlayer': instance.gamePlayer?.toJson(),
+      'cardId': instance.cardId,
       'card': instance.card?.toJson(),
+      'position': instance.position,
     };
 
-PlayerState _$PlayerStateFromJson(Map<String, dynamic> json) => PlayerState(
+PlayerStateDto _$PlayerStateDtoFromJson(Map<String, dynamic> json) =>
+    PlayerStateDto(
       userId: (json['userId'] as num?)?.toInt(),
       username: json['username'] as String?,
-      seatPosition: (json['seatPosition'] as num?)?.toInt(),
-      chipCount: (json['chipCount'] as num?)?.toInt(),
+      currentChips: (json['currentChips'] as num?)?.toInt(),
       isActive: json['isActive'] as bool?,
       isDealer: json['isDealer'] as bool?,
       isSmallBlind: json['isSmallBlind'] as bool?,
       isBigBlind: json['isBigBlind'] as bool?,
+      seatPosition: (json['seatPosition'] as num?)?.toInt(),
       cards: (json['cards'] as List<dynamic>?)
-              ?.map((e) => Card.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => CardDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );
 
-Map<String, dynamic> _$PlayerStateToJson(PlayerState instance) =>
+Map<String, dynamic> _$PlayerStateDtoToJson(PlayerStateDto instance) =>
     <String, dynamic>{
       'userId': instance.userId,
       'username': instance.username,
-      'seatPosition': instance.seatPosition,
-      'chipCount': instance.chipCount,
+      'currentChips': instance.currentChips,
       'isActive': instance.isActive,
       'isDealer': instance.isDealer,
       'isSmallBlind': instance.isSmallBlind,
       'isBigBlind': instance.isBigBlind,
+      'seatPosition': instance.seatPosition,
       'cards': instance.cards?.map((e) => e.toJson()).toList(),
     };
 
 PokerTable _$PokerTableFromJson(Map<String, dynamic> json) => PokerTable(
       tableId: (json['tableId'] as num?)?.toInt(),
-      name: json['name'] as String?,
+      name: json['name'] as String,
       entryFee: (json['entryFee'] as num?)?.toInt(),
       minBuyIn: (json['minBuyIn'] as num?)?.toInt(),
       maxBuyIn: (json['maxBuyIn'] as num?)?.toInt(),
       smallBlind: (json['smallBlind'] as num?)?.toInt(),
       bigBlind: (json['bigBlind'] as num?)?.toInt(),
       maxPlayers: (json['maxPlayers'] as num?)?.toInt(),
-      difficultyLevel: json['difficultyLevel'] as String?,
+      difficultyLevel: json['difficultyLevel'] as String,
       isActive: json['isActive'] as bool?,
       games: (json['games'] as List<dynamic>?)
               ?.map((e) => Game.fromJson(e as Map<String, dynamic>))
@@ -388,31 +461,31 @@ Map<String, dynamic> _$PokerTableToJson(PokerTable instance) =>
 Purchase _$PurchaseFromJson(Map<String, dynamic> json) => Purchase(
       purchaseId: (json['purchaseId'] as num?)?.toInt(),
       userId: (json['userId'] as num?)?.toInt(),
+      user: json['user'] == null
+          ? null
+          : User.fromJson(json['user'] as Map<String, dynamic>),
       itemId: (json['itemId'] as num?)?.toInt(),
+      shopItem: json['shopItem'] == null
+          ? null
+          : ShopItem.fromJson(json['shopItem'] as Map<String, dynamic>),
       purchaseDate: json['purchaseDate'] == null
           ? null
           : DateTime.parse(json['purchaseDate'] as String),
       price: (json['price'] as num?)?.toDouble(),
       paymentMethod: json['paymentMethod'] as String?,
       transactionId: json['transactionId'] as String?,
-      user: json['user'] == null
-          ? null
-          : User.fromJson(json['user'] as Map<String, dynamic>),
-      item: json['item'] == null
-          ? null
-          : ShopItem.fromJson(json['item'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$PurchaseToJson(Purchase instance) => <String, dynamic>{
       'purchaseId': instance.purchaseId,
       'userId': instance.userId,
+      'user': instance.user?.toJson(),
       'itemId': instance.itemId,
+      'shopItem': instance.shopItem?.toJson(),
       'purchaseDate': instance.purchaseDate?.toIso8601String(),
       'price': instance.price,
       'paymentMethod': instance.paymentMethod,
       'transactionId': instance.transactionId,
-      'user': instance.user?.toJson(),
-      'item': instance.item?.toJson(),
     };
 
 RegisterDto _$RegisterDtoFromJson(Map<String, dynamic> json) => RegisterDto(
@@ -428,14 +501,27 @@ Map<String, dynamic> _$RegisterDtoToJson(RegisterDto instance) =>
       'password': instance.password,
     };
 
+RoundWinnerDto _$RoundWinnerDtoFromJson(Map<String, dynamic> json) =>
+    RoundWinnerDto(
+      userId: (json['userId'] as num?)?.toInt(),
+      username: json['username'] as String?,
+      amountWon: (json['amountWon'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$RoundWinnerDtoToJson(RoundWinnerDto instance) =>
+    <String, dynamic>{
+      'userId': instance.userId,
+      'username': instance.username,
+      'amountWon': instance.amountWon,
+    };
+
 ShopItem _$ShopItemFromJson(Map<String, dynamic> json) => ShopItem(
       itemId: (json['itemId'] as num?)?.toInt(),
-      name: json['name'] as String?,
+      name: json['name'] as String,
       description: json['description'] as String?,
       price: (json['price'] as num?)?.toDouble(),
-      itemType: json['itemType'] as String?,
+      itemType: json['itemType'] as String,
       isActive: json['isActive'] as bool?,
-      currency: json['currency'] as String?,
       purchases: (json['purchases'] as List<dynamic>?)
               ?.map((e) => Purchase.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -449,7 +535,6 @@ Map<String, dynamic> _$ShopItemToJson(ShopItem instance) => <String, dynamic>{
       'price': instance.price,
       'itemType': instance.itemType,
       'isActive': instance.isActive,
-      'currency': instance.currency,
       'purchases': instance.purchases?.map((e) => e.toJson()).toList(),
     };
 
@@ -467,9 +552,9 @@ Map<String, dynamic> _$UpdateProfileDtoToJson(UpdateProfileDto instance) =>
 
 User _$UserFromJson(Map<String, dynamic> json) => User(
       userId: (json['userId'] as num?)?.toInt(),
-      username: json['username'] as String?,
-      email: json['email'] as String?,
-      passwordHash: json['passwordHash'] as String?,
+      username: json['username'] as String,
+      email: json['email'] as String,
+      passwordHash: json['passwordHash'] as String,
       chipsBalance: (json['chipsBalance'] as num?)?.toInt(),
       avatarImage: json['avatarImage'] as String?,
       registrationDate: json['registrationDate'] == null
@@ -479,17 +564,8 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
           ? null
           : DateTime.parse(json['lastLoginDate'] as String),
       isActive: json['isActive'] as bool?,
-      avatarType: json['avatarType'] as String?,
       gamePlayers: (json['gamePlayers'] as List<dynamic>?)
               ?.map((e) => GamePlayer.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      wonGames: (json['wonGames'] as List<dynamic>?)
-              ?.map((e) => Game.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      moves: (json['moves'] as List<dynamic>?)
-              ?.map((e) => Move.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       purchases: (json['purchases'] as List<dynamic>?)
@@ -498,6 +574,10 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
           [],
       chipTransactions: (json['chipTransactions'] as List<dynamic>?)
               ?.map((e) => ChipTransaction.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      gameRoundWinners: (json['gameRoundWinners'] as List<dynamic>?)
+              ?.map((e) => GameRoundWinner.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
     );
@@ -512,13 +592,12 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'registrationDate': instance.registrationDate?.toIso8601String(),
       'lastLoginDate': instance.lastLoginDate?.toIso8601String(),
       'isActive': instance.isActive,
-      'avatarType': instance.avatarType,
       'gamePlayers': instance.gamePlayers?.map((e) => e.toJson()).toList(),
-      'wonGames': instance.wonGames?.map((e) => e.toJson()).toList(),
-      'moves': instance.moves?.map((e) => e.toJson()).toList(),
       'purchases': instance.purchases?.map((e) => e.toJson()).toList(),
       'chipTransactions':
           instance.chipTransactions?.map((e) => e.toJson()).toList(),
+      'gameRoundWinners':
+          instance.gameRoundWinners?.map((e) => e.toJson()).toList(),
     };
 
 UserDto _$UserDtoFromJson(Map<String, dynamic> json) => UserDto(

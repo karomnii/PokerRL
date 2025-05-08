@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class AuthView extends StatelessWidget {
   const AuthView({super.key});
@@ -59,9 +61,8 @@ class AuthView extends StatelessWidget {
                         style: TextStyle(fontSize: 16),
                       ),
                       InkWell(
-                        onTap: () {
-                          Navigator.pushNamed(context, 'auth/login');
-                        },
+                        onTap: () => Get.offNamed('/auth/login',
+                            preventDuplicates: true),
                         child: const Text(
                           'login',
                           style: TextStyle(
@@ -76,9 +77,8 @@ class AuthView extends StatelessWidget {
                         style: TextStyle(fontSize: 16),
                       ),
                       InkWell(
-                        onTap: () {
-                          Navigator.pushNamed(context, 'auth/register');
-                        },
+                        onTap: () => Get.offNamed('/auth/register',
+                            preventDuplicates: true),
                         child: const Text(
                           'register',
                           style: TextStyle(

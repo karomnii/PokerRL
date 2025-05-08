@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/app/home/home.controller.dart';
+import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/widgets/app_bar/app_bar.dart';
 import 'package:frontend/widgets/app_bar/app_bar_icon.dart';
 import 'package:frontend/widgets/page_card.dart';
@@ -81,26 +82,28 @@ class HomePageView extends GetView<HomePageController> {
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Play'),
               ),
-              PageRow(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () =>
-                          Get.offNamed('/auth/login', preventDuplicates: false),
-                      icon: const Icon(Icons.person),
-                      label: const Text('Sign In'),
+              AuthService.to.isLoggedIn
+                  ? const SizedBox.shrink()
+                  : PageRow(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () =>
+                                Get.offNamed('/auth/', preventDuplicates: true),
+                            icon: const Icon(Icons.person),
+                            label: const Text('Sign In'),
+                          ),
+                        ),
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () => Get.offNamed('/auth/register',
+                                preventDuplicates: true),
+                            icon: const Icon(Icons.person_add),
+                            label: const Text('Sign up'),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => Get.offNamed('/auth/register',
-                          preventDuplicates: false),
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Sign up'),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

@@ -10,10 +10,8 @@ part 'swagger.models.swagger.g.dart';
 class Card {
   const Card({
     this.cardId,
-    this.suit,
-    this.$value,
-    this.communityCards,
-    this.playerCards,
+    required this.suit,
+    required this.$value,
   });
 
   factory Card.fromJson(Map<String, dynamic> json) => _$CardFromJson(json);
@@ -24,13 +22,9 @@ class Card {
   @JsonKey(name: 'cardId')
   final int? cardId;
   @JsonKey(name: 'suit')
-  final String? suit;
+  final String suit;
   @JsonKey(name: 'value')
-  final String? $value;
-  @JsonKey(name: 'communityCards', defaultValue: <CommunityCard>[])
-  final List<CommunityCard>? communityCards;
-  @JsonKey(name: 'playerCards', defaultValue: <PlayerCard>[])
-  final List<PlayerCard>? playerCards;
+  final String $value;
   static const fromJsonFactory = _$CardFromJson;
 
   @override
@@ -42,13 +36,7 @@ class Card {
             (identical(other.suit, suit) ||
                 const DeepCollectionEquality().equals(other.suit, suit)) &&
             (identical(other.$value, $value) ||
-                const DeepCollectionEquality().equals(other.$value, $value)) &&
-            (identical(other.communityCards, communityCards) ||
-                const DeepCollectionEquality()
-                    .equals(other.communityCards, communityCards)) &&
-            (identical(other.playerCards, playerCards) ||
-                const DeepCollectionEquality()
-                    .equals(other.playerCards, playerCards)));
+                const DeepCollectionEquality().equals(other.$value, $value)));
   }
 
   @override
@@ -59,41 +47,74 @@ class Card {
       const DeepCollectionEquality().hash(cardId) ^
       const DeepCollectionEquality().hash(suit) ^
       const DeepCollectionEquality().hash($value) ^
-      const DeepCollectionEquality().hash(communityCards) ^
-      const DeepCollectionEquality().hash(playerCards) ^
       runtimeType.hashCode;
 }
 
 extension $CardExtension on Card {
-  Card copyWith(
-      {int? cardId,
-      String? suit,
-      String? $value,
-      List<CommunityCard>? communityCards,
-      List<PlayerCard>? playerCards}) {
+  Card copyWith({int? cardId, String? suit, String? $value}) {
     return Card(
         cardId: cardId ?? this.cardId,
         suit: suit ?? this.suit,
-        $value: $value ?? this.$value,
-        communityCards: communityCards ?? this.communityCards,
-        playerCards: playerCards ?? this.playerCards);
+        $value: $value ?? this.$value);
   }
 
   Card copyWithWrapped(
-      {Wrapped<int?>? cardId,
-      Wrapped<String?>? suit,
-      Wrapped<String?>? $value,
-      Wrapped<List<CommunityCard>?>? communityCards,
-      Wrapped<List<PlayerCard>?>? playerCards}) {
+      {Wrapped<int?>? cardId, Wrapped<String>? suit, Wrapped<String>? $value}) {
     return Card(
         cardId: (cardId != null ? cardId.value : this.cardId),
         suit: (suit != null ? suit.value : this.suit),
-        $value: ($value != null ? $value.value : this.$value),
-        communityCards: (communityCards != null
-            ? communityCards.value
-            : this.communityCards),
-        playerCards:
-            (playerCards != null ? playerCards.value : this.playerCards));
+        $value: ($value != null ? $value.value : this.$value));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class CardDto {
+  const CardDto({
+    this.suit,
+    this.$value,
+  });
+
+  factory CardDto.fromJson(Map<String, dynamic> json) =>
+      _$CardDtoFromJson(json);
+
+  static const toJsonFactory = _$CardDtoToJson;
+  Map<String, dynamic> toJson() => _$CardDtoToJson(this);
+
+  @JsonKey(name: 'suit')
+  final String? suit;
+  @JsonKey(name: 'value')
+  final String? $value;
+  static const fromJsonFactory = _$CardDtoFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is CardDto &&
+            (identical(other.suit, suit) ||
+                const DeepCollectionEquality().equals(other.suit, suit)) &&
+            (identical(other.$value, $value) ||
+                const DeepCollectionEquality().equals(other.$value, $value)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(suit) ^
+      const DeepCollectionEquality().hash($value) ^
+      runtimeType.hashCode;
+}
+
+extension $CardDtoExtension on CardDto {
+  CardDto copyWith({String? suit, String? $value}) {
+    return CardDto(suit: suit ?? this.suit, $value: $value ?? this.$value);
+  }
+
+  CardDto copyWithWrapped({Wrapped<String?>? suit, Wrapped<String?>? $value}) {
+    return CardDto(
+        suit: (suit != null ? suit.value : this.suit),
+        $value: ($value != null ? $value.value : this.$value));
   }
 }
 
@@ -102,12 +123,12 @@ class ChipTransaction {
   const ChipTransaction({
     this.transactionId,
     this.userId,
+    this.user,
     this.amount,
-    this.transactionType,
+    required this.transactionType,
     this.referenceId,
     this.transactionDate,
     this.description,
-    this.user,
   });
 
   factory ChipTransaction.fromJson(Map<String, dynamic> json) =>
@@ -120,18 +141,18 @@ class ChipTransaction {
   final int? transactionId;
   @JsonKey(name: 'userId')
   final int? userId;
+  @JsonKey(name: 'user')
+  final User? user;
   @JsonKey(name: 'amount')
   final int? amount;
   @JsonKey(name: 'transactionType')
-  final String? transactionType;
+  final String transactionType;
   @JsonKey(name: 'referenceId')
   final int? referenceId;
   @JsonKey(name: 'transactionDate')
   final DateTime? transactionDate;
   @JsonKey(name: 'description')
   final String? description;
-  @JsonKey(name: 'user')
-  final User? user;
   static const fromJsonFactory = _$ChipTransactionFromJson;
 
   @override
@@ -143,6 +164,8 @@ class ChipTransaction {
                     .equals(other.transactionId, transactionId)) &&
             (identical(other.userId, userId) ||
                 const DeepCollectionEquality().equals(other.userId, userId)) &&
+            (identical(other.user, user) ||
+                const DeepCollectionEquality().equals(other.user, user)) &&
             (identical(other.amount, amount) ||
                 const DeepCollectionEquality().equals(other.amount, amount)) &&
             (identical(other.transactionType, transactionType) ||
@@ -156,9 +179,7 @@ class ChipTransaction {
                     .equals(other.transactionDate, transactionDate)) &&
             (identical(other.description, description) ||
                 const DeepCollectionEquality()
-                    .equals(other.description, description)) &&
-            (identical(other.user, user) ||
-                const DeepCollectionEquality().equals(other.user, user)));
+                    .equals(other.description, description)));
   }
 
   @override
@@ -168,12 +189,12 @@ class ChipTransaction {
   int get hashCode =>
       const DeepCollectionEquality().hash(transactionId) ^
       const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(user) ^
       const DeepCollectionEquality().hash(amount) ^
       const DeepCollectionEquality().hash(transactionType) ^
       const DeepCollectionEquality().hash(referenceId) ^
       const DeepCollectionEquality().hash(transactionDate) ^
       const DeepCollectionEquality().hash(description) ^
-      const DeepCollectionEquality().hash(user) ^
       runtimeType.hashCode;
 }
 
@@ -181,36 +202,37 @@ extension $ChipTransactionExtension on ChipTransaction {
   ChipTransaction copyWith(
       {int? transactionId,
       int? userId,
+      User? user,
       int? amount,
       String? transactionType,
       int? referenceId,
       DateTime? transactionDate,
-      String? description,
-      User? user}) {
+      String? description}) {
     return ChipTransaction(
         transactionId: transactionId ?? this.transactionId,
         userId: userId ?? this.userId,
+        user: user ?? this.user,
         amount: amount ?? this.amount,
         transactionType: transactionType ?? this.transactionType,
         referenceId: referenceId ?? this.referenceId,
         transactionDate: transactionDate ?? this.transactionDate,
-        description: description ?? this.description,
-        user: user ?? this.user);
+        description: description ?? this.description);
   }
 
   ChipTransaction copyWithWrapped(
       {Wrapped<int?>? transactionId,
       Wrapped<int?>? userId,
+      Wrapped<User?>? user,
       Wrapped<int?>? amount,
-      Wrapped<String?>? transactionType,
+      Wrapped<String>? transactionType,
       Wrapped<int?>? referenceId,
       Wrapped<DateTime?>? transactionDate,
-      Wrapped<String?>? description,
-      Wrapped<User?>? user}) {
+      Wrapped<String?>? description}) {
     return ChipTransaction(
         transactionId:
             (transactionId != null ? transactionId.value : this.transactionId),
         userId: (userId != null ? userId.value : this.userId),
+        user: (user != null ? user.value : this.user),
         amount: (amount != null ? amount.value : this.amount),
         transactionType: (transactionType != null
             ? transactionType.value
@@ -221,8 +243,7 @@ extension $ChipTransactionExtension on ChipTransaction {
             ? transactionDate.value
             : this.transactionDate),
         description:
-            (description != null ? description.value : this.description),
-        user: (user != null ? user.value : this.user));
+            (description != null ? description.value : this.description));
   }
 }
 
@@ -231,10 +252,10 @@ class CommunityCard {
   const CommunityCard({
     this.communityCardId,
     this.gameId,
-    this.cardId,
-    this.position,
     this.game,
+    this.cardId,
     this.card,
+    this.position,
   });
 
   factory CommunityCard.fromJson(Map<String, dynamic> json) =>
@@ -247,14 +268,14 @@ class CommunityCard {
   final int? communityCardId;
   @JsonKey(name: 'gameId')
   final int? gameId;
-  @JsonKey(name: 'cardId')
-  final int? cardId;
-  @JsonKey(name: 'position')
-  final int? position;
   @JsonKey(name: 'game')
   final Game? game;
+  @JsonKey(name: 'cardId')
+  final int? cardId;
   @JsonKey(name: 'card')
   final Card? card;
+  @JsonKey(name: 'position')
+  final int? position;
   static const fromJsonFactory = _$CommunityCardFromJson;
 
   @override
@@ -266,15 +287,15 @@ class CommunityCard {
                     .equals(other.communityCardId, communityCardId)) &&
             (identical(other.gameId, gameId) ||
                 const DeepCollectionEquality().equals(other.gameId, gameId)) &&
-            (identical(other.cardId, cardId) ||
-                const DeepCollectionEquality().equals(other.cardId, cardId)) &&
-            (identical(other.position, position) ||
-                const DeepCollectionEquality()
-                    .equals(other.position, position)) &&
             (identical(other.game, game) ||
                 const DeepCollectionEquality().equals(other.game, game)) &&
+            (identical(other.cardId, cardId) ||
+                const DeepCollectionEquality().equals(other.cardId, cardId)) &&
             (identical(other.card, card) ||
-                const DeepCollectionEquality().equals(other.card, card)));
+                const DeepCollectionEquality().equals(other.card, card)) &&
+            (identical(other.position, position) ||
+                const DeepCollectionEquality()
+                    .equals(other.position, position)));
   }
 
   @override
@@ -284,10 +305,10 @@ class CommunityCard {
   int get hashCode =>
       const DeepCollectionEquality().hash(communityCardId) ^
       const DeepCollectionEquality().hash(gameId) ^
-      const DeepCollectionEquality().hash(cardId) ^
-      const DeepCollectionEquality().hash(position) ^
       const DeepCollectionEquality().hash(game) ^
+      const DeepCollectionEquality().hash(cardId) ^
       const DeepCollectionEquality().hash(card) ^
+      const DeepCollectionEquality().hash(position) ^
       runtimeType.hashCode;
 }
 
@@ -295,35 +316,35 @@ extension $CommunityCardExtension on CommunityCard {
   CommunityCard copyWith(
       {int? communityCardId,
       int? gameId,
-      int? cardId,
-      int? position,
       Game? game,
-      Card? card}) {
+      int? cardId,
+      Card? card,
+      int? position}) {
     return CommunityCard(
         communityCardId: communityCardId ?? this.communityCardId,
         gameId: gameId ?? this.gameId,
-        cardId: cardId ?? this.cardId,
-        position: position ?? this.position,
         game: game ?? this.game,
-        card: card ?? this.card);
+        cardId: cardId ?? this.cardId,
+        card: card ?? this.card,
+        position: position ?? this.position);
   }
 
   CommunityCard copyWithWrapped(
       {Wrapped<int?>? communityCardId,
       Wrapped<int?>? gameId,
-      Wrapped<int?>? cardId,
-      Wrapped<int?>? position,
       Wrapped<Game?>? game,
-      Wrapped<Card?>? card}) {
+      Wrapped<int?>? cardId,
+      Wrapped<Card?>? card,
+      Wrapped<int?>? position}) {
     return CommunityCard(
         communityCardId: (communityCardId != null
             ? communityCardId.value
             : this.communityCardId),
         gameId: (gameId != null ? gameId.value : this.gameId),
-        cardId: (cardId != null ? cardId.value : this.cardId),
-        position: (position != null ? position.value : this.position),
         game: (game != null ? game.value : this.game),
-        card: (card != null ? card.value : this.card));
+        cardId: (cardId != null ? cardId.value : this.cardId),
+        card: (card != null ? card.value : this.card),
+        position: (position != null ? position.value : this.position));
   }
 }
 
@@ -375,16 +396,17 @@ class Game {
   const Game({
     this.gameId,
     this.tableId,
+    this.table,
     this.startTime,
     this.endTime,
-    this.currentState,
+    required this.currentState,
     this.potSize,
-    this.winnerId,
-    this.table,
-    this.winner,
+    this.currentTurnUserId,
+    this.currentTurnUser,
     this.gamePlayers,
     this.moves,
     this.communityCards,
+    this.gameRounds,
   });
 
   factory Game.fromJson(Map<String, dynamic> json) => _$GameFromJson(json);
@@ -396,26 +418,28 @@ class Game {
   final int? gameId;
   @JsonKey(name: 'tableId')
   final int? tableId;
+  @JsonKey(name: 'table')
+  final PokerTable? table;
   @JsonKey(name: 'startTime')
   final DateTime? startTime;
   @JsonKey(name: 'endTime')
   final DateTime? endTime;
   @JsonKey(name: 'currentState')
-  final String? currentState;
+  final String currentState;
   @JsonKey(name: 'potSize')
   final int? potSize;
-  @JsonKey(name: 'winnerId')
-  final int? winnerId;
-  @JsonKey(name: 'table')
-  final PokerTable? table;
-  @JsonKey(name: 'winner')
-  final User? winner;
+  @JsonKey(name: 'currentTurnUserId')
+  final int? currentTurnUserId;
+  @JsonKey(name: 'currentTurnUser')
+  final User? currentTurnUser;
   @JsonKey(name: 'gamePlayers', defaultValue: <GamePlayer>[])
   final List<GamePlayer>? gamePlayers;
   @JsonKey(name: 'moves', defaultValue: <Move>[])
   final List<Move>? moves;
   @JsonKey(name: 'communityCards', defaultValue: <CommunityCard>[])
   final List<CommunityCard>? communityCards;
+  @JsonKey(name: 'gameRounds', defaultValue: <GameRound>[])
+  final List<GameRound>? gameRounds;
   static const fromJsonFactory = _$GameFromJson;
 
   @override
@@ -427,6 +451,8 @@ class Game {
             (identical(other.tableId, tableId) ||
                 const DeepCollectionEquality()
                     .equals(other.tableId, tableId)) &&
+            (identical(other.table, table) ||
+                const DeepCollectionEquality().equals(other.table, table)) &&
             (identical(other.startTime, startTime) ||
                 const DeepCollectionEquality()
                     .equals(other.startTime, startTime)) &&
@@ -439,13 +465,12 @@ class Game {
             (identical(other.potSize, potSize) ||
                 const DeepCollectionEquality()
                     .equals(other.potSize, potSize)) &&
-            (identical(other.winnerId, winnerId) ||
+            (identical(other.currentTurnUserId, currentTurnUserId) ||
                 const DeepCollectionEquality()
-                    .equals(other.winnerId, winnerId)) &&
-            (identical(other.table, table) ||
-                const DeepCollectionEquality().equals(other.table, table)) &&
-            (identical(other.winner, winner) ||
-                const DeepCollectionEquality().equals(other.winner, winner)) &&
+                    .equals(other.currentTurnUserId, currentTurnUserId)) &&
+            (identical(other.currentTurnUser, currentTurnUser) ||
+                const DeepCollectionEquality()
+                    .equals(other.currentTurnUser, currentTurnUser)) &&
             (identical(other.gamePlayers, gamePlayers) ||
                 const DeepCollectionEquality()
                     .equals(other.gamePlayers, gamePlayers)) &&
@@ -453,7 +478,10 @@ class Game {
                 const DeepCollectionEquality().equals(other.moves, moves)) &&
             (identical(other.communityCards, communityCards) ||
                 const DeepCollectionEquality()
-                    .equals(other.communityCards, communityCards)));
+                    .equals(other.communityCards, communityCards)) &&
+            (identical(other.gameRounds, gameRounds) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRounds, gameRounds)));
   }
 
   @override
@@ -463,16 +491,17 @@ class Game {
   int get hashCode =>
       const DeepCollectionEquality().hash(gameId) ^
       const DeepCollectionEquality().hash(tableId) ^
+      const DeepCollectionEquality().hash(table) ^
       const DeepCollectionEquality().hash(startTime) ^
       const DeepCollectionEquality().hash(endTime) ^
       const DeepCollectionEquality().hash(currentState) ^
       const DeepCollectionEquality().hash(potSize) ^
-      const DeepCollectionEquality().hash(winnerId) ^
-      const DeepCollectionEquality().hash(table) ^
-      const DeepCollectionEquality().hash(winner) ^
+      const DeepCollectionEquality().hash(currentTurnUserId) ^
+      const DeepCollectionEquality().hash(currentTurnUser) ^
       const DeepCollectionEquality().hash(gamePlayers) ^
       const DeepCollectionEquality().hash(moves) ^
       const DeepCollectionEquality().hash(communityCards) ^
+      const DeepCollectionEquality().hash(gameRounds) ^
       runtimeType.hashCode;
 }
 
@@ -480,61 +509,69 @@ extension $GameExtension on Game {
   Game copyWith(
       {int? gameId,
       int? tableId,
+      PokerTable? table,
       DateTime? startTime,
       DateTime? endTime,
       String? currentState,
       int? potSize,
-      int? winnerId,
-      PokerTable? table,
-      User? winner,
+      int? currentTurnUserId,
+      User? currentTurnUser,
       List<GamePlayer>? gamePlayers,
       List<Move>? moves,
-      List<CommunityCard>? communityCards}) {
+      List<CommunityCard>? communityCards,
+      List<GameRound>? gameRounds}) {
     return Game(
         gameId: gameId ?? this.gameId,
         tableId: tableId ?? this.tableId,
+        table: table ?? this.table,
         startTime: startTime ?? this.startTime,
         endTime: endTime ?? this.endTime,
         currentState: currentState ?? this.currentState,
         potSize: potSize ?? this.potSize,
-        winnerId: winnerId ?? this.winnerId,
-        table: table ?? this.table,
-        winner: winner ?? this.winner,
+        currentTurnUserId: currentTurnUserId ?? this.currentTurnUserId,
+        currentTurnUser: currentTurnUser ?? this.currentTurnUser,
         gamePlayers: gamePlayers ?? this.gamePlayers,
         moves: moves ?? this.moves,
-        communityCards: communityCards ?? this.communityCards);
+        communityCards: communityCards ?? this.communityCards,
+        gameRounds: gameRounds ?? this.gameRounds);
   }
 
   Game copyWithWrapped(
       {Wrapped<int?>? gameId,
       Wrapped<int?>? tableId,
+      Wrapped<PokerTable?>? table,
       Wrapped<DateTime?>? startTime,
       Wrapped<DateTime?>? endTime,
-      Wrapped<String?>? currentState,
+      Wrapped<String>? currentState,
       Wrapped<int?>? potSize,
-      Wrapped<int?>? winnerId,
-      Wrapped<PokerTable?>? table,
-      Wrapped<User?>? winner,
+      Wrapped<int?>? currentTurnUserId,
+      Wrapped<User?>? currentTurnUser,
       Wrapped<List<GamePlayer>?>? gamePlayers,
       Wrapped<List<Move>?>? moves,
-      Wrapped<List<CommunityCard>?>? communityCards}) {
+      Wrapped<List<CommunityCard>?>? communityCards,
+      Wrapped<List<GameRound>?>? gameRounds}) {
     return Game(
         gameId: (gameId != null ? gameId.value : this.gameId),
         tableId: (tableId != null ? tableId.value : this.tableId),
+        table: (table != null ? table.value : this.table),
         startTime: (startTime != null ? startTime.value : this.startTime),
         endTime: (endTime != null ? endTime.value : this.endTime),
         currentState:
             (currentState != null ? currentState.value : this.currentState),
         potSize: (potSize != null ? potSize.value : this.potSize),
-        winnerId: (winnerId != null ? winnerId.value : this.winnerId),
-        table: (table != null ? table.value : this.table),
-        winner: (winner != null ? winner.value : this.winner),
+        currentTurnUserId: (currentTurnUserId != null
+            ? currentTurnUserId.value
+            : this.currentTurnUserId),
+        currentTurnUser: (currentTurnUser != null
+            ? currentTurnUser.value
+            : this.currentTurnUser),
         gamePlayers:
             (gamePlayers != null ? gamePlayers.value : this.gamePlayers),
         moves: (moves != null ? moves.value : this.moves),
         communityCards: (communityCards != null
             ? communityCards.value
-            : this.communityCards));
+            : this.communityCards),
+        gameRounds: (gameRounds != null ? gameRounds.value : this.gameRounds));
   }
 }
 
@@ -543,7 +580,9 @@ class GamePlayer {
   const GamePlayer({
     this.gamePlayerId,
     this.gameId,
+    this.game,
     this.userId,
+    this.user,
     this.seatPosition,
     this.initialChips,
     this.currentChips,
@@ -551,8 +590,6 @@ class GamePlayer {
     this.isDealer,
     this.isSmallBlind,
     this.isBigBlind,
-    this.game,
-    this.user,
     this.playerCards,
   });
 
@@ -566,8 +603,12 @@ class GamePlayer {
   final int? gamePlayerId;
   @JsonKey(name: 'gameId')
   final int? gameId;
+  @JsonKey(name: 'game')
+  final Game? game;
   @JsonKey(name: 'userId')
   final int? userId;
+  @JsonKey(name: 'user')
+  final User? user;
   @JsonKey(name: 'seatPosition')
   final int? seatPosition;
   @JsonKey(name: 'initialChips')
@@ -582,10 +623,6 @@ class GamePlayer {
   final bool? isSmallBlind;
   @JsonKey(name: 'isBigBlind')
   final bool? isBigBlind;
-  @JsonKey(name: 'game')
-  final Game? game;
-  @JsonKey(name: 'user')
-  final User? user;
   @JsonKey(name: 'playerCards', defaultValue: <PlayerCard>[])
   final List<PlayerCard>? playerCards;
   static const fromJsonFactory = _$GamePlayerFromJson;
@@ -599,8 +636,12 @@ class GamePlayer {
                     .equals(other.gamePlayerId, gamePlayerId)) &&
             (identical(other.gameId, gameId) ||
                 const DeepCollectionEquality().equals(other.gameId, gameId)) &&
+            (identical(other.game, game) ||
+                const DeepCollectionEquality().equals(other.game, game)) &&
             (identical(other.userId, userId) ||
                 const DeepCollectionEquality().equals(other.userId, userId)) &&
+            (identical(other.user, user) ||
+                const DeepCollectionEquality().equals(other.user, user)) &&
             (identical(other.seatPosition, seatPosition) ||
                 const DeepCollectionEquality()
                     .equals(other.seatPosition, seatPosition)) &&
@@ -622,10 +663,6 @@ class GamePlayer {
             (identical(other.isBigBlind, isBigBlind) ||
                 const DeepCollectionEquality()
                     .equals(other.isBigBlind, isBigBlind)) &&
-            (identical(other.game, game) ||
-                const DeepCollectionEquality().equals(other.game, game)) &&
-            (identical(other.user, user) ||
-                const DeepCollectionEquality().equals(other.user, user)) &&
             (identical(other.playerCards, playerCards) ||
                 const DeepCollectionEquality()
                     .equals(other.playerCards, playerCards)));
@@ -638,7 +675,9 @@ class GamePlayer {
   int get hashCode =>
       const DeepCollectionEquality().hash(gamePlayerId) ^
       const DeepCollectionEquality().hash(gameId) ^
+      const DeepCollectionEquality().hash(game) ^
       const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(user) ^
       const DeepCollectionEquality().hash(seatPosition) ^
       const DeepCollectionEquality().hash(initialChips) ^
       const DeepCollectionEquality().hash(currentChips) ^
@@ -646,8 +685,6 @@ class GamePlayer {
       const DeepCollectionEquality().hash(isDealer) ^
       const DeepCollectionEquality().hash(isSmallBlind) ^
       const DeepCollectionEquality().hash(isBigBlind) ^
-      const DeepCollectionEquality().hash(game) ^
-      const DeepCollectionEquality().hash(user) ^
       const DeepCollectionEquality().hash(playerCards) ^
       runtimeType.hashCode;
 }
@@ -656,7 +693,9 @@ extension $GamePlayerExtension on GamePlayer {
   GamePlayer copyWith(
       {int? gamePlayerId,
       int? gameId,
+      Game? game,
       int? userId,
+      User? user,
       int? seatPosition,
       int? initialChips,
       int? currentChips,
@@ -664,13 +703,13 @@ extension $GamePlayerExtension on GamePlayer {
       bool? isDealer,
       bool? isSmallBlind,
       bool? isBigBlind,
-      Game? game,
-      User? user,
       List<PlayerCard>? playerCards}) {
     return GamePlayer(
         gamePlayerId: gamePlayerId ?? this.gamePlayerId,
         gameId: gameId ?? this.gameId,
+        game: game ?? this.game,
         userId: userId ?? this.userId,
+        user: user ?? this.user,
         seatPosition: seatPosition ?? this.seatPosition,
         initialChips: initialChips ?? this.initialChips,
         currentChips: currentChips ?? this.currentChips,
@@ -678,15 +717,15 @@ extension $GamePlayerExtension on GamePlayer {
         isDealer: isDealer ?? this.isDealer,
         isSmallBlind: isSmallBlind ?? this.isSmallBlind,
         isBigBlind: isBigBlind ?? this.isBigBlind,
-        game: game ?? this.game,
-        user: user ?? this.user,
         playerCards: playerCards ?? this.playerCards);
   }
 
   GamePlayer copyWithWrapped(
       {Wrapped<int?>? gamePlayerId,
       Wrapped<int?>? gameId,
+      Wrapped<Game?>? game,
       Wrapped<int?>? userId,
+      Wrapped<User?>? user,
       Wrapped<int?>? seatPosition,
       Wrapped<int?>? initialChips,
       Wrapped<int?>? currentChips,
@@ -694,14 +733,14 @@ extension $GamePlayerExtension on GamePlayer {
       Wrapped<bool?>? isDealer,
       Wrapped<bool?>? isSmallBlind,
       Wrapped<bool?>? isBigBlind,
-      Wrapped<Game?>? game,
-      Wrapped<User?>? user,
       Wrapped<List<PlayerCard>?>? playerCards}) {
     return GamePlayer(
         gamePlayerId:
             (gamePlayerId != null ? gamePlayerId.value : this.gamePlayerId),
         gameId: (gameId != null ? gameId.value : this.gameId),
+        game: (game != null ? game.value : this.game),
         userId: (userId != null ? userId.value : this.userId),
+        user: (user != null ? user.value : this.user),
         seatPosition:
             (seatPosition != null ? seatPosition.value : this.seatPosition),
         initialChips:
@@ -713,33 +752,263 @@ extension $GamePlayerExtension on GamePlayer {
         isSmallBlind:
             (isSmallBlind != null ? isSmallBlind.value : this.isSmallBlind),
         isBigBlind: (isBigBlind != null ? isBigBlind.value : this.isBigBlind),
-        game: (game != null ? game.value : this.game),
-        user: (user != null ? user.value : this.user),
         playerCards:
             (playerCards != null ? playerCards.value : this.playerCards));
   }
 }
 
 @JsonSerializable(explicitToJson: true)
-class GameState {
-  const GameState({
+class GameRound {
+  const GameRound({
+    this.gameRoundId,
+    this.gameId,
+    this.game,
+    this.roundNumber,
+    this.startTime,
+    this.endTime,
+    this.potSize,
+    this.winners,
+  });
+
+  factory GameRound.fromJson(Map<String, dynamic> json) =>
+      _$GameRoundFromJson(json);
+
+  static const toJsonFactory = _$GameRoundToJson;
+  Map<String, dynamic> toJson() => _$GameRoundToJson(this);
+
+  @JsonKey(name: 'gameRoundId')
+  final int? gameRoundId;
+  @JsonKey(name: 'gameId')
+  final int? gameId;
+  @JsonKey(name: 'game')
+  final Game? game;
+  @JsonKey(name: 'roundNumber')
+  final int? roundNumber;
+  @JsonKey(name: 'startTime')
+  final DateTime? startTime;
+  @JsonKey(name: 'endTime')
+  final DateTime? endTime;
+  @JsonKey(name: 'potSize')
+  final int? potSize;
+  @JsonKey(name: 'winners', defaultValue: <GameRoundWinner>[])
+  final List<GameRoundWinner>? winners;
+  static const fromJsonFactory = _$GameRoundFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is GameRound &&
+            (identical(other.gameRoundId, gameRoundId) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRoundId, gameRoundId)) &&
+            (identical(other.gameId, gameId) ||
+                const DeepCollectionEquality().equals(other.gameId, gameId)) &&
+            (identical(other.game, game) ||
+                const DeepCollectionEquality().equals(other.game, game)) &&
+            (identical(other.roundNumber, roundNumber) ||
+                const DeepCollectionEquality()
+                    .equals(other.roundNumber, roundNumber)) &&
+            (identical(other.startTime, startTime) ||
+                const DeepCollectionEquality()
+                    .equals(other.startTime, startTime)) &&
+            (identical(other.endTime, endTime) ||
+                const DeepCollectionEquality()
+                    .equals(other.endTime, endTime)) &&
+            (identical(other.potSize, potSize) ||
+                const DeepCollectionEquality()
+                    .equals(other.potSize, potSize)) &&
+            (identical(other.winners, winners) ||
+                const DeepCollectionEquality().equals(other.winners, winners)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(gameRoundId) ^
+      const DeepCollectionEquality().hash(gameId) ^
+      const DeepCollectionEquality().hash(game) ^
+      const DeepCollectionEquality().hash(roundNumber) ^
+      const DeepCollectionEquality().hash(startTime) ^
+      const DeepCollectionEquality().hash(endTime) ^
+      const DeepCollectionEquality().hash(potSize) ^
+      const DeepCollectionEquality().hash(winners) ^
+      runtimeType.hashCode;
+}
+
+extension $GameRoundExtension on GameRound {
+  GameRound copyWith(
+      {int? gameRoundId,
+      int? gameId,
+      Game? game,
+      int? roundNumber,
+      DateTime? startTime,
+      DateTime? endTime,
+      int? potSize,
+      List<GameRoundWinner>? winners}) {
+    return GameRound(
+        gameRoundId: gameRoundId ?? this.gameRoundId,
+        gameId: gameId ?? this.gameId,
+        game: game ?? this.game,
+        roundNumber: roundNumber ?? this.roundNumber,
+        startTime: startTime ?? this.startTime,
+        endTime: endTime ?? this.endTime,
+        potSize: potSize ?? this.potSize,
+        winners: winners ?? this.winners);
+  }
+
+  GameRound copyWithWrapped(
+      {Wrapped<int?>? gameRoundId,
+      Wrapped<int?>? gameId,
+      Wrapped<Game?>? game,
+      Wrapped<int?>? roundNumber,
+      Wrapped<DateTime?>? startTime,
+      Wrapped<DateTime?>? endTime,
+      Wrapped<int?>? potSize,
+      Wrapped<List<GameRoundWinner>?>? winners}) {
+    return GameRound(
+        gameRoundId:
+            (gameRoundId != null ? gameRoundId.value : this.gameRoundId),
+        gameId: (gameId != null ? gameId.value : this.gameId),
+        game: (game != null ? game.value : this.game),
+        roundNumber:
+            (roundNumber != null ? roundNumber.value : this.roundNumber),
+        startTime: (startTime != null ? startTime.value : this.startTime),
+        endTime: (endTime != null ? endTime.value : this.endTime),
+        potSize: (potSize != null ? potSize.value : this.potSize),
+        winners: (winners != null ? winners.value : this.winners));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class GameRoundWinner {
+  const GameRoundWinner({
+    this.gameRoundWinnerId,
+    this.gameRoundId,
+    this.gameRound,
+    this.userId,
+    this.user,
+    this.amountWon,
+  });
+
+  factory GameRoundWinner.fromJson(Map<String, dynamic> json) =>
+      _$GameRoundWinnerFromJson(json);
+
+  static const toJsonFactory = _$GameRoundWinnerToJson;
+  Map<String, dynamic> toJson() => _$GameRoundWinnerToJson(this);
+
+  @JsonKey(name: 'gameRoundWinnerId')
+  final int? gameRoundWinnerId;
+  @JsonKey(name: 'gameRoundId')
+  final int? gameRoundId;
+  @JsonKey(name: 'gameRound')
+  final GameRound? gameRound;
+  @JsonKey(name: 'userId')
+  final int? userId;
+  @JsonKey(name: 'user')
+  final User? user;
+  @JsonKey(name: 'amountWon')
+  final int? amountWon;
+  static const fromJsonFactory = _$GameRoundWinnerFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is GameRoundWinner &&
+            (identical(other.gameRoundWinnerId, gameRoundWinnerId) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRoundWinnerId, gameRoundWinnerId)) &&
+            (identical(other.gameRoundId, gameRoundId) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRoundId, gameRoundId)) &&
+            (identical(other.gameRound, gameRound) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRound, gameRound)) &&
+            (identical(other.userId, userId) ||
+                const DeepCollectionEquality().equals(other.userId, userId)) &&
+            (identical(other.user, user) ||
+                const DeepCollectionEquality().equals(other.user, user)) &&
+            (identical(other.amountWon, amountWon) ||
+                const DeepCollectionEquality()
+                    .equals(other.amountWon, amountWon)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(gameRoundWinnerId) ^
+      const DeepCollectionEquality().hash(gameRoundId) ^
+      const DeepCollectionEquality().hash(gameRound) ^
+      const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(user) ^
+      const DeepCollectionEquality().hash(amountWon) ^
+      runtimeType.hashCode;
+}
+
+extension $GameRoundWinnerExtension on GameRoundWinner {
+  GameRoundWinner copyWith(
+      {int? gameRoundWinnerId,
+      int? gameRoundId,
+      GameRound? gameRound,
+      int? userId,
+      User? user,
+      int? amountWon}) {
+    return GameRoundWinner(
+        gameRoundWinnerId: gameRoundWinnerId ?? this.gameRoundWinnerId,
+        gameRoundId: gameRoundId ?? this.gameRoundId,
+        gameRound: gameRound ?? this.gameRound,
+        userId: userId ?? this.userId,
+        user: user ?? this.user,
+        amountWon: amountWon ?? this.amountWon);
+  }
+
+  GameRoundWinner copyWithWrapped(
+      {Wrapped<int?>? gameRoundWinnerId,
+      Wrapped<int?>? gameRoundId,
+      Wrapped<GameRound?>? gameRound,
+      Wrapped<int?>? userId,
+      Wrapped<User?>? user,
+      Wrapped<int?>? amountWon}) {
+    return GameRoundWinner(
+        gameRoundWinnerId: (gameRoundWinnerId != null
+            ? gameRoundWinnerId.value
+            : this.gameRoundWinnerId),
+        gameRoundId:
+            (gameRoundId != null ? gameRoundId.value : this.gameRoundId),
+        gameRound: (gameRound != null ? gameRound.value : this.gameRound),
+        userId: (userId != null ? userId.value : this.userId),
+        user: (user != null ? user.value : this.user),
+        amountWon: (amountWon != null ? amountWon.value : this.amountWon));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class GameStateDto {
+  const GameStateDto({
     this.gameId,
     this.tableId,
     this.tableName,
     this.currentState,
     this.potSize,
+    this.currentTurnUserId,
     this.communityCards,
-    this.playerCards,
     this.players,
+    this.playerCards,
     this.lastMoves,
-    this.winnerId,
+    this.roundWinners,
+    this.playerRoundContributions,
+    this.callAmount,
+    this.minRaiseAmount,
   });
 
-  factory GameState.fromJson(Map<String, dynamic> json) =>
-      _$GameStateFromJson(json);
+  factory GameStateDto.fromJson(Map<String, dynamic> json) =>
+      _$GameStateDtoFromJson(json);
 
-  static const toJsonFactory = _$GameStateToJson;
-  Map<String, dynamic> toJson() => _$GameStateToJson(this);
+  static const toJsonFactory = _$GameStateDtoToJson;
+  Map<String, dynamic> toJson() => _$GameStateDtoToJson(this);
 
   @JsonKey(name: 'gameId')
   final int? gameId;
@@ -751,22 +1020,30 @@ class GameState {
   final String? currentState;
   @JsonKey(name: 'potSize')
   final int? potSize;
-  @JsonKey(name: 'communityCards', defaultValue: <Card>[])
-  final List<Card>? communityCards;
-  @JsonKey(name: 'playerCards', defaultValue: <Card>[])
-  final List<Card>? playerCards;
-  @JsonKey(name: 'players', defaultValue: <PlayerState>[])
-  final List<PlayerState>? players;
-  @JsonKey(name: 'lastMoves', defaultValue: <Move>[])
-  final List<Move>? lastMoves;
-  @JsonKey(name: 'winnerId')
-  final int? winnerId;
-  static const fromJsonFactory = _$GameStateFromJson;
+  @JsonKey(name: 'currentTurnUserId')
+  final int? currentTurnUserId;
+  @JsonKey(name: 'communityCards', defaultValue: <CardDto>[])
+  final List<CardDto>? communityCards;
+  @JsonKey(name: 'players', defaultValue: <PlayerStateDto>[])
+  final List<PlayerStateDto>? players;
+  @JsonKey(name: 'playerCards', defaultValue: <CardDto>[])
+  final List<CardDto>? playerCards;
+  @JsonKey(name: 'lastMoves', defaultValue: <MoveDto>[])
+  final List<MoveDto>? lastMoves;
+  @JsonKey(name: 'roundWinners', defaultValue: <RoundWinnerDto>[])
+  final List<RoundWinnerDto>? roundWinners;
+  @JsonKey(name: 'playerRoundContributions')
+  final Map<String, dynamic>? playerRoundContributions;
+  @JsonKey(name: 'callAmount')
+  final int? callAmount;
+  @JsonKey(name: 'minRaiseAmount')
+  final int? minRaiseAmount;
+  static const fromJsonFactory = _$GameStateDtoFromJson;
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other is GameState &&
+        (other is GameStateDto &&
             (identical(other.gameId, gameId) ||
                 const DeepCollectionEquality().equals(other.gameId, gameId)) &&
             (identical(other.tableId, tableId) ||
@@ -781,21 +1058,35 @@ class GameState {
             (identical(other.potSize, potSize) ||
                 const DeepCollectionEquality()
                     .equals(other.potSize, potSize)) &&
+            (identical(other.currentTurnUserId, currentTurnUserId) ||
+                const DeepCollectionEquality()
+                    .equals(other.currentTurnUserId, currentTurnUserId)) &&
             (identical(other.communityCards, communityCards) ||
                 const DeepCollectionEquality()
                     .equals(other.communityCards, communityCards)) &&
-            (identical(other.playerCards, playerCards) ||
-                const DeepCollectionEquality()
-                    .equals(other.playerCards, playerCards)) &&
             (identical(other.players, players) ||
                 const DeepCollectionEquality()
                     .equals(other.players, players)) &&
+            (identical(other.playerCards, playerCards) ||
+                const DeepCollectionEquality()
+                    .equals(other.playerCards, playerCards)) &&
             (identical(other.lastMoves, lastMoves) ||
                 const DeepCollectionEquality()
                     .equals(other.lastMoves, lastMoves)) &&
-            (identical(other.winnerId, winnerId) ||
+            (identical(other.roundWinners, roundWinners) ||
                 const DeepCollectionEquality()
-                    .equals(other.winnerId, winnerId)));
+                    .equals(other.roundWinners, roundWinners)) &&
+            (identical(
+                    other.playerRoundContributions, playerRoundContributions) ||
+                const DeepCollectionEquality().equals(
+                    other.playerRoundContributions,
+                    playerRoundContributions)) &&
+            (identical(other.callAmount, callAmount) ||
+                const DeepCollectionEquality()
+                    .equals(other.callAmount, callAmount)) &&
+            (identical(other.minRaiseAmount, minRaiseAmount) ||
+                const DeepCollectionEquality()
+                    .equals(other.minRaiseAmount, minRaiseAmount)));
   }
 
   @override
@@ -808,65 +1099,93 @@ class GameState {
       const DeepCollectionEquality().hash(tableName) ^
       const DeepCollectionEquality().hash(currentState) ^
       const DeepCollectionEquality().hash(potSize) ^
+      const DeepCollectionEquality().hash(currentTurnUserId) ^
       const DeepCollectionEquality().hash(communityCards) ^
-      const DeepCollectionEquality().hash(playerCards) ^
       const DeepCollectionEquality().hash(players) ^
+      const DeepCollectionEquality().hash(playerCards) ^
       const DeepCollectionEquality().hash(lastMoves) ^
-      const DeepCollectionEquality().hash(winnerId) ^
+      const DeepCollectionEquality().hash(roundWinners) ^
+      const DeepCollectionEquality().hash(playerRoundContributions) ^
+      const DeepCollectionEquality().hash(callAmount) ^
+      const DeepCollectionEquality().hash(minRaiseAmount) ^
       runtimeType.hashCode;
 }
 
-extension $GameStateExtension on GameState {
-  GameState copyWith(
+extension $GameStateDtoExtension on GameStateDto {
+  GameStateDto copyWith(
       {int? gameId,
       int? tableId,
       String? tableName,
       String? currentState,
       int? potSize,
-      List<Card>? communityCards,
-      List<Card>? playerCards,
-      List<PlayerState>? players,
-      List<Move>? lastMoves,
-      int? winnerId}) {
-    return GameState(
+      int? currentTurnUserId,
+      List<CardDto>? communityCards,
+      List<PlayerStateDto>? players,
+      List<CardDto>? playerCards,
+      List<MoveDto>? lastMoves,
+      List<RoundWinnerDto>? roundWinners,
+      Map<String, dynamic>? playerRoundContributions,
+      int? callAmount,
+      int? minRaiseAmount}) {
+    return GameStateDto(
         gameId: gameId ?? this.gameId,
         tableId: tableId ?? this.tableId,
         tableName: tableName ?? this.tableName,
         currentState: currentState ?? this.currentState,
         potSize: potSize ?? this.potSize,
+        currentTurnUserId: currentTurnUserId ?? this.currentTurnUserId,
         communityCards: communityCards ?? this.communityCards,
-        playerCards: playerCards ?? this.playerCards,
         players: players ?? this.players,
+        playerCards: playerCards ?? this.playerCards,
         lastMoves: lastMoves ?? this.lastMoves,
-        winnerId: winnerId ?? this.winnerId);
+        roundWinners: roundWinners ?? this.roundWinners,
+        playerRoundContributions:
+            playerRoundContributions ?? this.playerRoundContributions,
+        callAmount: callAmount ?? this.callAmount,
+        minRaiseAmount: minRaiseAmount ?? this.minRaiseAmount);
   }
 
-  GameState copyWithWrapped(
+  GameStateDto copyWithWrapped(
       {Wrapped<int?>? gameId,
       Wrapped<int?>? tableId,
       Wrapped<String?>? tableName,
       Wrapped<String?>? currentState,
       Wrapped<int?>? potSize,
-      Wrapped<List<Card>?>? communityCards,
-      Wrapped<List<Card>?>? playerCards,
-      Wrapped<List<PlayerState>?>? players,
-      Wrapped<List<Move>?>? lastMoves,
-      Wrapped<int?>? winnerId}) {
-    return GameState(
+      Wrapped<int?>? currentTurnUserId,
+      Wrapped<List<CardDto>?>? communityCards,
+      Wrapped<List<PlayerStateDto>?>? players,
+      Wrapped<List<CardDto>?>? playerCards,
+      Wrapped<List<MoveDto>?>? lastMoves,
+      Wrapped<List<RoundWinnerDto>?>? roundWinners,
+      Wrapped<Map<String, dynamic>?>? playerRoundContributions,
+      Wrapped<int?>? callAmount,
+      Wrapped<int?>? minRaiseAmount}) {
+    return GameStateDto(
         gameId: (gameId != null ? gameId.value : this.gameId),
         tableId: (tableId != null ? tableId.value : this.tableId),
         tableName: (tableName != null ? tableName.value : this.tableName),
         currentState:
             (currentState != null ? currentState.value : this.currentState),
         potSize: (potSize != null ? potSize.value : this.potSize),
+        currentTurnUserId: (currentTurnUserId != null
+            ? currentTurnUserId.value
+            : this.currentTurnUserId),
         communityCards: (communityCards != null
             ? communityCards.value
             : this.communityCards),
+        players: (players != null ? players.value : this.players),
         playerCards:
             (playerCards != null ? playerCards.value : this.playerCards),
-        players: (players != null ? players.value : this.players),
         lastMoves: (lastMoves != null ? lastMoves.value : this.lastMoves),
-        winnerId: (winnerId != null ? winnerId.value : this.winnerId));
+        roundWinners:
+            (roundWinners != null ? roundWinners.value : this.roundWinners),
+        playerRoundContributions: (playerRoundContributions != null
+            ? playerRoundContributions.value
+            : this.playerRoundContributions),
+        callAmount: (callAmount != null ? callAmount.value : this.callAmount),
+        minRaiseAmount: (minRaiseAmount != null
+            ? minRaiseAmount.value
+            : this.minRaiseAmount));
   }
 }
 
@@ -925,122 +1244,6 @@ extension $JoinGameDtoExtension on JoinGameDto {
             (seatPosition != null ? seatPosition.value : this.seatPosition),
         buyInAmount:
             (buyInAmount != null ? buyInAmount.value : this.buyInAmount));
-  }
-}
-
-@JsonSerializable(explicitToJson: true)
-class LeaderboardEntry {
-  const LeaderboardEntry({
-    this.userId,
-    this.username,
-    this.chipsBalance,
-    this.avatarImage,
-    this.gamesWon,
-    this.gamesPlayed,
-    this.winRatio,
-  });
-
-  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
-      _$LeaderboardEntryFromJson(json);
-
-  static const toJsonFactory = _$LeaderboardEntryToJson;
-  Map<String, dynamic> toJson() => _$LeaderboardEntryToJson(this);
-
-  @JsonKey(name: 'userId')
-  final int? userId;
-  @JsonKey(name: 'username')
-  final String? username;
-  @JsonKey(name: 'chipsBalance')
-  final int? chipsBalance;
-  @JsonKey(name: 'avatarImage')
-  final String? avatarImage;
-  @JsonKey(name: 'gamesWon')
-  final int? gamesWon;
-  @JsonKey(name: 'gamesPlayed')
-  final int? gamesPlayed;
-  @JsonKey(name: 'winRatio')
-  final double? winRatio;
-  static const fromJsonFactory = _$LeaderboardEntryFromJson;
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other is LeaderboardEntry &&
-            (identical(other.userId, userId) ||
-                const DeepCollectionEquality().equals(other.userId, userId)) &&
-            (identical(other.username, username) ||
-                const DeepCollectionEquality()
-                    .equals(other.username, username)) &&
-            (identical(other.chipsBalance, chipsBalance) ||
-                const DeepCollectionEquality()
-                    .equals(other.chipsBalance, chipsBalance)) &&
-            (identical(other.avatarImage, avatarImage) ||
-                const DeepCollectionEquality()
-                    .equals(other.avatarImage, avatarImage)) &&
-            (identical(other.gamesWon, gamesWon) ||
-                const DeepCollectionEquality()
-                    .equals(other.gamesWon, gamesWon)) &&
-            (identical(other.gamesPlayed, gamesPlayed) ||
-                const DeepCollectionEquality()
-                    .equals(other.gamesPlayed, gamesPlayed)) &&
-            (identical(other.winRatio, winRatio) ||
-                const DeepCollectionEquality()
-                    .equals(other.winRatio, winRatio)));
-  }
-
-  @override
-  String toString() => jsonEncode(this);
-
-  @override
-  int get hashCode =>
-      const DeepCollectionEquality().hash(userId) ^
-      const DeepCollectionEquality().hash(username) ^
-      const DeepCollectionEquality().hash(chipsBalance) ^
-      const DeepCollectionEquality().hash(avatarImage) ^
-      const DeepCollectionEquality().hash(gamesWon) ^
-      const DeepCollectionEquality().hash(gamesPlayed) ^
-      const DeepCollectionEquality().hash(winRatio) ^
-      runtimeType.hashCode;
-}
-
-extension $LeaderboardEntryExtension on LeaderboardEntry {
-  LeaderboardEntry copyWith(
-      {int? userId,
-      String? username,
-      int? chipsBalance,
-      String? avatarImage,
-      int? gamesWon,
-      int? gamesPlayed,
-      double? winRatio}) {
-    return LeaderboardEntry(
-        userId: userId ?? this.userId,
-        username: username ?? this.username,
-        chipsBalance: chipsBalance ?? this.chipsBalance,
-        avatarImage: avatarImage ?? this.avatarImage,
-        gamesWon: gamesWon ?? this.gamesWon,
-        gamesPlayed: gamesPlayed ?? this.gamesPlayed,
-        winRatio: winRatio ?? this.winRatio);
-  }
-
-  LeaderboardEntry copyWithWrapped(
-      {Wrapped<int?>? userId,
-      Wrapped<String?>? username,
-      Wrapped<int?>? chipsBalance,
-      Wrapped<String?>? avatarImage,
-      Wrapped<int?>? gamesWon,
-      Wrapped<int?>? gamesPlayed,
-      Wrapped<double?>? winRatio}) {
-    return LeaderboardEntry(
-        userId: (userId != null ? userId.value : this.userId),
-        username: (username != null ? username.value : this.username),
-        chipsBalance:
-            (chipsBalance != null ? chipsBalance.value : this.chipsBalance),
-        avatarImage:
-            (avatarImage != null ? avatarImage.value : this.avatarImage),
-        gamesWon: (gamesWon != null ? gamesWon.value : this.gamesWon),
-        gamesPlayed:
-            (gamesPlayed != null ? gamesPlayed.value : this.gamesPlayed),
-        winRatio: (winRatio != null ? winRatio.value : this.winRatio));
   }
 }
 
@@ -1160,13 +1363,15 @@ class Move {
   const Move({
     this.moveId,
     this.gameId,
+    this.game,
+    this.gameRoundId,
+    this.gameRound,
     this.playerId,
-    this.actionType,
+    this.player,
+    required this.actionType,
     this.amount,
     this.moveTime,
-    this.round,
-    this.game,
-    this.player,
+    required this.round,
   });
 
   factory Move.fromJson(Map<String, dynamic> json) => _$MoveFromJson(json);
@@ -1178,20 +1383,24 @@ class Move {
   final int? moveId;
   @JsonKey(name: 'gameId')
   final int? gameId;
+  @JsonKey(name: 'game')
+  final Game? game;
+  @JsonKey(name: 'gameRoundId')
+  final int? gameRoundId;
+  @JsonKey(name: 'gameRound')
+  final GameRound? gameRound;
   @JsonKey(name: 'playerId')
   final int? playerId;
+  @JsonKey(name: 'player')
+  final User? player;
   @JsonKey(name: 'actionType')
-  final String? actionType;
+  final String actionType;
   @JsonKey(name: 'amount')
   final int? amount;
   @JsonKey(name: 'moveTime')
   final DateTime? moveTime;
   @JsonKey(name: 'round')
-  final String? round;
-  @JsonKey(name: 'game')
-  final Game? game;
-  @JsonKey(name: 'player')
-  final User? player;
+  final String round;
   static const fromJsonFactory = _$MoveFromJson;
 
   @override
@@ -1202,6 +1411,134 @@ class Move {
                 const DeepCollectionEquality().equals(other.moveId, moveId)) &&
             (identical(other.gameId, gameId) ||
                 const DeepCollectionEquality().equals(other.gameId, gameId)) &&
+            (identical(other.game, game) ||
+                const DeepCollectionEquality().equals(other.game, game)) &&
+            (identical(other.gameRoundId, gameRoundId) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRoundId, gameRoundId)) &&
+            (identical(other.gameRound, gameRound) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRound, gameRound)) &&
+            (identical(other.playerId, playerId) ||
+                const DeepCollectionEquality()
+                    .equals(other.playerId, playerId)) &&
+            (identical(other.player, player) ||
+                const DeepCollectionEquality().equals(other.player, player)) &&
+            (identical(other.actionType, actionType) ||
+                const DeepCollectionEquality()
+                    .equals(other.actionType, actionType)) &&
+            (identical(other.amount, amount) ||
+                const DeepCollectionEquality().equals(other.amount, amount)) &&
+            (identical(other.moveTime, moveTime) ||
+                const DeepCollectionEquality()
+                    .equals(other.moveTime, moveTime)) &&
+            (identical(other.round, round) ||
+                const DeepCollectionEquality().equals(other.round, round)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(moveId) ^
+      const DeepCollectionEquality().hash(gameId) ^
+      const DeepCollectionEquality().hash(game) ^
+      const DeepCollectionEquality().hash(gameRoundId) ^
+      const DeepCollectionEquality().hash(gameRound) ^
+      const DeepCollectionEquality().hash(playerId) ^
+      const DeepCollectionEquality().hash(player) ^
+      const DeepCollectionEquality().hash(actionType) ^
+      const DeepCollectionEquality().hash(amount) ^
+      const DeepCollectionEquality().hash(moveTime) ^
+      const DeepCollectionEquality().hash(round) ^
+      runtimeType.hashCode;
+}
+
+extension $MoveExtension on Move {
+  Move copyWith(
+      {int? moveId,
+      int? gameId,
+      Game? game,
+      int? gameRoundId,
+      GameRound? gameRound,
+      int? playerId,
+      User? player,
+      String? actionType,
+      int? amount,
+      DateTime? moveTime,
+      String? round}) {
+    return Move(
+        moveId: moveId ?? this.moveId,
+        gameId: gameId ?? this.gameId,
+        game: game ?? this.game,
+        gameRoundId: gameRoundId ?? this.gameRoundId,
+        gameRound: gameRound ?? this.gameRound,
+        playerId: playerId ?? this.playerId,
+        player: player ?? this.player,
+        actionType: actionType ?? this.actionType,
+        amount: amount ?? this.amount,
+        moveTime: moveTime ?? this.moveTime,
+        round: round ?? this.round);
+  }
+
+  Move copyWithWrapped(
+      {Wrapped<int?>? moveId,
+      Wrapped<int?>? gameId,
+      Wrapped<Game?>? game,
+      Wrapped<int?>? gameRoundId,
+      Wrapped<GameRound?>? gameRound,
+      Wrapped<int?>? playerId,
+      Wrapped<User?>? player,
+      Wrapped<String>? actionType,
+      Wrapped<int?>? amount,
+      Wrapped<DateTime?>? moveTime,
+      Wrapped<String>? round}) {
+    return Move(
+        moveId: (moveId != null ? moveId.value : this.moveId),
+        gameId: (gameId != null ? gameId.value : this.gameId),
+        game: (game != null ? game.value : this.game),
+        gameRoundId:
+            (gameRoundId != null ? gameRoundId.value : this.gameRoundId),
+        gameRound: (gameRound != null ? gameRound.value : this.gameRound),
+        playerId: (playerId != null ? playerId.value : this.playerId),
+        player: (player != null ? player.value : this.player),
+        actionType: (actionType != null ? actionType.value : this.actionType),
+        amount: (amount != null ? amount.value : this.amount),
+        moveTime: (moveTime != null ? moveTime.value : this.moveTime),
+        round: (round != null ? round.value : this.round));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class MoveDto {
+  const MoveDto({
+    this.playerId,
+    this.actionType,
+    this.amount,
+    this.moveTime,
+  });
+
+  factory MoveDto.fromJson(Map<String, dynamic> json) =>
+      _$MoveDtoFromJson(json);
+
+  static const toJsonFactory = _$MoveDtoToJson;
+  Map<String, dynamic> toJson() => _$MoveDtoToJson(this);
+
+  @JsonKey(name: 'playerId')
+  final int? playerId;
+  @JsonKey(name: 'actionType')
+  final String? actionType;
+  @JsonKey(name: 'amount')
+  final int? amount;
+  @JsonKey(name: 'moveTime')
+  final DateTime? moveTime;
+  static const fromJsonFactory = _$MoveDtoFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is MoveDto &&
             (identical(other.playerId, playerId) ||
                 const DeepCollectionEquality()
                     .equals(other.playerId, playerId)) &&
@@ -1212,13 +1549,7 @@ class Move {
                 const DeepCollectionEquality().equals(other.amount, amount)) &&
             (identical(other.moveTime, moveTime) ||
                 const DeepCollectionEquality()
-                    .equals(other.moveTime, moveTime)) &&
-            (identical(other.round, round) ||
-                const DeepCollectionEquality().equals(other.round, round)) &&
-            (identical(other.game, game) ||
-                const DeepCollectionEquality().equals(other.game, game)) &&
-            (identical(other.player, player) ||
-                const DeepCollectionEquality().equals(other.player, player)));
+                    .equals(other.moveTime, moveTime)));
   }
 
   @override
@@ -1226,61 +1557,33 @@ class Move {
 
   @override
   int get hashCode =>
-      const DeepCollectionEquality().hash(moveId) ^
-      const DeepCollectionEquality().hash(gameId) ^
       const DeepCollectionEquality().hash(playerId) ^
       const DeepCollectionEquality().hash(actionType) ^
       const DeepCollectionEquality().hash(amount) ^
       const DeepCollectionEquality().hash(moveTime) ^
-      const DeepCollectionEquality().hash(round) ^
-      const DeepCollectionEquality().hash(game) ^
-      const DeepCollectionEquality().hash(player) ^
       runtimeType.hashCode;
 }
 
-extension $MoveExtension on Move {
-  Move copyWith(
-      {int? moveId,
-      int? gameId,
-      int? playerId,
-      String? actionType,
-      int? amount,
-      DateTime? moveTime,
-      String? round,
-      Game? game,
-      User? player}) {
-    return Move(
-        moveId: moveId ?? this.moveId,
-        gameId: gameId ?? this.gameId,
+extension $MoveDtoExtension on MoveDto {
+  MoveDto copyWith(
+      {int? playerId, String? actionType, int? amount, DateTime? moveTime}) {
+    return MoveDto(
         playerId: playerId ?? this.playerId,
         actionType: actionType ?? this.actionType,
         amount: amount ?? this.amount,
-        moveTime: moveTime ?? this.moveTime,
-        round: round ?? this.round,
-        game: game ?? this.game,
-        player: player ?? this.player);
+        moveTime: moveTime ?? this.moveTime);
   }
 
-  Move copyWithWrapped(
-      {Wrapped<int?>? moveId,
-      Wrapped<int?>? gameId,
-      Wrapped<int?>? playerId,
+  MoveDto copyWithWrapped(
+      {Wrapped<int?>? playerId,
       Wrapped<String?>? actionType,
       Wrapped<int?>? amount,
-      Wrapped<DateTime?>? moveTime,
-      Wrapped<String?>? round,
-      Wrapped<Game?>? game,
-      Wrapped<User?>? player}) {
-    return Move(
-        moveId: (moveId != null ? moveId.value : this.moveId),
-        gameId: (gameId != null ? gameId.value : this.gameId),
+      Wrapped<DateTime?>? moveTime}) {
+    return MoveDto(
         playerId: (playerId != null ? playerId.value : this.playerId),
         actionType: (actionType != null ? actionType.value : this.actionType),
         amount: (amount != null ? amount.value : this.amount),
-        moveTime: (moveTime != null ? moveTime.value : this.moveTime),
-        round: (round != null ? round.value : this.round),
-        game: (game != null ? game.value : this.game),
-        player: (player != null ? player.value : this.player));
+        moveTime: (moveTime != null ? moveTime.value : this.moveTime));
   }
 }
 
@@ -1289,10 +1592,10 @@ class PlayerCard {
   const PlayerCard({
     this.playerCardId,
     this.gamePlayerId,
-    this.cardId,
-    this.position,
     this.gamePlayer,
+    this.cardId,
     this.card,
+    this.position,
   });
 
   factory PlayerCard.fromJson(Map<String, dynamic> json) =>
@@ -1305,14 +1608,14 @@ class PlayerCard {
   final int? playerCardId;
   @JsonKey(name: 'gamePlayerId')
   final int? gamePlayerId;
-  @JsonKey(name: 'cardId')
-  final int? cardId;
-  @JsonKey(name: 'position')
-  final int? position;
   @JsonKey(name: 'gamePlayer')
   final GamePlayer? gamePlayer;
+  @JsonKey(name: 'cardId')
+  final int? cardId;
   @JsonKey(name: 'card')
   final Card? card;
+  @JsonKey(name: 'position')
+  final int? position;
   static const fromJsonFactory = _$PlayerCardFromJson;
 
   @override
@@ -1325,16 +1628,16 @@ class PlayerCard {
             (identical(other.gamePlayerId, gamePlayerId) ||
                 const DeepCollectionEquality()
                     .equals(other.gamePlayerId, gamePlayerId)) &&
-            (identical(other.cardId, cardId) ||
-                const DeepCollectionEquality().equals(other.cardId, cardId)) &&
-            (identical(other.position, position) ||
-                const DeepCollectionEquality()
-                    .equals(other.position, position)) &&
             (identical(other.gamePlayer, gamePlayer) ||
                 const DeepCollectionEquality()
                     .equals(other.gamePlayer, gamePlayer)) &&
+            (identical(other.cardId, cardId) ||
+                const DeepCollectionEquality().equals(other.cardId, cardId)) &&
             (identical(other.card, card) ||
-                const DeepCollectionEquality().equals(other.card, card)));
+                const DeepCollectionEquality().equals(other.card, card)) &&
+            (identical(other.position, position) ||
+                const DeepCollectionEquality()
+                    .equals(other.position, position)));
   }
 
   @override
@@ -1344,10 +1647,10 @@ class PlayerCard {
   int get hashCode =>
       const DeepCollectionEquality().hash(playerCardId) ^
       const DeepCollectionEquality().hash(gamePlayerId) ^
-      const DeepCollectionEquality().hash(cardId) ^
-      const DeepCollectionEquality().hash(position) ^
       const DeepCollectionEquality().hash(gamePlayer) ^
+      const DeepCollectionEquality().hash(cardId) ^
       const DeepCollectionEquality().hash(card) ^
+      const DeepCollectionEquality().hash(position) ^
       runtimeType.hashCode;
 }
 
@@ -1355,66 +1658,64 @@ extension $PlayerCardExtension on PlayerCard {
   PlayerCard copyWith(
       {int? playerCardId,
       int? gamePlayerId,
-      int? cardId,
-      int? position,
       GamePlayer? gamePlayer,
-      Card? card}) {
+      int? cardId,
+      Card? card,
+      int? position}) {
     return PlayerCard(
         playerCardId: playerCardId ?? this.playerCardId,
         gamePlayerId: gamePlayerId ?? this.gamePlayerId,
-        cardId: cardId ?? this.cardId,
-        position: position ?? this.position,
         gamePlayer: gamePlayer ?? this.gamePlayer,
-        card: card ?? this.card);
+        cardId: cardId ?? this.cardId,
+        card: card ?? this.card,
+        position: position ?? this.position);
   }
 
   PlayerCard copyWithWrapped(
       {Wrapped<int?>? playerCardId,
       Wrapped<int?>? gamePlayerId,
-      Wrapped<int?>? cardId,
-      Wrapped<int?>? position,
       Wrapped<GamePlayer?>? gamePlayer,
-      Wrapped<Card?>? card}) {
+      Wrapped<int?>? cardId,
+      Wrapped<Card?>? card,
+      Wrapped<int?>? position}) {
     return PlayerCard(
         playerCardId:
             (playerCardId != null ? playerCardId.value : this.playerCardId),
         gamePlayerId:
             (gamePlayerId != null ? gamePlayerId.value : this.gamePlayerId),
-        cardId: (cardId != null ? cardId.value : this.cardId),
-        position: (position != null ? position.value : this.position),
         gamePlayer: (gamePlayer != null ? gamePlayer.value : this.gamePlayer),
-        card: (card != null ? card.value : this.card));
+        cardId: (cardId != null ? cardId.value : this.cardId),
+        card: (card != null ? card.value : this.card),
+        position: (position != null ? position.value : this.position));
   }
 }
 
 @JsonSerializable(explicitToJson: true)
-class PlayerState {
-  const PlayerState({
+class PlayerStateDto {
+  const PlayerStateDto({
     this.userId,
     this.username,
-    this.seatPosition,
-    this.chipCount,
+    this.currentChips,
     this.isActive,
     this.isDealer,
     this.isSmallBlind,
     this.isBigBlind,
+    this.seatPosition,
     this.cards,
   });
 
-  factory PlayerState.fromJson(Map<String, dynamic> json) =>
-      _$PlayerStateFromJson(json);
+  factory PlayerStateDto.fromJson(Map<String, dynamic> json) =>
+      _$PlayerStateDtoFromJson(json);
 
-  static const toJsonFactory = _$PlayerStateToJson;
-  Map<String, dynamic> toJson() => _$PlayerStateToJson(this);
+  static const toJsonFactory = _$PlayerStateDtoToJson;
+  Map<String, dynamic> toJson() => _$PlayerStateDtoToJson(this);
 
   @JsonKey(name: 'userId')
   final int? userId;
   @JsonKey(name: 'username')
   final String? username;
-  @JsonKey(name: 'seatPosition')
-  final int? seatPosition;
-  @JsonKey(name: 'chipCount')
-  final int? chipCount;
+  @JsonKey(name: 'currentChips')
+  final int? currentChips;
   @JsonKey(name: 'isActive')
   final bool? isActive;
   @JsonKey(name: 'isDealer')
@@ -1423,25 +1724,24 @@ class PlayerState {
   final bool? isSmallBlind;
   @JsonKey(name: 'isBigBlind')
   final bool? isBigBlind;
-  @JsonKey(name: 'cards', defaultValue: <Card>[])
-  final List<Card>? cards;
-  static const fromJsonFactory = _$PlayerStateFromJson;
+  @JsonKey(name: 'seatPosition')
+  final int? seatPosition;
+  @JsonKey(name: 'cards', defaultValue: <CardDto>[])
+  final List<CardDto>? cards;
+  static const fromJsonFactory = _$PlayerStateDtoFromJson;
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other is PlayerState &&
+        (other is PlayerStateDto &&
             (identical(other.userId, userId) ||
                 const DeepCollectionEquality().equals(other.userId, userId)) &&
             (identical(other.username, username) ||
                 const DeepCollectionEquality()
                     .equals(other.username, username)) &&
-            (identical(other.seatPosition, seatPosition) ||
+            (identical(other.currentChips, currentChips) ||
                 const DeepCollectionEquality()
-                    .equals(other.seatPosition, seatPosition)) &&
-            (identical(other.chipCount, chipCount) ||
-                const DeepCollectionEquality()
-                    .equals(other.chipCount, chipCount)) &&
+                    .equals(other.currentChips, currentChips)) &&
             (identical(other.isActive, isActive) ||
                 const DeepCollectionEquality()
                     .equals(other.isActive, isActive)) &&
@@ -1454,6 +1754,9 @@ class PlayerState {
             (identical(other.isBigBlind, isBigBlind) ||
                 const DeepCollectionEquality()
                     .equals(other.isBigBlind, isBigBlind)) &&
+            (identical(other.seatPosition, seatPosition) ||
+                const DeepCollectionEquality()
+                    .equals(other.seatPosition, seatPosition)) &&
             (identical(other.cards, cards) ||
                 const DeepCollectionEquality().equals(other.cards, cards)));
   }
@@ -1465,60 +1768,61 @@ class PlayerState {
   int get hashCode =>
       const DeepCollectionEquality().hash(userId) ^
       const DeepCollectionEquality().hash(username) ^
-      const DeepCollectionEquality().hash(seatPosition) ^
-      const DeepCollectionEquality().hash(chipCount) ^
+      const DeepCollectionEquality().hash(currentChips) ^
       const DeepCollectionEquality().hash(isActive) ^
       const DeepCollectionEquality().hash(isDealer) ^
       const DeepCollectionEquality().hash(isSmallBlind) ^
       const DeepCollectionEquality().hash(isBigBlind) ^
+      const DeepCollectionEquality().hash(seatPosition) ^
       const DeepCollectionEquality().hash(cards) ^
       runtimeType.hashCode;
 }
 
-extension $PlayerStateExtension on PlayerState {
-  PlayerState copyWith(
+extension $PlayerStateDtoExtension on PlayerStateDto {
+  PlayerStateDto copyWith(
       {int? userId,
       String? username,
-      int? seatPosition,
-      int? chipCount,
+      int? currentChips,
       bool? isActive,
       bool? isDealer,
       bool? isSmallBlind,
       bool? isBigBlind,
-      List<Card>? cards}) {
-    return PlayerState(
+      int? seatPosition,
+      List<CardDto>? cards}) {
+    return PlayerStateDto(
         userId: userId ?? this.userId,
         username: username ?? this.username,
-        seatPosition: seatPosition ?? this.seatPosition,
-        chipCount: chipCount ?? this.chipCount,
+        currentChips: currentChips ?? this.currentChips,
         isActive: isActive ?? this.isActive,
         isDealer: isDealer ?? this.isDealer,
         isSmallBlind: isSmallBlind ?? this.isSmallBlind,
         isBigBlind: isBigBlind ?? this.isBigBlind,
+        seatPosition: seatPosition ?? this.seatPosition,
         cards: cards ?? this.cards);
   }
 
-  PlayerState copyWithWrapped(
+  PlayerStateDto copyWithWrapped(
       {Wrapped<int?>? userId,
       Wrapped<String?>? username,
-      Wrapped<int?>? seatPosition,
-      Wrapped<int?>? chipCount,
+      Wrapped<int?>? currentChips,
       Wrapped<bool?>? isActive,
       Wrapped<bool?>? isDealer,
       Wrapped<bool?>? isSmallBlind,
       Wrapped<bool?>? isBigBlind,
-      Wrapped<List<Card>?>? cards}) {
-    return PlayerState(
+      Wrapped<int?>? seatPosition,
+      Wrapped<List<CardDto>?>? cards}) {
+    return PlayerStateDto(
         userId: (userId != null ? userId.value : this.userId),
         username: (username != null ? username.value : this.username),
-        seatPosition:
-            (seatPosition != null ? seatPosition.value : this.seatPosition),
-        chipCount: (chipCount != null ? chipCount.value : this.chipCount),
+        currentChips:
+            (currentChips != null ? currentChips.value : this.currentChips),
         isActive: (isActive != null ? isActive.value : this.isActive),
         isDealer: (isDealer != null ? isDealer.value : this.isDealer),
         isSmallBlind:
             (isSmallBlind != null ? isSmallBlind.value : this.isSmallBlind),
         isBigBlind: (isBigBlind != null ? isBigBlind.value : this.isBigBlind),
+        seatPosition:
+            (seatPosition != null ? seatPosition.value : this.seatPosition),
         cards: (cards != null ? cards.value : this.cards));
   }
 }
@@ -1527,14 +1831,14 @@ extension $PlayerStateExtension on PlayerState {
 class PokerTable {
   const PokerTable({
     this.tableId,
-    this.name,
+    required this.name,
     this.entryFee,
     this.minBuyIn,
     this.maxBuyIn,
     this.smallBlind,
     this.bigBlind,
     this.maxPlayers,
-    this.difficultyLevel,
+    required this.difficultyLevel,
     this.isActive,
     this.games,
   });
@@ -1548,7 +1852,7 @@ class PokerTable {
   @JsonKey(name: 'tableId')
   final int? tableId;
   @JsonKey(name: 'name')
-  final String? name;
+  final String name;
   @JsonKey(name: 'entryFee')
   final int? entryFee;
   @JsonKey(name: 'minBuyIn')
@@ -1562,7 +1866,7 @@ class PokerTable {
   @JsonKey(name: 'maxPlayers')
   final int? maxPlayers;
   @JsonKey(name: 'difficultyLevel')
-  final String? difficultyLevel;
+  final String difficultyLevel;
   @JsonKey(name: 'isActive')
   final bool? isActive;
   @JsonKey(name: 'games', defaultValue: <Game>[])
@@ -1654,14 +1958,14 @@ extension $PokerTableExtension on PokerTable {
 
   PokerTable copyWithWrapped(
       {Wrapped<int?>? tableId,
-      Wrapped<String?>? name,
+      Wrapped<String>? name,
       Wrapped<int?>? entryFee,
       Wrapped<int?>? minBuyIn,
       Wrapped<int?>? maxBuyIn,
       Wrapped<int?>? smallBlind,
       Wrapped<int?>? bigBlind,
       Wrapped<int?>? maxPlayers,
-      Wrapped<String?>? difficultyLevel,
+      Wrapped<String>? difficultyLevel,
       Wrapped<bool?>? isActive,
       Wrapped<List<Game>?>? games}) {
     return PokerTable(
@@ -1686,13 +1990,13 @@ class Purchase {
   const Purchase({
     this.purchaseId,
     this.userId,
+    this.user,
     this.itemId,
+    this.shopItem,
     this.purchaseDate,
     this.price,
     this.paymentMethod,
     this.transactionId,
-    this.user,
-    this.item,
   });
 
   factory Purchase.fromJson(Map<String, dynamic> json) =>
@@ -1705,8 +2009,12 @@ class Purchase {
   final int? purchaseId;
   @JsonKey(name: 'userId')
   final int? userId;
+  @JsonKey(name: 'user')
+  final User? user;
   @JsonKey(name: 'itemId')
   final int? itemId;
+  @JsonKey(name: 'shopItem')
+  final ShopItem? shopItem;
   @JsonKey(name: 'purchaseDate')
   final DateTime? purchaseDate;
   @JsonKey(name: 'price')
@@ -1715,10 +2023,6 @@ class Purchase {
   final String? paymentMethod;
   @JsonKey(name: 'transactionId')
   final String? transactionId;
-  @JsonKey(name: 'user')
-  final User? user;
-  @JsonKey(name: 'item')
-  final ShopItem? item;
   static const fromJsonFactory = _$PurchaseFromJson;
 
   @override
@@ -1730,8 +2034,13 @@ class Purchase {
                     .equals(other.purchaseId, purchaseId)) &&
             (identical(other.userId, userId) ||
                 const DeepCollectionEquality().equals(other.userId, userId)) &&
+            (identical(other.user, user) ||
+                const DeepCollectionEquality().equals(other.user, user)) &&
             (identical(other.itemId, itemId) ||
                 const DeepCollectionEquality().equals(other.itemId, itemId)) &&
+            (identical(other.shopItem, shopItem) ||
+                const DeepCollectionEquality()
+                    .equals(other.shopItem, shopItem)) &&
             (identical(other.purchaseDate, purchaseDate) ||
                 const DeepCollectionEquality()
                     .equals(other.purchaseDate, purchaseDate)) &&
@@ -1742,11 +2051,7 @@ class Purchase {
                     .equals(other.paymentMethod, paymentMethod)) &&
             (identical(other.transactionId, transactionId) ||
                 const DeepCollectionEquality()
-                    .equals(other.transactionId, transactionId)) &&
-            (identical(other.user, user) ||
-                const DeepCollectionEquality().equals(other.user, user)) &&
-            (identical(other.item, item) ||
-                const DeepCollectionEquality().equals(other.item, item)));
+                    .equals(other.transactionId, transactionId)));
   }
 
   @override
@@ -1756,13 +2061,13 @@ class Purchase {
   int get hashCode =>
       const DeepCollectionEquality().hash(purchaseId) ^
       const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(user) ^
       const DeepCollectionEquality().hash(itemId) ^
+      const DeepCollectionEquality().hash(shopItem) ^
       const DeepCollectionEquality().hash(purchaseDate) ^
       const DeepCollectionEquality().hash(price) ^
       const DeepCollectionEquality().hash(paymentMethod) ^
       const DeepCollectionEquality().hash(transactionId) ^
-      const DeepCollectionEquality().hash(user) ^
-      const DeepCollectionEquality().hash(item) ^
       runtimeType.hashCode;
 }
 
@@ -1770,48 +2075,48 @@ extension $PurchaseExtension on Purchase {
   Purchase copyWith(
       {int? purchaseId,
       int? userId,
+      User? user,
       int? itemId,
+      ShopItem? shopItem,
       DateTime? purchaseDate,
       double? price,
       String? paymentMethod,
-      String? transactionId,
-      User? user,
-      ShopItem? item}) {
+      String? transactionId}) {
     return Purchase(
         purchaseId: purchaseId ?? this.purchaseId,
         userId: userId ?? this.userId,
+        user: user ?? this.user,
         itemId: itemId ?? this.itemId,
+        shopItem: shopItem ?? this.shopItem,
         purchaseDate: purchaseDate ?? this.purchaseDate,
         price: price ?? this.price,
         paymentMethod: paymentMethod ?? this.paymentMethod,
-        transactionId: transactionId ?? this.transactionId,
-        user: user ?? this.user,
-        item: item ?? this.item);
+        transactionId: transactionId ?? this.transactionId);
   }
 
   Purchase copyWithWrapped(
       {Wrapped<int?>? purchaseId,
       Wrapped<int?>? userId,
+      Wrapped<User?>? user,
       Wrapped<int?>? itemId,
+      Wrapped<ShopItem?>? shopItem,
       Wrapped<DateTime?>? purchaseDate,
       Wrapped<double?>? price,
       Wrapped<String?>? paymentMethod,
-      Wrapped<String?>? transactionId,
-      Wrapped<User?>? user,
-      Wrapped<ShopItem?>? item}) {
+      Wrapped<String?>? transactionId}) {
     return Purchase(
         purchaseId: (purchaseId != null ? purchaseId.value : this.purchaseId),
         userId: (userId != null ? userId.value : this.userId),
+        user: (user != null ? user.value : this.user),
         itemId: (itemId != null ? itemId.value : this.itemId),
+        shopItem: (shopItem != null ? shopItem.value : this.shopItem),
         purchaseDate:
             (purchaseDate != null ? purchaseDate.value : this.purchaseDate),
         price: (price != null ? price.value : this.price),
         paymentMethod:
             (paymentMethod != null ? paymentMethod.value : this.paymentMethod),
         transactionId:
-            (transactionId != null ? transactionId.value : this.transactionId),
-        user: (user != null ? user.value : this.user),
-        item: (item != null ? item.value : this.item));
+            (transactionId != null ? transactionId.value : this.transactionId));
   }
 }
 
@@ -1882,15 +2187,80 @@ extension $RegisterDtoExtension on RegisterDto {
 }
 
 @JsonSerializable(explicitToJson: true)
+class RoundWinnerDto {
+  const RoundWinnerDto({
+    this.userId,
+    this.username,
+    this.amountWon,
+  });
+
+  factory RoundWinnerDto.fromJson(Map<String, dynamic> json) =>
+      _$RoundWinnerDtoFromJson(json);
+
+  static const toJsonFactory = _$RoundWinnerDtoToJson;
+  Map<String, dynamic> toJson() => _$RoundWinnerDtoToJson(this);
+
+  @JsonKey(name: 'userId')
+  final int? userId;
+  @JsonKey(name: 'username')
+  final String? username;
+  @JsonKey(name: 'amountWon')
+  final int? amountWon;
+  static const fromJsonFactory = _$RoundWinnerDtoFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is RoundWinnerDto &&
+            (identical(other.userId, userId) ||
+                const DeepCollectionEquality().equals(other.userId, userId)) &&
+            (identical(other.username, username) ||
+                const DeepCollectionEquality()
+                    .equals(other.username, username)) &&
+            (identical(other.amountWon, amountWon) ||
+                const DeepCollectionEquality()
+                    .equals(other.amountWon, amountWon)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(username) ^
+      const DeepCollectionEquality().hash(amountWon) ^
+      runtimeType.hashCode;
+}
+
+extension $RoundWinnerDtoExtension on RoundWinnerDto {
+  RoundWinnerDto copyWith({int? userId, String? username, int? amountWon}) {
+    return RoundWinnerDto(
+        userId: userId ?? this.userId,
+        username: username ?? this.username,
+        amountWon: amountWon ?? this.amountWon);
+  }
+
+  RoundWinnerDto copyWithWrapped(
+      {Wrapped<int?>? userId,
+      Wrapped<String?>? username,
+      Wrapped<int?>? amountWon}) {
+    return RoundWinnerDto(
+        userId: (userId != null ? userId.value : this.userId),
+        username: (username != null ? username.value : this.username),
+        amountWon: (amountWon != null ? amountWon.value : this.amountWon));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
 class ShopItem {
   const ShopItem({
     this.itemId,
-    this.name,
+    required this.name,
     this.description,
     this.price,
-    this.itemType,
+    required this.itemType,
     this.isActive,
-    this.currency,
     this.purchases,
   });
 
@@ -1903,17 +2273,15 @@ class ShopItem {
   @JsonKey(name: 'itemId')
   final int? itemId;
   @JsonKey(name: 'name')
-  final String? name;
+  final String name;
   @JsonKey(name: 'description')
   final String? description;
   @JsonKey(name: 'price')
   final double? price;
   @JsonKey(name: 'itemType')
-  final String? itemType;
+  final String itemType;
   @JsonKey(name: 'isActive')
   final bool? isActive;
-  @JsonKey(name: 'currency')
-  final String? currency;
   @JsonKey(name: 'purchases', defaultValue: <Purchase>[])
   final List<Purchase>? purchases;
   static const fromJsonFactory = _$ShopItemFromJson;
@@ -1937,9 +2305,6 @@ class ShopItem {
             (identical(other.isActive, isActive) ||
                 const DeepCollectionEquality()
                     .equals(other.isActive, isActive)) &&
-            (identical(other.currency, currency) ||
-                const DeepCollectionEquality()
-                    .equals(other.currency, currency)) &&
             (identical(other.purchases, purchases) ||
                 const DeepCollectionEquality()
                     .equals(other.purchases, purchases)));
@@ -1956,7 +2321,6 @@ class ShopItem {
       const DeepCollectionEquality().hash(price) ^
       const DeepCollectionEquality().hash(itemType) ^
       const DeepCollectionEquality().hash(isActive) ^
-      const DeepCollectionEquality().hash(currency) ^
       const DeepCollectionEquality().hash(purchases) ^
       runtimeType.hashCode;
 }
@@ -1969,7 +2333,6 @@ extension $ShopItemExtension on ShopItem {
       double? price,
       String? itemType,
       bool? isActive,
-      String? currency,
       List<Purchase>? purchases}) {
     return ShopItem(
         itemId: itemId ?? this.itemId,
@@ -1978,18 +2341,16 @@ extension $ShopItemExtension on ShopItem {
         price: price ?? this.price,
         itemType: itemType ?? this.itemType,
         isActive: isActive ?? this.isActive,
-        currency: currency ?? this.currency,
         purchases: purchases ?? this.purchases);
   }
 
   ShopItem copyWithWrapped(
       {Wrapped<int?>? itemId,
-      Wrapped<String?>? name,
+      Wrapped<String>? name,
       Wrapped<String?>? description,
       Wrapped<double?>? price,
-      Wrapped<String?>? itemType,
+      Wrapped<String>? itemType,
       Wrapped<bool?>? isActive,
-      Wrapped<String?>? currency,
       Wrapped<List<Purchase>?>? purchases}) {
     return ShopItem(
         itemId: (itemId != null ? itemId.value : this.itemId),
@@ -1999,7 +2360,6 @@ extension $ShopItemExtension on ShopItem {
         price: (price != null ? price.value : this.price),
         itemType: (itemType != null ? itemType.value : this.itemType),
         isActive: (isActive != null ? isActive.value : this.isActive),
-        currency: (currency != null ? currency.value : this.currency),
         purchases: (purchases != null ? purchases.value : this.purchases));
   }
 }
@@ -2064,20 +2424,18 @@ extension $UpdateProfileDtoExtension on UpdateProfileDto {
 class User {
   const User({
     this.userId,
-    this.username,
-    this.email,
-    this.passwordHash,
+    required this.username,
+    required this.email,
+    required this.passwordHash,
     this.chipsBalance,
     this.avatarImage,
     this.registrationDate,
     this.lastLoginDate,
     this.isActive,
-    this.avatarType,
     this.gamePlayers,
-    this.wonGames,
-    this.moves,
     this.purchases,
     this.chipTransactions,
+    this.gameRoundWinners,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
@@ -2088,11 +2446,11 @@ class User {
   @JsonKey(name: 'userId')
   final int? userId;
   @JsonKey(name: 'username')
-  final String? username;
+  final String username;
   @JsonKey(name: 'email')
-  final String? email;
+  final String email;
   @JsonKey(name: 'passwordHash')
-  final String? passwordHash;
+  final String passwordHash;
   @JsonKey(name: 'chipsBalance')
   final int? chipsBalance;
   @JsonKey(name: 'avatarImage')
@@ -2103,18 +2461,14 @@ class User {
   final DateTime? lastLoginDate;
   @JsonKey(name: 'isActive')
   final bool? isActive;
-  @JsonKey(name: 'avatarType')
-  final String? avatarType;
   @JsonKey(name: 'gamePlayers', defaultValue: <GamePlayer>[])
   final List<GamePlayer>? gamePlayers;
-  @JsonKey(name: 'wonGames', defaultValue: <Game>[])
-  final List<Game>? wonGames;
-  @JsonKey(name: 'moves', defaultValue: <Move>[])
-  final List<Move>? moves;
   @JsonKey(name: 'purchases', defaultValue: <Purchase>[])
   final List<Purchase>? purchases;
   @JsonKey(name: 'chipTransactions', defaultValue: <ChipTransaction>[])
   final List<ChipTransaction>? chipTransactions;
+  @JsonKey(name: 'gameRoundWinners', defaultValue: <GameRoundWinner>[])
+  final List<GameRoundWinner>? gameRoundWinners;
   static const fromJsonFactory = _$UserFromJson;
 
   @override
@@ -2146,23 +2500,18 @@ class User {
             (identical(other.isActive, isActive) ||
                 const DeepCollectionEquality()
                     .equals(other.isActive, isActive)) &&
-            (identical(other.avatarType, avatarType) ||
-                const DeepCollectionEquality()
-                    .equals(other.avatarType, avatarType)) &&
             (identical(other.gamePlayers, gamePlayers) ||
                 const DeepCollectionEquality()
                     .equals(other.gamePlayers, gamePlayers)) &&
-            (identical(other.wonGames, wonGames) ||
-                const DeepCollectionEquality()
-                    .equals(other.wonGames, wonGames)) &&
-            (identical(other.moves, moves) ||
-                const DeepCollectionEquality().equals(other.moves, moves)) &&
             (identical(other.purchases, purchases) ||
                 const DeepCollectionEquality()
                     .equals(other.purchases, purchases)) &&
             (identical(other.chipTransactions, chipTransactions) ||
                 const DeepCollectionEquality()
-                    .equals(other.chipTransactions, chipTransactions)));
+                    .equals(other.chipTransactions, chipTransactions)) &&
+            (identical(other.gameRoundWinners, gameRoundWinners) ||
+                const DeepCollectionEquality()
+                    .equals(other.gameRoundWinners, gameRoundWinners)));
   }
 
   @override
@@ -2179,12 +2528,10 @@ class User {
       const DeepCollectionEquality().hash(registrationDate) ^
       const DeepCollectionEquality().hash(lastLoginDate) ^
       const DeepCollectionEquality().hash(isActive) ^
-      const DeepCollectionEquality().hash(avatarType) ^
       const DeepCollectionEquality().hash(gamePlayers) ^
-      const DeepCollectionEquality().hash(wonGames) ^
-      const DeepCollectionEquality().hash(moves) ^
       const DeepCollectionEquality().hash(purchases) ^
       const DeepCollectionEquality().hash(chipTransactions) ^
+      const DeepCollectionEquality().hash(gameRoundWinners) ^
       runtimeType.hashCode;
 }
 
@@ -2199,12 +2546,10 @@ extension $UserExtension on User {
       DateTime? registrationDate,
       DateTime? lastLoginDate,
       bool? isActive,
-      String? avatarType,
       List<GamePlayer>? gamePlayers,
-      List<Game>? wonGames,
-      List<Move>? moves,
       List<Purchase>? purchases,
-      List<ChipTransaction>? chipTransactions}) {
+      List<ChipTransaction>? chipTransactions,
+      List<GameRoundWinner>? gameRoundWinners}) {
     return User(
         userId: userId ?? this.userId,
         username: username ?? this.username,
@@ -2215,30 +2560,26 @@ extension $UserExtension on User {
         registrationDate: registrationDate ?? this.registrationDate,
         lastLoginDate: lastLoginDate ?? this.lastLoginDate,
         isActive: isActive ?? this.isActive,
-        avatarType: avatarType ?? this.avatarType,
         gamePlayers: gamePlayers ?? this.gamePlayers,
-        wonGames: wonGames ?? this.wonGames,
-        moves: moves ?? this.moves,
         purchases: purchases ?? this.purchases,
-        chipTransactions: chipTransactions ?? this.chipTransactions);
+        chipTransactions: chipTransactions ?? this.chipTransactions,
+        gameRoundWinners: gameRoundWinners ?? this.gameRoundWinners);
   }
 
   User copyWithWrapped(
       {Wrapped<int?>? userId,
-      Wrapped<String?>? username,
-      Wrapped<String?>? email,
-      Wrapped<String?>? passwordHash,
+      Wrapped<String>? username,
+      Wrapped<String>? email,
+      Wrapped<String>? passwordHash,
       Wrapped<int?>? chipsBalance,
       Wrapped<String?>? avatarImage,
       Wrapped<DateTime?>? registrationDate,
       Wrapped<DateTime?>? lastLoginDate,
       Wrapped<bool?>? isActive,
-      Wrapped<String?>? avatarType,
       Wrapped<List<GamePlayer>?>? gamePlayers,
-      Wrapped<List<Game>?>? wonGames,
-      Wrapped<List<Move>?>? moves,
       Wrapped<List<Purchase>?>? purchases,
-      Wrapped<List<ChipTransaction>?>? chipTransactions}) {
+      Wrapped<List<ChipTransaction>?>? chipTransactions,
+      Wrapped<List<GameRoundWinner>?>? gameRoundWinners}) {
     return User(
         userId: (userId != null ? userId.value : this.userId),
         username: (username != null ? username.value : this.username),
@@ -2255,15 +2596,15 @@ extension $UserExtension on User {
         lastLoginDate:
             (lastLoginDate != null ? lastLoginDate.value : this.lastLoginDate),
         isActive: (isActive != null ? isActive.value : this.isActive),
-        avatarType: (avatarType != null ? avatarType.value : this.avatarType),
         gamePlayers:
             (gamePlayers != null ? gamePlayers.value : this.gamePlayers),
-        wonGames: (wonGames != null ? wonGames.value : this.wonGames),
-        moves: (moves != null ? moves.value : this.moves),
         purchases: (purchases != null ? purchases.value : this.purchases),
         chipTransactions: (chipTransactions != null
             ? chipTransactions.value
-            : this.chipTransactions));
+            : this.chipTransactions),
+        gameRoundWinners: (gameRoundWinners != null
+            ? gameRoundWinners.value
+            : this.gameRoundWinners));
   }
 }
 

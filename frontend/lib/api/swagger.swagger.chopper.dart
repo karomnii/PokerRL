@@ -43,14 +43,25 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<GameState>> _apiGamesIdGet({required int? id}) {
+  Future<Response<GameStateDto>> _apiGamesIdGet({required int? id}) {
     final Uri $url = Uri.parse('/api/Games/${id}');
     final Request $request = Request(
       'GET',
       $url,
       client.baseUrl,
     );
-    return client.send<GameState, GameState>($request);
+    return client.send<GameStateDto, GameStateDto>($request);
+  }
+
+  @override
+  Future<Response<GameStateDto>> _apiGamesIdPublicGet({required int? id}) {
+    final Uri $url = Uri.parse('/api/Games/${id}/public');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<GameStateDto, GameStateDto>($request);
   }
 
   @override
@@ -108,9 +119,26 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<dynamic>> _apiPaymentsCreateCheckoutSessionPost(
-      {required int? body}) {
-    final Uri $url = Uri.parse('/api/Payments/create-checkout-session');
+  Future<Response<GameStateDto>> _apiGamesIdUserIdGet({
+    required int? id,
+    required int? userId,
+  }) {
+    final Uri $url = Uri.parse('/api/Games/${id}/${userId}');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<GameStateDto, GameStateDto>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> _apiGamesIdJoinUserIdPost({
+    required int? id,
+    required int? userId,
+    required JoinGameDto? body,
+  }) {
+    final Uri $url = Uri.parse('/api/Games/${id}/join/${userId}');
     final $body = body;
     final Request $request = Request(
       'POST',
@@ -122,29 +150,30 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<dynamic>> _apiPaymentsSuccessGet({
-    String? sessionId,
-    int? itemId,
+  Future<Response<dynamic>> _apiGamesIdMoveUserIdPost({
+    required int? id,
+    required int? userId,
+    required MakeMoveDto? body,
   }) {
-    final Uri $url = Uri.parse('/api/Payments/success');
-    final Map<String, dynamic> $params = <String, dynamic>{
-      'session_id': sessionId,
-      'itemId': itemId,
-    };
+    final Uri $url = Uri.parse('/api/Games/${id}/move/${userId}');
+    final $body = body;
     final Request $request = Request(
-      'GET',
+      'POST',
       $url,
       client.baseUrl,
-      parameters: $params,
+      body: $body,
     );
     return client.send<dynamic, dynamic>($request);
   }
 
   @override
-  Future<Response<dynamic>> _apiPaymentsCancelGet() {
-    final Uri $url = Uri.parse('/api/Payments/cancel');
+  Future<Response<dynamic>> _apiGamesIdLeaveUserIdPost({
+    required int? id,
+    required int? userId,
+  }) {
+    final Uri $url = Uri.parse('/api/Games/${id}/leave/${userId}');
     final Request $request = Request(
-      'GET',
+      'POST',
       $url,
       client.baseUrl,
     );
@@ -199,32 +228,6 @@ final class _$Swagger extends Swagger {
       $url,
       client.baseUrl,
       body: $body,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
-  Future<Response<List<LeaderboardEntry>>> _apiUsersLeaderboardTopGet(
-      {int? count}) {
-    final Uri $url = Uri.parse('/api/Users/leaderboard/top');
-    final Map<String, dynamic> $params = <String, dynamic>{'count': count};
-    final Request $request = Request(
-      'GET',
-      $url,
-      client.baseUrl,
-      parameters: $params,
-    );
-    return client.send<List<LeaderboardEntry>, LeaderboardEntry>($request);
-  }
-
-  @override
-  Future<Response<dynamic>> _apiUsersLeaderboardPlayerInfoUserIdGet(
-      {required int? userId}) {
-    final Uri $url = Uri.parse('/api/Users/leaderboard/player-info/${userId}');
-    final Request $request = Request(
-      'GET',
-      $url,
-      client.baseUrl,
     );
     return client.send<dynamic, dynamic>($request);
   }

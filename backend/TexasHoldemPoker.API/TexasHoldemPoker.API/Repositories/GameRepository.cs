@@ -7,9 +7,12 @@ namespace TexasHoldemPoker.API.Repositories
     public class GameRepository : IGameRepository
     {
         private readonly ApplicationDbContext context;
-        public GameRepository(ApplicationDbContext ctx) => context = ctx;
+       public GameRepository(ApplicationDbContext context)
+        {
+            this.context = context;
+        }
 
-        public async Task<Game?> GetByIdAsync(int gameId)
+        public async Task<Game> GetByIdAsync(int gameId)
         {
             return await context.Games
                 .Include(g => g.Table)

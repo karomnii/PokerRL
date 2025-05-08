@@ -45,14 +45,21 @@ namespace TexasHoldemPoker.API.Services
 
         public async Task<Game> CreateGameAsync(int tableId)
         {
-            var game = await gameRepository.CreateGameAsync(new Game { TableId = tableId, CurrentState = "Waiting" });
+            var game = await gameRepository.CreateGameAsync(new Game { TableId = tableId});
             return game;
         }
 
         public async Task<bool> JoinGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
         {
             var game = await gameRepository.GetByIdAsync(gameId);
-            if (game == null || game.CurrentState != "Waiting")
+
+            if (game == null)
+            {
+                return false;
+            }
+
+            var gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+            if (gameRound != null && gameRound.CurrentState != "Waiting")
             {
                 return false;
             }
@@ -78,6 +85,12 @@ namespace TexasHoldemPoker.API.Services
 
             var game = await gameRepository.GetByIdAsync(gameId);
             if (game == null) return false;
+
+            var gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+            if (gameRound != null && gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
+            {
+                return false;
+            }
 
             if (game.CurrentState != "Waiting" && game.CurrentState != "Completed")
             {
@@ -772,7 +785,6 @@ namespace TexasHoldemPoker.API.Services
             }
 
             await RotateDealerAndSetBlindsAsync(gameId);
-            await cardRepository.ClearGameCardsAsync(gameId);
             await gameRepository.UpdatePotSizeAsync(gameId, 0);
             var newRound = await gameRoundRepository.StartNewRoundAsync(gameId);
 

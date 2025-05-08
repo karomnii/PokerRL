@@ -22,7 +22,6 @@ namespace TexasHoldemPoker.API.Repositories
             {
                 var move = new Move
                 {
-                    GameId = gameId,
                     GameRoundId = gameRoundId,
                     PlayerId = playerId,
                     ActionType = actionType,
@@ -62,7 +61,8 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<IEnumerable<Move>> GetMovesByGameIdAsync(int gameId)
         {
             return await _context.Moves
-                .Where(m => m.GameId == gameId)
+                .Include(m => m.GameRound)
+                .Where(m => m.GameRound.GameId == gameId)
                 .OrderBy(m => m.MoveTime)
                 .ToListAsync();
         }
@@ -70,7 +70,8 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<IEnumerable<Move>> GetLastRoundMovesAsync(int gameId, int gameRoundId, string state)
         {
             return await _context.Moves
-                .Where(m => m.GameId == gameId && m.Round == state && m.GameRoundId == gameRoundId)
+                .Include(m => m.GameRound)
+                .Where(m => m.GameRound.GameId == gameId && m.Round == state && m.GameRoundId == gameRoundId)
                 .OrderBy(m => m.MoveTime)
                 .ToListAsync();
         }
@@ -79,7 +80,7 @@ namespace TexasHoldemPoker.API.Repositories
             string state)
         {
             var moves = await _context.Moves
-                .Where(m => m.GameId == gameId && m.Round == state && m.GameRoundId == gameRoundId)
+                .Where(m => m.Round == state && m.GameRoundId == gameRoundId)
                 .ToListAsync();
 
             var contributions = new Dictionary<int, int>();
@@ -117,13 +118,14 @@ namespace TexasHoldemPoker.API.Repositories
         {
             return await _context.Moves
                 .AnyAsync(m =>
-                    m.GameId == gameId && m.PlayerId == playerId && m.Round == state && m.GameRoundId == gameRoundId);
+                    m.PlayerId == playerId && m.Round == state && m.GameRoundId == gameRoundId);
         }
 
         public async Task<Move> GetLastMoveAsync(int gameId)
         {
             return await _context.Moves
-                .Where(m => m.GameId == gameId)
+                .Include(m => m.GameRound)
+                .Where(m => m.GameRound.GameId == gameId)
                 .OrderByDescending(m => m.MoveTime)
                 .FirstOrDefaultAsync();
         }
@@ -131,7 +133,7 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<IEnumerable<Move>> GetMovesByGameRoundAsync(int gameId, int gameRoundId, string state)
         {
             return await _context.Moves
-                .Where(m => m.GameId == gameId && m.GameRoundId == gameRoundId && m.Round == state)
+                .Where(m => m.GameRoundId == gameRoundId && m.Round == state)
                 .OrderByDescending(m => m.MoveTime)
                 .ToListAsync();
         }

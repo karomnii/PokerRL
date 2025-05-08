@@ -13,22 +13,22 @@ namespace TexasHoldemPoker.API.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<LeaderboardEntry>> GetTopPlayersAsync(int count)
+        public async Task<IEnumerable<LeaderboardView>> GetTopPlayersAsync(int count)
         {
-            return await _context.LeaderboardEntries
+            return await _context.LeaderboardViews
                 .Take(count)
                 .ToListAsync();
         }
 
-        public async Task<LeaderboardEntry> GetPlayerRankingAsync(int userId)
+        public async Task<LeaderboardView> GetPlayerRankingAsync(int userId)
         {
-            return await _context.LeaderboardEntries
+            return await _context.LeaderboardViews
                 .FirstOrDefaultAsync(l => l.UserId == userId);
         }
 
         public async Task<int> GetPlayerRankPositionAsync(int userId)
         {
-            var orderedUserIds = await _context.LeaderboardEntries
+            var orderedUserIds = await _context.LeaderboardViews
                 .Select(l => l.UserId)
                 .ToListAsync();
 
@@ -36,9 +36,9 @@ namespace TexasHoldemPoker.API.Repositories
 
             return position >= 0 ? position + 1 : -1;
         }
-        public async Task<IEnumerable<LeaderboardEntry>> GetTopPlayersSortedAsync(int count)
+        public async Task<IEnumerable<LeaderboardView>> GetTopPlayersSortedAsync(int count)
         {
-            return await _context.LeaderboardView
+            return await _context.LeaderboardViews
                 .OrderByDescending(l => l.ChipsBalance) // Sortowanie według ilości zetonow
                 .Take(count) // Pobranie określonej liczby graczy
                 .ToListAsync();

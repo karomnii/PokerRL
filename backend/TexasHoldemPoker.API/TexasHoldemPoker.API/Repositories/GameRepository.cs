@@ -97,7 +97,12 @@ namespace TexasHoldemPoker.API.Repositories
             if (game == null)
                 return false;
 
-            game.CurrentState = newState;
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            gameRound.CurrentState = newState;
             await context.SaveChangesAsync();
             return true;
         }
@@ -108,15 +113,21 @@ namespace TexasHoldemPoker.API.Repositories
             if (game == null)
                 return false;
 
-            game.CurrentTurnUserId = userId;
+            var gamePlayer = await context.GamePlayers
+                .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
+            if (gamePlayer == null)
+                return false;
+
+            game.CurrentTurnPlayerId = gamePlayer.GamePlayerId;
             await context.SaveChangesAsync();
             return true;
         }
 
+        //TODO: Handle change to GamePlayerId
         public async Task<int?> GetCurrentTurnUserIdAsync(int gameId)
         {
             var game = await context.Games.FindAsync(gameId);
-            return game?.CurrentTurnUserId;
+            return game?.CurrentTurnPlayerId;
         }
 
         public async Task<bool> EndGameAsync(int gameId)
@@ -125,8 +136,17 @@ namespace TexasHoldemPoker.API.Repositories
             if (game == null)
                 return false;
 
+            var gameRound = await context.GameRounds.
+                Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+            if (gameRound == null)
+                return false;
+
+            gameRound.CurrentState = "Completed";
+            gameRound.EndTime = DateTime.UtcNow;
+
             game.EndTime = DateTime.UtcNow;
-            game.CurrentState = "Completed";
 
             await context.SaveChangesAsync();
             return true;
@@ -150,7 +170,16 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<string> GetGameStateAsync(int gameId)
         {
             var game = await context.Games.FindAsync(gameId);
-            return game?.CurrentState;
+            if(game == null)
+                return string.Empty;
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+            if (gameRound == null)
+                return string.Empty;
+
+            return gameRound.CurrentState;
         }
 
         public async Task<bool> SaveChangesAsync()

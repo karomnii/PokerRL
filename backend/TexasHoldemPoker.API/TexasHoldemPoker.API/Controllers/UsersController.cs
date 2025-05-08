@@ -122,7 +122,7 @@ namespace TexasHoldemPoker.API.Controllers
                     AvatarImage = "/images/default.png",
                     Username = null
                 };
-                await _userRepository.CreateAsync(user);
+                await _userRepository.CreateUserAsync(user);
             }
             if (string.IsNullOrWhiteSpace(user.Username))
             {
@@ -160,7 +160,7 @@ namespace TexasHoldemPoker.API.Controllers
             if (user == null) return NotFound();
 
             user.Username = dto.Username;
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return Ok(new UserDto
             {
@@ -216,7 +216,7 @@ namespace TexasHoldemPoker.API.Controllers
         
         
         [HttpGet("leaderboard/top")]
-        public async Task<ActionResult<IEnumerable<LeaderboardEntry>>> GetTopPlayers([FromQuery] int count = 10)
+        public async Task<ActionResult<IEnumerable<LeaderboardView>>> GetTopPlayers([FromQuery] int count = 10)
         {
             var topPlayers = await _leaderboardRepository.GetTopPlayersSortedAsync(count);
             return Ok(topPlayers);

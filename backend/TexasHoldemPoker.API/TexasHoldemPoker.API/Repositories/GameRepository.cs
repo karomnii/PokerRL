@@ -30,9 +30,10 @@ namespace TexasHoldemPoker.API.Repositories
             return await context.Games
                 .Include(g => g.Table)
                 .Include(g => g.GameRounds)
-                .Where(g => g.GameRounds
+                .Where(g => !g.GameRounds.Any() || g.GameRounds
                     .OrderByDescending(gr => gr.RoundNumber)
                     .FirstOrDefault().CurrentState == "Waiting")
+                .Include(g => g.GamePlayers)
                 .ToListAsync();
         }
 

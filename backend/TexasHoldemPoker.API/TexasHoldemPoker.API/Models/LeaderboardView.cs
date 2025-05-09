@@ -16,4 +16,6 @@ public partial class LeaderboardView
     public int? GamesWon { get; set; }
 
     public int? GamesPlayed { get; set; }
+
+    public double? WinRatio { get; set; }
 }

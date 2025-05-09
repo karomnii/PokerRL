@@ -15,9 +15,9 @@ public partial class User
 
     public int ChipsBalance { get; set; }
 
-    public string? AvatarImage { get; set; } = "/images/default.png"; 
+    public string? AvatarImage { get; set; }
 
-    public string AvatarType { get; set; }
+    public string AvatarType { get; set; } = null!;
 
     public DateTime RegistrationDate { get; set; }
 
@@ -34,6 +34,8 @@ public partial class User
     public virtual ICollection<GameRoundWinner> GameRoundWinners { get; set; } = new List<GameRoundWinner>();
 
     public virtual ICollection<Move> Moves { get; set; } = new List<Move>();
+
+    public virtual ICollection<PlayerCard> PlayerCards { get; set; } = new List<PlayerCard>();
 
     public virtual ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
 

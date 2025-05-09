@@ -62,7 +62,7 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.TransactionId);
 
-            entity.HasIndex(e => e.UserId, "IXChipTransactionsUserId");
+            entity.HasIndex(e => e.UserId, "IX_ChipTransactions_UserId");
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.TransactionDate)
@@ -93,7 +93,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Game>(entity =>
         {
-            entity.HasIndex(e => e.TableId, "IXGamesTableId");
+            entity.HasIndex(e => e.TableId, "IX_Games_TableId");
 
             entity.Property(e => e.EndTime).HasColumnType("datetime");
             entity.Property(e => e.StartTime)
@@ -112,9 +112,9 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<GamePlayer>(entity =>
         {
-            entity.HasIndex(e => e.GameId, "IXGamePlayersGameId");
+            entity.HasIndex(e => e.GameId, "IX_GamePlayers_GameId");
 
-            entity.HasIndex(e => e.UserId, "IXGamePlayersUserId");
+            entity.HasIndex(e => e.UserId, "IX_GamePlayers_UserId");
 
             entity.HasIndex(e => new { e.GameId, e.SeatPosition }, "UQ_GamePlayers_GamePosition").IsUnique();
 
@@ -149,10 +149,6 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<GameRoundWinner>(entity =>
         {
-            entity.HasIndex(e => e.GameRoundId, "IXGameRoundWinnersGameRoundId");
-
-            entity.HasIndex(e => e.UserId, "IXGameRoundWinnersUserId");
-
             entity.HasOne(d => d.GameRound).WithMany(p => p.GameRoundWinners)
                 .HasForeignKey(d => d.GameRoundId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -186,9 +182,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Move>(entity =>
         {
-            entity.HasIndex(e => e.GameRoundId, "IXMovesGameId");
-
-            entity.HasIndex(e => e.PlayerId, "IXMovesPlayerId");
+            entity.HasIndex(e => e.PlayerId, "IX_Moves_PlayerId");
 
             entity.Property(e => e.ActionType).HasMaxLength(20);
             entity.Property(e => e.MoveTime)
@@ -209,8 +203,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<PlayerCard>(entity =>
         {
-            entity.HasIndex(e => new { e.GameRoundId, e.GamePlayerId, e.Position }, "UQ_PlayerCards_GamePlayerPosition")
-                .IsUnique();
+            entity.HasIndex(e => new { e.GameRoundId, e.GamePlayerId, e.Position }, "UQ_PlayerCards_GamePlayerPosition").IsUnique();
 
             entity.HasOne(d => d.Card).WithMany(p => p.PlayerCards)
                 .HasForeignKey(d => d.CardId)
@@ -226,6 +219,11 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.GameRoundId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PlayerCards_GameRounds");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PlayerCards)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PlayerCards_Users");
         });
 
         modelBuilder.Entity<PokerTable>(entity =>
@@ -240,7 +238,7 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Purchase>(entity =>
         {
-            entity.HasIndex(e => e.UserId, "IXPurchasesUserId");
+            entity.HasIndex(e => e.UserId, "IX_Purchases_UserId");
 
             entity.Property(e => e.PaymentMethod).HasMaxLength(50);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
@@ -264,6 +262,9 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.ItemId);
 
+            entity.Property(e => e.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValue("PLN");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.ItemType).HasMaxLength(50);
@@ -278,6 +279,9 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Username, "UQ_Users_Username").IsUnique();
 
             entity.Property(e => e.AvatarImage).HasMaxLength(255);
+            entity.Property(e => e.AvatarType)
+                .HasMaxLength(20)
+                .HasDefaultValue("Standard");
             entity.Property(e => e.ChipsBalance).HasDefaultValue(5000);
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -303,11 +307,6 @@ public partial class ApplicationDbContext : DbContext
                 .HasConstraintName("FK_UserModels_Users");
         });
 
-        SeedCards(modelBuilder);
-
-        SeedPokerTables(modelBuilder);
-
-        SeedShopItems(modelBuilder);
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -58,35 +58,32 @@ public class Program
         
         // Add authentication
         builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                    builder.Configuration["TokenKey"])),
-                ValidateIssuer = false,
-                ValidateAudience = false
-            };
-        })
-        .AddGoogle(googleOptions =>
-        {
-            googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-            googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-        })
-        .AddFacebook(facebookOptions =>
-        {
-            facebookOptions.ClientId = builder.Configuration["Authentication:Facebook:AppId"];
-            facebookOptions.ClientSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
-        });
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                        builder.Configuration["TokenKey"])),
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
+            });
+        //.AddGoogle(googleOptions =>
+        //{
+        //    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+        //    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        //})
+        //.AddFacebook(facebookOptions =>
+        //{
+        //    facebookOptions.ClientId = builder.Configuration["Authentication:Facebook:AppId"];
+        //    facebookOptions.ClientSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
+        //});
         
-        
-        // Add SignalR for real-time communication
-        builder.Services.AddSignalR();
         
         // Add JSON options
         builder.Services.AddControllers().AddJsonOptions(options =>

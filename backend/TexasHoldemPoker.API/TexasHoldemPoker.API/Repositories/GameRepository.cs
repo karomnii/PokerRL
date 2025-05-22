@@ -28,10 +28,17 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<IEnumerable<Game>> GetActiveGamesAsync()
         {
-            return await context.Games
+            var games = await context.Games
                 .Where(g => g.CurrentState != "Completed")
                 .Include(g => g.Table)
                 .ToListAsync();
+            foreach (var game in games)
+            {
+                // Usuń null z relacji Games w Table
+                game.Table.Games = [];
+            }
+
+            return games;
         }
 
         public async Task<IEnumerable<Game>> GetGamesByTableIdAsync(int tableId)

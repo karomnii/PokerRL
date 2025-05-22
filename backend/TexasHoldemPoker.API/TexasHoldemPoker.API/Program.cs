@@ -63,16 +63,16 @@ public class Program
 
 
         //// Add CORS
-        //builder.Services.AddCors(options =>
-        //{
-        //    options.AddPolicy("CorsPolicy", policy =>
-        //    {
-        //        policy.AllowAnyHeader()
-        //            .AllowAnyMethod()
-        //            .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
-        //            .AllowCredentials();
-        //    });
-        //});
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("CorsPolicy", policy =>
+            {
+                policy.AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .WithOrigins("http://localhost:8000") // Replace with your Flutter web app URL
+                    .AllowCredentials();
+            });
+        });
 
         var app = builder.Build();
 

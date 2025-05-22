@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
+import 'package:frontend/app/home/games/game/game.binding.dart';
+import 'package:frontend/app/home/games/game/game.view.dart';
 import 'package:get/get.dart';
 
 import '../app/home/home.binding.dart';
 import '../app/home/home.view.dart';
 
-import '../app/home/game/game.binding.dart';
-import '../app/home/game/game.view.dart';
+import '../app/home/games/games.binding.dart';
+import '../app/home/games/games.view.dart';
 
 import '../app/home/shop/shop.binding.dart';
 import '../app/home/shop/shop.view.dart';
@@ -48,7 +50,7 @@ abstract class Routes {
   static const register = '/auth/register';
 
   // private pages
-  static const game = '/game';
+  static const games = '/games';
   static const shop = '/shop';
 }
 
@@ -64,11 +66,22 @@ final List<GetPage<dynamic>> appPages = [
 
   /* --------  PRIVATE PAGES  -------- */
   GetPage(
-    name: Routes.game,
-    page: () => const GamePageView(),
-    binding: GamePageBinding(),
-    middlewares: [AuthGuard()],
-  ),
+      name: Routes.games,
+      page: () => const GamesPageView(),
+      binding: GamesPageBinding(),
+      middlewares: [
+        AuthGuard()
+      ],
+      children: [
+        GetPage(
+          name: '/:id',
+          page: () => const GamePageView(),
+          binding: GamePageBinding(),
+          middlewares: [
+            AuthGuard(),
+          ],
+        ),
+      ]),
   GetPage(
     name: Routes.shop,
     page: () => const ShopPageView(),

@@ -7,7 +7,8 @@
         {
             "name": "frontend",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": ["--web-port", "8000"],
         },
         {
             "name": "frontend (profile mode)",

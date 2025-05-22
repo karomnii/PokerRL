@@ -21,7 +21,7 @@ class HomePageView extends GetView<HomePageController> {
           AppBarIcon(
             icon: Icons.casino,
             tooltipText: 'Play',
-            onPressed: () => Get.offNamed('/game', preventDuplicates: false),
+            onPressed: () => Get.offNamed('/games', preventDuplicates: false),
           ),
           AppBarIcon(
             icon: Icons.store,
@@ -31,7 +31,7 @@ class HomePageView extends GetView<HomePageController> {
           AppBarIcon(
             icon: Icons.person,
             tooltipText: 'Account',
-            onPressed: () {},
+            onPressed: () => AuthService.to.logout(),
           ),
         ],
       ),

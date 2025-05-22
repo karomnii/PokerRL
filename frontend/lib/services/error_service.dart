@@ -15,7 +15,7 @@ class ErrorService extends GetxService {
       ),
       duration: const Duration(seconds: 4),
       backgroundColor: Colors.red.shade700,
-      snackPosition: SnackPosition.BOTTOM, // bottom edge
+      snackPosition: SnackPosition.TOP, // bottom edge
       margin: const EdgeInsets.only(left: 20, bottom: 20), // bottom-left
       borderRadius: 8,
       maxWidth: 420, // never full-width

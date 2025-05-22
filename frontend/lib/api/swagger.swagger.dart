@@ -1,6 +1,7 @@
 // ignore_for_file: type=lint
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:json_annotation/json_annotation.dart' as json;
 import 'package:collection/collection.dart';
 import 'dart:convert';
 
@@ -22,15 +23,14 @@ part 'swagger.swagger.chopper.dart';
 
 @ChopperApi()
 abstract class Swagger extends ChopperService {
-  static Swagger create(
-    ChopperClient chopper, {
+  static Swagger create({
     ChopperClient? client,
     http.Client? httpClient,
     Authenticator? authenticator,
     ErrorConverter? errorConverter,
     Converter? converter,
     Uri? baseUrl,
-    Iterable<dynamic>? interceptors,
+    List<Interceptor>? interceptors,
   }) {
     if (client != null) {
       return _$Swagger(client);
@@ -39,7 +39,7 @@ abstract class Swagger extends ChopperService {
     final newClient = ChopperClient(
         services: [_$Swagger()],
         converter: converter ?? $JsonSerializableConverter(),
-        interceptors: interceptors?.cast<Interceptor>().toList() ?? [],
+        interceptors: interceptors ?? [],
         client: httpClient,
         authenticator: authenticator,
         errorConverter: errorConverter,

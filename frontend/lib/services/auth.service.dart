@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'dart:html' as html;
 import 'package:frontend/api/swagger.swagger.dart';
-import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:get/get.dart';
 import 'error_service.dart';
 
@@ -12,10 +12,24 @@ class AuthService extends GetxService {
 
   final RxnString _token = RxnString();
   String? get token => _token.value;
-  bool get isLoggedIn => _token.value != null;
+  bool get isLoggedIn => _token.value != null && _token.value != '';
+
+  static const _userKey = 'user_info'; // <-- NEW
+
+  final Rxn<UserDto> _user = Rxn<UserDto>(); // <-- NEW
+
+  UserDto? get user => _user.value;
+  int? get userId => _user.value?.userId; // convenience
 
   Future<AuthService> init() async {
     _token.value = html.window.localStorage[_tokenKey];
+
+    final rawUser = html.window.localStorage[_userKey];
+    if (rawUser != null) {
+      _user.value =
+          UserDto.fromJson(jsonDecode(rawUser) as Map<String, dynamic>);
+    }
+
     return this;
   }
 
@@ -23,9 +37,31 @@ class AuthService extends GetxService {
     try {
       final dto = LoginDto(username: username, password: password);
       final jwt = await _api.apiUsersLoginPost(body: dto);
-      _saveToken(jwt.body!.token!);
+      if (jwt.error != null) {
+        final decoded = jsonDecode(jwt.error as String);
+        final title = decoded['title'] ?? 'Error';
+
+        final errorsMap = decoded['errors'];
+        String errorMessages = '';
+
+        if (errorsMap is Map<String, dynamic>) {
+          final messages = <String>[];
+          errorsMap.forEach((key, value) {
+            if (value is List) {
+              messages.addAll(value.map((e) => e.toString()));
+            }
+          });
+          errorMessages = messages.join(', ');
+        }
+
+        final message =
+            errorMessages.isNotEmpty ? '$title: $errorMessages' : title;
+
+        ErrorService.to.showError(message);
+        throw '';
+      }
+      _saveToken(jwt.body!);
     } catch (e) {
-      ErrorService.to.showError('$e');
       rethrow;
     }
   }
@@ -35,9 +71,31 @@ class AuthService extends GetxService {
       final dto =
           RegisterDto(email: email, username: username, password: password);
       final jwt = await _api.apiUsersRegisterPost(body: dto);
-      _saveToken(jwt.body!.token!);
+      if (jwt.error != null) {
+        final decoded = jsonDecode(jwt.error as String);
+        final title = decoded['title'] ?? 'Error';
+
+        final errorsMap = decoded['errors'];
+        String errorMessages = '';
+
+        if (errorsMap is Map<String, dynamic>) {
+          final messages = <String>[];
+          errorsMap.forEach((key, value) {
+            if (value is List) {
+              messages.addAll(value.map((e) => e.toString()));
+            }
+          });
+          errorMessages = messages.join(', ');
+        }
+
+        final message =
+            errorMessages.isNotEmpty ? '$title: $errorMessages' : title;
+
+        ErrorService.to.showError(message);
+        throw '';
+      }
+      _saveToken(jwt.body!);
     } catch (e) {
-      ErrorService.to.showError('$e');
       rethrow;
     }
   }
@@ -49,8 +107,10 @@ class AuthService extends GetxService {
 
   /* ---------- internals ---------- */
 
-  void _saveToken(String t) {
-    html.window.localStorage[_tokenKey] = t;
-    _token.value = t;
+  void _saveToken(UserDto user) {
+    html.window.localStorage[_tokenKey] = user.token!;
+    _token.value = user.token!;
+    html.window.localStorage[_userKey] = jsonEncode(user);
+    _user.value = user;
   }
 }

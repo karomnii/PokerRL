@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/app/home/auth/login/login.controller.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
+import 'package:get/get_state_manager/src/simple/get_view.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends GetView<LoginPageController> {
   const LoginView({super.key});
 
   @override
@@ -27,6 +29,7 @@ class LoginView extends StatelessWidget {
                 SizedBox(
                   width: 450,
                   child: TextField(
+                    controller: controller.usernameController,
                     decoration: InputDecoration(
                       hintText: 'Username',
                       hintStyle: const TextStyle(color: Colors.grey),
@@ -43,6 +46,7 @@ class LoginView extends StatelessWidget {
                 SizedBox(
                   width: 400,
                   child: TextField(
+                    controller: controller.passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Password',
@@ -61,7 +65,7 @@ class LoginView extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(0, 50),
                   ),
-                  onPressed: () {},
+                  onPressed: () => controller.login(),
                   child: const Text("Login"),
                 ),
                 Wrap(

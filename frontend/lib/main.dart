@@ -17,19 +17,15 @@ Future<void> main() async {
 
   getx.Get.put(ErrorService(), permanent: true);
 
-  final client = ChopperClient(
+  final swagger = Swagger.create(
     baseUrl: Uri.parse('https://localhost:65463'),
-    services: const [],
+    converter: $JsonSerializableConverter(),
     interceptors: [
       AuthInterceptor(),
       ErrorInterceptor(),
     ],
   );
-  print(client.baseUrl);
-  final swagger =
-      Swagger.create(client, baseUrl: Uri.parse('https://localhost:65463'));
   getx.Get.put<Swagger>(swagger, permanent: true);
-  print(swagger.client.baseUrl);
   await getx.Get.putAsync(() => AuthService().init());
 
   runApp(const MyApp());

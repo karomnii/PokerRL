@@ -98,60 +98,71 @@ class GamesPageView extends GetView<GamesPageController> {
                               iconTheme:
                                   theme.iconTheme.copyWith(color: Colors.white),
                             ),
-                            child: DataTable(
-                              showBottomBorder: true,
-                              sortColumnIndex: controller.sortColumnIndex.value,
-                              sortAscending: controller.sortAscending.value,
-                              columns: [
-                                const DataColumn(label: Text('Game ID')),
-                                const DataColumn(label: Text('Owner')),
-                                DataColumn(
-                                  label: const Text('Difficulty'),
-                                  onSort: (columnIndex, ascending) {
-                                    controller.sortColumnIndex.value =
-                                        columnIndex;
-                                    controller.sortAscending.value = ascending;
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: 400),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                controller: ScrollController(),
+                                child: DataTable(
+                                  showBottomBorder: true,
+                                  sortColumnIndex:
+                                      controller.sortColumnIndex.value,
+                                  sortAscending: controller.sortAscending.value,
+                                  columns: [
+                                    const DataColumn(label: Text('Game ID')),
+                                    const DataColumn(label: Text('Owner')),
+                                    DataColumn(
+                                      label: const Text('Difficulty'),
+                                      onSort: (columnIndex, ascending) {
+                                        controller.sortColumnIndex.value =
+                                            columnIndex;
+                                        controller.sortAscending.value =
+                                            ascending;
 
-                                    controller.games.sort((a, b) {
-                                      final aDiff =
-                                          a.table?.difficultyLevel ?? '';
-                                      final bDiff =
-                                          b.table?.difficultyLevel ?? '';
-                                      return ascending
-                                          ? aDiff.compareTo(bDiff)
-                                          : bDiff.compareTo(aDiff);
-                                    });
-                                  },
-                                ),
-                                const DataColumn(label: Text('Players')),
-                                const DataColumn(label: Text('')),
-                              ],
-                              rows: controller.games.map((game) {
-                                final ownerName = game.gamePlayers
-                                        ?.firstWhereOrNull(
-                                            (gp) => gp.isActive ?? false)
-                                        ?.user
-                                        ?.username ??
-                                    'Unknown';
-
-                                return DataRow(cells: [
-                                  DataCell(Text(game.gameId.toString())),
-                                  DataCell(Text(ownerName)),
-                                  DataCell(Text(game.table?.difficultyLevel ??
-                                      'Unknown')),
-                                  DataCell(Text(
-                                      '${game.gamePlayers?.length ?? 0}/4')),
-                                  DataCell(
-                                    FilledButton.icon(
-                                      icon: const Icon(Icons.play_arrow_sharp),
-                                      onPressed: () {
-                                        controller.joinGame(game);
+                                        controller.games.sort((a, b) {
+                                          final aDiff =
+                                              a.table?.difficultyLevel ?? '';
+                                          final bDiff =
+                                              b.table?.difficultyLevel ?? '';
+                                          return ascending
+                                              ? aDiff.compareTo(bDiff)
+                                              : bDiff.compareTo(aDiff);
+                                        });
                                       },
-                                      label: const Text('Join'),
                                     ),
-                                  ),
-                                ]);
-                              }).toList(),
+                                    const DataColumn(label: Text('Players')),
+                                    const DataColumn(label: Text('')),
+                                  ],
+                                  rows: controller.games.map((game) {
+                                    final ownerName = game.gamePlayers
+                                            ?.firstWhereOrNull(
+                                                (gp) => gp.isActive ?? false)
+                                            ?.user
+                                            ?.username ??
+                                        'Unknown';
+
+                                    return DataRow(cells: [
+                                      DataCell(Text(game.gameId.toString())),
+                                      DataCell(Text(ownerName)),
+                                      DataCell(Text(
+                                          game.table?.difficultyLevel ??
+                                              'Unknown')),
+                                      DataCell(Text(
+                                          '${game.gamePlayers?.length ?? 0}/4')),
+                                      DataCell(
+                                        FilledButton.icon(
+                                          icon: const Icon(
+                                              Icons.play_arrow_sharp),
+                                          onPressed: () {
+                                            controller.joinGame(game);
+                                          },
+                                          label: const Text('Join'),
+                                        ),
+                                      ),
+                                    ]);
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           ))),
             ),

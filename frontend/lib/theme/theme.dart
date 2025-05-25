@@ -140,6 +140,29 @@ class AppTheme {
             ),
           ),
         ),
+        popupMenuTheme: const PopupMenuThemeData(
+          color: Color(0xFF131212),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+        ),
+        dropdownMenuTheme: DropdownMenuThemeData(
+          textStyle: GoogleFonts.ubuntuMono(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 255, 242, 242),
+          ),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all<Color>(
+              const Color(0xFF131212),
+            ),
+            shape: WidgetStateProperty.all<OutlinedBorder>(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
         extensions: const <ThemeExtension<dynamic>>[
           AppCustomTheme(
               backgroundImageAsset: "background_gold_and_silver_dimmed2.png"),

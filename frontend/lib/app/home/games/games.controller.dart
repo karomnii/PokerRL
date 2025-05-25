@@ -7,6 +7,9 @@ class GamesPageController extends GetxController {
   final RxList<Game> games = <Game>[].obs;
   final RxBool isLoading = false.obs;
   final errorMessage = RxnString();
+  final RxBool sortAscending = true.obs;
+  final RxInt sortColumnIndex = 2.obs;
+  final RxInt selectedTableId = 1.obs;
 
   @override
   void onReady() {
@@ -28,11 +31,8 @@ class GamesPageController extends GetxController {
   Future<void> createGame() async {
     try {
       isLoading.value = true;
-
-      final int newTableId = 1;
-
       final newGame = await GameService.to.createGame(
-        CreateGameDto(tableId: newTableId),
+        CreateGameDto(tableId: selectedTableId.value),
       );
 
       Get.toNamed('/games/${newGame.gameId}', preventDuplicates: false);

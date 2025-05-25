@@ -13,85 +13,90 @@ class AuthView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ThemedScaffold(
       body: Center(
-        child: PageCard(
-          title: 'AuthPage',
-          child: IntrinsicWidth(
-            child: PageColumn(
-              spacing: 30.0,
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(
-                  width: 300,
-                  child: Center(
-                    child: Text(
-                      "Login in with",
-                      style: TextStyle(fontSize: 30),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 450),
+          child: PageCard(
+            title: 'AuthPage',
+            child: Center(
+              child: IntrinsicWidth(
+                child: PageColumn(
+                  spacing: 30.0,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(
+                      width: 300,
+                      child: Center(
+                        child: Text(
+                          "Login in with",
+                          style: TextStyle(fontSize: 30),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                _socialButton(
-                  label: "Google",
-                  iconUrl:
-                      'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Google.svg',
-                  color: Colors.red,
-                  onPressed: () {},
-                ),
-                _socialButton(
-                  label: "Facebook",
-                  iconUrl:
-                      'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Facebook.svg',
-                  color: Colors.indigo,
-                  onPressed: () {},
-                ),
-                _socialButton(
-                  label: "Twitter",
-                  iconUrl:
-                      'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Twitter.svg',
-                  color: Colors.lightBlue,
-                  onPressed: () {},
-                ),
-                Center(
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 5,
-                    children: [
-                      const Text(
-                        'Or use your password to',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      InkWell(
-                        onTap: () => Get.offNamed('/auth/login',
-                            preventDuplicates: true),
-                        child: const Text(
-                          'login',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
+                    _socialButton(
+                      label: "Google",
+                      iconUrl:
+                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Google.svg',
+                      color: Colors.red,
+                      onPressed: () {},
+                    ),
+                    _socialButton(
+                      label: "Facebook",
+                      iconUrl:
+                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Facebook.svg',
+                      color: Colors.indigo,
+                      onPressed: () {},
+                    ),
+                    _socialButton(
+                      label: "Twitter",
+                      iconUrl:
+                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Twitter.svg',
+                      color: Colors.lightBlue,
+                      onPressed: () {},
+                    ),
+                    Center(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 5,
+                        children: [
+                          const Text(
+                            'Or use your password to',
+                            style: TextStyle(fontSize: 16),
                           ),
-                        ),
-                      ),
-                      const Text(
-                        'or',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      InkWell(
-                        onTap: () => Get.offNamed('/auth/register',
-                            preventDuplicates: true),
-                        child: const Text(
-                          'register',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
+                          InkWell(
+                            onTap: () => Get.offNamed('/auth/login',
+                                preventDuplicates: true),
+                            child: const Text(
+                              'login',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
                           ),
-                        ),
+                          const Text(
+                            'or',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          InkWell(
+                            onTap: () => Get.offNamed('/auth/register',
+                                preventDuplicates: true),
+                            child: const Text(
+                              'register',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

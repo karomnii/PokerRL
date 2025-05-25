@@ -28,83 +28,129 @@ class HomePageView extends GetView<HomePageController> {
             tooltipText: 'Shop',
             onPressed: () => Get.offNamed('/shop', preventDuplicates: false),
           ),
-          AppBarIcon(
-            icon: Icons.person,
-            tooltipText: 'Account',
-            onPressed: () => AuthService.to.logout(),
+          PopupMenuButton<String>(
+            icon: Tooltip(
+              message: 'Account',
+              child: const Icon(
+                Icons.person,
+                size: 36.0,
+              ),
+            ),
+            onSelected: (value) {
+              switch (value) {
+                case 'logout':
+                  AuthService.to.logout();
+                  Get.offAllNamed('/');
+                  break;
+                case 'login':
+                  Get.offNamed('/auth/');
+                  break;
+                case 'register':
+                  Get.offNamed('/auth/register');
+                  break;
+              }
+            },
+            itemBuilder: (context) {
+              final loggedIn = AuthService.to.isLoggedIn;
+              return loggedIn
+                  ? [
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Text('Logout',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ]
+                  : [
+                      const PopupMenuItem(
+                        value: 'login',
+                        child: Text('Login',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                      const PopupMenuItem(
+                        value: 'register',
+                        child: Text('Register',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ];
+            },
           ),
         ],
       ),
       body: Center(
-          child: PageCard(
-        title: '',
-        child: IntrinsicWidth(
-          child: PageColumn(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const PageRow(
+          child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 500),
+        child: PageCard(
+          title: 'HomePage',
+          child: Center(
+            child: IntrinsicWidth(
+              child: PageColumn(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    width: 50,
-                    child: Divider(
-                      color: Colors.white,
-                      thickness: 2,
-                    ),
+                  const PageRow(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 50,
+                        child: Divider(
+                          color: Colors.white,
+                          thickness: 2,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text('AI Casino',
+                            style: TextStyle(
+                                fontSize: 25, fontWeight: FontWeight.bold)),
+                      ),
+                      SizedBox(
+                        width: 50,
+                        child: Divider(
+                          color: Colors.white,
+                          thickness: 2,
+                        ),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('AI Casino',
-                        style: TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold)),
+                  Image.asset(
+                    width: 500,
+                    'dices.png',
+                    scale: 0.2,
+                    fit: BoxFit.contain,
                   ),
-                  SizedBox(
-                    width: 50,
-                    child: Divider(
-                      color: Colors.white,
-                      thickness: 2,
-                    ),
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Get.offNamed('/game', preventDuplicates: false),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Play'),
                   ),
+                  AuthService.to.isLoggedIn
+                      ? const SizedBox.shrink()
+                      : PageRow(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => Get.offNamed('/auth/',
+                                    preventDuplicates: true),
+                                icon: const Icon(Icons.person),
+                                label: const Text('Sign In'),
+                              ),
+                            ),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => Get.offNamed('/auth/register',
+                                    preventDuplicates: true),
+                                icon: const Icon(Icons.person_add),
+                                label: const Text('Sign up'),
+                              ),
+                            ),
+                          ],
+                        ),
                 ],
               ),
-              Image.asset(
-                width: 500,
-                'dices.png',
-                scale: 0.2,
-                fit: BoxFit.contain,
-              ),
-              ElevatedButton.icon(
-                onPressed: () =>
-                    Get.offNamed('/game', preventDuplicates: false),
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Play'),
-              ),
-              AuthService.to.isLoggedIn
-                  ? const SizedBox.shrink()
-                  : PageRow(
-                      children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () =>
-                                Get.offNamed('/auth/', preventDuplicates: true),
-                            icon: const Icon(Icons.person),
-                            label: const Text('Sign In'),
-                          ),
-                        ),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () => Get.offNamed('/auth/register',
-                                preventDuplicates: true),
-                            icon: const Icon(Icons.person_add),
-                            label: const Text('Sign up'),
-                          ),
-                        ),
-                      ],
-                    ),
-            ],
+            ),
           ),
         ),
       )),

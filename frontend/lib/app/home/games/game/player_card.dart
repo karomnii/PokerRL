@@ -91,8 +91,10 @@ class PlayerCard extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: PlayingCard(
+              width: 55,
+              height: 75,
               frontAsset:
-                  'assets/cards/${card.$value == '10' ? 'T' : card.$value}${card.suit}.png'),
+                  'assets/cards/${card.$value == '10' ? 'T' : card.$value}${card.suit?.substring(0, 1)}.png'),
         );
       }).toList(),
     );

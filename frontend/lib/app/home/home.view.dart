@@ -21,12 +21,12 @@ class HomePageView extends GetView<HomePageController> {
           AppBarIcon(
             icon: Icons.casino,
             tooltipText: 'Play',
-            onPressed: () => Get.offNamed('/games', preventDuplicates: false),
+            onPressed: () => Get.toNamed('/games', preventDuplicates: false),
           ),
           AppBarIcon(
             icon: Icons.store,
             tooltipText: 'Shop',
-            onPressed: () => Get.offNamed('/shop', preventDuplicates: false),
+            onPressed: () => Get.toNamed('/shop', preventDuplicates: false),
           ),
           PopupMenuButton<String>(
             icon: Tooltip(
@@ -43,10 +43,10 @@ class HomePageView extends GetView<HomePageController> {
                   Get.offAllNamed('/');
                   break;
                 case 'login':
-                  Get.offNamed('/auth/');
+                  Get.toNamed('/auth/');
                   break;
                 case 'register':
-                  Get.offNamed('/auth/register');
+                  Get.toNamed('/auth/register');
                   break;
               }
             },
@@ -122,7 +122,7 @@ class HomePageView extends GetView<HomePageController> {
                   ),
                   ElevatedButton.icon(
                     onPressed: () =>
-                        Get.offNamed('/game', preventDuplicates: false),
+                        Get.toNamed('/games', preventDuplicates: false),
                     icon: const Icon(Icons.play_arrow),
                     label: const Text('Play'),
                   ),
@@ -132,7 +132,7 @@ class HomePageView extends GetView<HomePageController> {
                           children: [
                             Expanded(
                               child: FilledButton.icon(
-                                onPressed: () => Get.offNamed('/auth/',
+                                onPressed: () => Get.toNamed('/auth/',
                                     preventDuplicates: true),
                                 icon: const Icon(Icons.person),
                                 label: const Text('Sign In'),
@@ -140,7 +140,7 @@ class HomePageView extends GetView<HomePageController> {
                             ),
                             Expanded(
                               child: FilledButton.icon(
-                                onPressed: () => Get.offNamed('/auth/register',
+                                onPressed: () => Get.toNamed('/auth/register',
                                     preventDuplicates: true),
                                 icon: const Icon(Icons.person_add),
                                 label: const Text('Sign up'),

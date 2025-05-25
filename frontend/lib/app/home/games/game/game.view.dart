@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/app/home/games/game/game.controller.dart';
+import 'package:frontend/app/home/games/game/game_table.dart';
 import 'package:frontend/app/home/games/game/player_card.dart';
 import 'package:frontend/app/home/games/game_card.dart';
 import 'package:frontend/services/auth.service.dart';
@@ -44,13 +45,7 @@ class GamePageView extends GetView<GamePageController> {
             spacing: 1,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageCard(
-                title: 'Table',
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                ),
-              ),
+              GameTable(game: controller.gameState.value),
               PageRow(spacing: 1, children: [
                 Expanded(
                     child: PlayerCard(

@@ -3,6 +3,7 @@ import 'package:frontend/app/home/auth/register/register.controller.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
+import 'package:get/get.dart';
 import 'package:get/get_state_manager/src/simple/get_view.dart';
 
 class RegisterView extends GetView<RegisterPageController> {
@@ -97,7 +98,7 @@ class RegisterView extends GetView<RegisterPageController> {
                         ),
                         InkWell(
                           onTap: () {
-                            Navigator.pushNamed(context, '/auth/login');
+                            Get.toNamed('/auth/login', preventDuplicates: true);
                           },
                           child: const Text(
                             "login",

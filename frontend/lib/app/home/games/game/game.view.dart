@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/app/home/games/game/bet_button.dart';
 import 'package:frontend/app/home/games/game/game.controller.dart';
 import 'package:frontend/app/home/games/game/game_table.dart';
 import 'package:frontend/app/home/games/game/player_card.dart';
@@ -26,7 +27,7 @@ class GamePageView extends GetView<GamePageController> {
         if (err != null) {
           WidgetsBinding.instance.addPostFrameCallback(
               (_) => Get.snackbar('Error', err, instantInit: false));
-          controller.errorMessage.value = null; // clear
+          controller.errorMessage.value = null;
         }
 
         if (controller.isInitialLoading.value) {
@@ -46,41 +47,70 @@ class GamePageView extends GetView<GamePageController> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GameTable(game: controller.gameState.value),
-              PageRow(spacing: 1, children: [
-                Expanded(
-                    child: PlayerCard(
-                  seatId: 1,
-                  player: controller.gameState.value.players
-                      ?.singleWhereOrNull((p) => p.seatPosition == 1),
-                  joinGame: () => controller.joinGame(1),
-                )),
-                Expanded(
-                    child: PlayerCard(
-                  player: controller.gameState.value.players
-                      ?.singleWhereOrNull((p) => p.seatPosition == 2),
-                  seatId: 2,
-                  joinGame: () => controller.joinGame(2),
-                )),
-                Expanded(
-                    child: PlayerCard(
-                  player: controller.gameState.value.players
-                      ?.singleWhereOrNull((p) => p.seatPosition == 3),
-                  seatId: 3,
-                  joinGame: () => controller.joinGame(3),
-                )),
-                Expanded(
-                    child: PlayerCard(
-                  player: controller.gameState.value.players
-                      ?.singleWhereOrNull((p) => p.seatPosition == 4),
-                  seatId: 4,
-                  joinGame: () => controller.joinGame(4),
-                )),
-              ]),
+              PageRow(
+                  spacing: 1,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: PlayerCard(
+                      currentSeatId:
+                          controller.gameState.value.currentTurnUserId ?? 0,
+                      seatId: 1,
+                      player: controller.gameState.value.players
+                          ?.singleWhereOrNull((p) => p.seatPosition == 1),
+                      joinGame: () => controller.joinGame(1),
+                      showHaveCards:
+                          controller.gameState.value.playerCards?.isNotEmpty ??
+                              false,
+                    )),
+                    Expanded(
+                        child: PlayerCard(
+                      currentSeatId:
+                          controller.gameState.value.currentTurnUserId ?? 0,
+                      player: controller.gameState.value.players
+                          ?.singleWhereOrNull((p) => p.seatPosition == 2),
+                      seatId: 2,
+                      joinGame: () => controller.joinGame(2),
+                      showHaveCards:
+                          controller.gameState.value.playerCards?.isNotEmpty ??
+                              false,
+                    )),
+                  ]),
+              PageRow(
+                  spacing: 1,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: PlayerCard(
+                      currentSeatId:
+                          controller.gameState.value.currentTurnUserId ?? 0,
+                      player: controller.gameState.value.players
+                          ?.singleWhereOrNull((p) => p.seatPosition == 3),
+                      seatId: 3,
+                      joinGame: () => controller.joinGame(3),
+                      showHaveCards:
+                          controller.gameState.value.playerCards?.isNotEmpty ??
+                              false,
+                    )),
+                    Expanded(
+                        child: PlayerCard(
+                      currentSeatId:
+                          controller.gameState.value.currentTurnUserId ?? 0,
+                      player: controller.gameState.value.players
+                          ?.singleWhereOrNull((p) => p.seatPosition == 4),
+                      seatId: 4,
+                      joinGame: () => controller.joinGame(4),
+                      showHaveCards:
+                          controller.gameState.value.playerCards?.isNotEmpty ??
+                              false,
+                    )),
+                  ]),
               SizedBox(
                 height: 20,
               ),
               PageRow(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: (controller.gameState.value.currentState ?? '') ==
                         'Waiting'
                     ? [
@@ -111,18 +141,29 @@ class GamePageView extends GetView<GamePageController> {
                         ),
                         // Call
                         ElevatedButton.icon(
-                          onPressed:
-                              controller.gameState.value.currentTurnUserId ==
-                                      AuthService.to.userId
-                                  ? () => controller.makeMove('Call', 0)
-                                  : null,
-                          label: Text('Call'),
-                          icon: Icon(Icons.equalizer_sharp),
+                          onPressed: controller
+                                      .gameState.value.currentTurnUserId ==
+                                  AuthService.to.userId
+                              ? () => controller.makeMove(
+                                    'Call',
+                                    // <- MUSI pójść kwota do dopłacenia
+                                    controller.gameState.value.callAmount ?? 0,
+                                  )
+                              : null,
+                          label: const Text('Call'),
+                          icon: const Icon(Icons.equalizer_sharp),
                         ),
                         // Bet
-                        ElevatedButton.icon(
-                          onPressed: controller
-                                          .gameState.value.currentTurnUserId ==
+                        BetButtonWidget(
+                          isEnabled: controller
+                                      .gameState.value.currentTurnUserId ==
+                                  AuthService.to.userId &&
+                              controller.gameState.value.minRaiseAmount! <=
+                                  controller.gameState.value.players!
+                                      .singleWhere((p) =>
+                                          p.userId == AuthService.to.userId)
+                                      .currentChips!,
+                          bet: controller.gameState.value.currentTurnUserId ==
                                       AuthService.to.userId &&
                                   (controller.gameState.value.callAmount ??
                                           0) ==
@@ -132,23 +173,46 @@ class GamePageView extends GetView<GamePageController> {
                                           .singleWhere((p) =>
                                               p.userId! ==
                                               AuthService.to.userId!)
-                                          .currentChips!
+                                          .currentChips! &&
+                                  controller.gameState.value.minRaiseAmount! <=
+                                      controller.currentBet.value
                               ? () => controller.makeMove(
-                                  'Bet',
-                                  controller.gameState.value.minRaiseAmount! *
-                                      2)
+                                  'Bet', controller.currentBet.value)
                               : null,
-                          label: Text('Bet'),
-                          icon: Icon(Icons.play_arrow_outlined),
+                          addValue: () {
+                            final chipsLeft = controller
+                                .gameState.value.players!
+                                .singleWhere(
+                                    (p) => p.userId == AuthService.to.userId)
+                                .currentChips!;
+                            final next = controller.currentBet.value +
+                                controller.gameState.value.minRaiseAmount!;
+                            if (next <= chipsLeft) {
+                              controller.currentBet.value = next;
+                            }
+                          },
+                          removeValue: () {
+                            final next = controller.currentBet.value -
+                                controller.gameState.value.minRaiseAmount!;
+                            // nie schodź poniżej minRaise
+                            if (next >=
+                                controller.gameState.value.minRaiseAmount!) {
+                              controller.currentBet.value = next;
+                            }
+                          },
+                          currentValue: controller.currentBet.value,
+                          changeValue: (x) => controller.currentBet.value = x,
                         ),
                         // Raise
                         ElevatedButton.icon(
-                          onPressed: controller
-                                      .gameState.value.currentTurnUserId ==
-                                  AuthService.to.userId
-                              ? () => controller.makeMove('Raise',
-                                  controller.gameState.value.minRaiseAmount!)
-                              : null,
+                          onPressed:
+                              controller.gameState.value.currentTurnUserId ==
+                                      AuthService.to.userId
+                                  ? () => controller.makeMove(
+                                        'Raise',
+                                        controller.currentBet.value,
+                                      )
+                                  : null,
                           label: Text('Raise'),
                           icon: Icon(Icons.more_sharp),
                         ),

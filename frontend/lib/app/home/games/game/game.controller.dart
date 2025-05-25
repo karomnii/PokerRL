@@ -6,11 +6,12 @@ import 'package:get/get.dart';
 
 class GamePageController extends GetxController {
   /* -------- konfiguracja pollingu -------- */
-  static const Duration _pollInterval = Duration(seconds: 4);
+  static const Duration _pollInterval = Duration(seconds: 2);
 
   /* -------- stan -------- */
   final Rx<GameStateDto> gameState = GameStateDto().obs;
 
+  final RxInt currentBet = 0.obs;
   // Spin-bar tylko przy pierwszym wczytaniu
   final RxBool isInitialLoading = false.obs;
 
@@ -51,6 +52,9 @@ class GamePageController extends GetxController {
       final gameId = int.parse(Uri.base.pathSegments[1]);
       final result = await GameService.to.getGame(gameId);
       gameState.value = result;
+      if (currentBet.value == 0) {
+        currentBet.value = result.minRaiseAmount ?? currentBet.value;
+      }
     } catch (e, s) {
       errorMessage.value = e.toString();
       // logować stacktrace jeśli potrzeba:

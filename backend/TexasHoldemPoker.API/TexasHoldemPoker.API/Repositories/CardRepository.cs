@@ -131,6 +131,7 @@ namespace TexasHoldemPoker.API.Repositories
             {
                 GameRoundId = gameRound.GameRoundId,
                 GamePlayerId = gamePlayerId,
+                UserId = gamePlayer.UserId,
                 CardId = cardId,
                 Position = position
             };

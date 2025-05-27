@@ -12,13 +12,13 @@ class PlayerCard extends StatelessWidget {
     this.player,
     this.joinGame,
     required this.seatId,
-    required this.currentSeatId,
+    required this.currentPlayerId,
     required this.showHaveCards,
   });
 
   final api.PlayerStateDto? player;
   final int seatId;
-  final int currentSeatId;
+  final int currentPlayerId;
 
   final VoidCallback? joinGame;
 
@@ -44,6 +44,10 @@ class PlayerCard extends StatelessWidget {
 
     return PageCard(
       title: 'Seat $seatId',
+      highlightColor: player!.userId == currentPlayerId
+          ? theme.elevatedButtonTheme.style?.backgroundColor?.resolve({}) ??
+              theme.colorScheme.primary
+          : null,
       child: Row(
         children: [
           PageColumn(

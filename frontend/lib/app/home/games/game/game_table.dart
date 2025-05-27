@@ -16,7 +16,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
   final List<api.CardDto> _cards = [];
   final List<AnimationController> _ctrl = [];
 
-  static const _w = 80.0, _h = 112.0;
+  static const _w = 110.0, _h = 150.0;
 
   @override
   void didUpdateWidget(covariant GameTable oldWidget) {

@@ -53,7 +53,7 @@ class GamePageView extends GetView<GamePageController> {
                   children: [
                     Expanded(
                         child: PlayerCard(
-                      currentSeatId:
+                      currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       seatId: 1,
                       player: controller.gameState.value.players
@@ -65,7 +65,7 @@ class GamePageView extends GetView<GamePageController> {
                     )),
                     Expanded(
                         child: PlayerCard(
-                      currentSeatId:
+                      currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players
                           ?.singleWhereOrNull((p) => p.seatPosition == 2),
@@ -82,7 +82,7 @@ class GamePageView extends GetView<GamePageController> {
                   children: [
                     Expanded(
                         child: PlayerCard(
-                      currentSeatId:
+                      currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players
                           ?.singleWhereOrNull((p) => p.seatPosition == 3),
@@ -94,7 +94,7 @@ class GamePageView extends GetView<GamePageController> {
                     )),
                     Expanded(
                         child: PlayerCard(
-                      currentSeatId:
+                      currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players
                           ?.singleWhereOrNull((p) => p.seatPosition == 4),

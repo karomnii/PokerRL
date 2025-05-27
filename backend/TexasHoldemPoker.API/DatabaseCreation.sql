@@ -281,9 +281,9 @@ GO
 
 -- Populate PokerTables Table
 INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive) VALUES
-('Beginner Table', 100, 500, 1000, 10, 20, 9, 'Beginner', 1),
-('Intermediate Table', 500, 1000, 5000, 50, 100, 9, 'Intermediate', 1),
-('Pro Table', 1000, 5000, 10000, 100, 200, 9, 'Pro', 1);
+('Beginner Table', 100, 500, 1000, 10, 20, 4, 'Beginner', 1),
+('Intermediate Table', 500, 1000, 5000, 50, 100, 4, 'Intermediate', 1),
+('Pro Table', 1000, 5000, 10000, 100, 200, 4, 'Pro', 1);
 GO
 
 -- Populate ShopItems Table

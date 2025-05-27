@@ -57,8 +57,6 @@ namespace TexasHoldemPoker.API.Repositories
                 if (seatTaken)
                     throw new InvalidOperationException("Seat position is already taken");
 
-                user.ChipsBalance -= buyInAmount;
-
                 var gamePlayer = new GamePlayer
                 {
                     GameId = gameId,

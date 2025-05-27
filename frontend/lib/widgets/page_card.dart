@@ -7,20 +7,28 @@ class PageCard extends StatelessWidget implements PreferredSizeWidget {
     this.title,
     this.titleExtras,
     this.child,
+    this.highlightColor,
   });
 
   final String? title;
   final List<Widget>? titleExtras;
   final Widget? child;
+  final Color? highlightColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: highlightColor != null
+          ? BorderSide(color: highlightColor!, width: 2)
+          : BorderSide.none,
+    );
     return Card(
       margin: const EdgeInsets.all(16.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: shape,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: PageColumn(

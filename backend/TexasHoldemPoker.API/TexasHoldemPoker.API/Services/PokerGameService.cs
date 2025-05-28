@@ -46,14 +46,20 @@ namespace TexasHoldemPoker.API.Services
         public async Task<Game> CreateGameAsync(int tableId)
         {
             var game = await gameRepository.CreateGameAsync(new Game { TableId = tableId });
+            await gameRoundRepository.StartNewRoundAsync(game.GameId);
             return game;
         }
 
         public async Task<bool> JoinGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
         {
             var game = await gameRepository.GetByIdAsync(gameId);
-
             if (game == null)
+            {
+                return false;
+            }
+
+            var gamePlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            if (gamePlayers.Count() > game.Table.MaxPlayers-1)
             {
                 return false;
             }
@@ -371,7 +377,7 @@ namespace TexasHoldemPoker.API.Services
                         effectiveAmount = 0;
                         actionType = "Check";
                     }
-                    else if (callAmount == gamePlayer.CurrentChips)
+                    else if (callAmount >= gamePlayer.CurrentChips)
                     {
                         effectiveAmount = gamePlayer.CurrentChips;
                         actionType = "AllIn";
@@ -386,7 +392,7 @@ namespace TexasHoldemPoker.API.Services
                     break;
                 case "Bet":
                     isValidMove = (callAmount == 0 &&
-                                   amount > (await gameRepository.GetGameTableAsync(gameId)).BigBlind &&
+                                   amount >= (await gameRepository.GetGameTableAsync(gameId)).BigBlind &&
                                    amount <= gamePlayer.CurrentChips);
                     if (isValidMove) effectiveAmount = amount;
                     break;
@@ -453,22 +459,24 @@ namespace TexasHoldemPoker.API.Services
             if (game?.CurrentTurnPlayerId == null) return;
 
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            var activePlayersWithChips = players
-                .Where(p => p.CurrentChips > 0)
+            var activePlayers = players
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.SeatPosition)
                 .ToList();
+            var activePlayersWithChips = activePlayers
+                .Where(p => p.CurrentChips > 0)
+                .OrderBy(p => p.SeatPosition)
+                .ToList();
 
-            if (activePlayersWithChips.Count <= 1)
+            if (activePlayersWithChips.Count == 0)
             {
-                await gameRepository.SetCurrentTurnAsync(gameId, null);
                 return;
             }
 
-            var currentPlayer = activePlayersWithChips.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId);
+            var currentPlayer = activePlayersWithChips.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId) ?? activePlayers.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId);
             if (currentPlayer == null)
             {
-                var originalPlayer = players.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId);
+                var originalPlayer = players.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId);
                 int searchStartIndex = originalPlayer != null
                     ? players.OrderBy(p => p.SeatPosition).ToList().IndexOf(originalPlayer)
                     : -1;
@@ -487,7 +495,7 @@ namespace TexasHoldemPoker.API.Services
                     }
                 }
 
-                await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips.First().UserId);
+                await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips?.First()?.UserId ?? activePlayers?.First()?.UserId);
                 return;
             }
 
@@ -506,9 +514,8 @@ namespace TexasHoldemPoker.API.Services
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
             var activePlayersWithChips = activePlayers.Where(p => p.CurrentChips > 0).ToList();
-
-
-            if (activePlayersWithChips.Count <= 1)
+            
+            if (activePlayersWithChips.Count == 0)
             {
                 return true;
             }
@@ -632,6 +639,16 @@ namespace TexasHoldemPoker.API.Services
                     await DetermineWinnerAsync(gameId);
                 }
             }
+
+            var activePlayersWithChips = activePlayers.Where(p => p.CurrentChips > 0).ToList();
+            gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+
+            if (activePlayersWithChips.Count < 2 && (gameRound.CurrentState == "Flop" ||
+                                                     gameRound.CurrentState == "Turn" ||
+                                                     gameRound.CurrentState == "River"))
+            {
+                await AdvanceGameStateAsync(gameId);
+            }
         }
 
         private async Task DealCommunityCardsAsync(int gameId, int count)
@@ -717,6 +734,7 @@ namespace TexasHoldemPoker.API.Services
             {
                 if (winnerIds.Count == 1)
                 {
+                    // TODO: Handle case with AllIn player having less chips(player can win max 2 times the amount of chips if he did not match the bet)
                     await gameRoundWinnerRepository.AddWinnerAsync(gameRound.GameRoundId, winnerIds.First(),
                         totalPot);
                 }

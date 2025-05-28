@@ -42,7 +42,7 @@ namespace TexasHoldemPoker.API.Controllers
             {
                 Username = registerDto.Username,
                 Email = registerDto.Email,
-                ChipsBalance = 1000,
+                ChipsBalance = 5000,
                 RegistrationDate = DateTime.UtcNow,
                 IsActive = true,
                 AvatarImage = "/images/default.png"
@@ -117,7 +117,7 @@ namespace TexasHoldemPoker.API.Controllers
                 {
                     Email = info.Email,
                     RegistrationDate = DateTime.UtcNow,
-                    ChipsBalance = 1000,
+                    ChipsBalance = 5000,
                     IsActive = true,
                     AvatarImage = "/images/default.png",
                     Username = null

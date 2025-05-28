@@ -281,9 +281,9 @@ GO
 
 -- Populate PokerTables Table
 INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive) VALUES
-('Beginner Table', 100, 500, 1000, 10, 20, 9, 'Beginner', 1),
-('Intermediate Table', 500, 1000, 5000, 50, 100, 9, 'Intermediate', 1),
-('Pro Table', 1000, 5000, 10000, 100, 200, 9, 'Pro', 1);
+('Beginner Table', 100, 500, 1000, 10, 20, 4, 'Beginner', 1),
+('Intermediate Table', 500, 1000, 5000, 50, 100, 4, 'Intermediate', 1),
+('Pro Table', 1000, 5000, 10000, 100, 200, 4, 'Pro', 1);
 GO
 
 -- Populate ShopItems Table
@@ -295,3 +295,12 @@ INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) V
 ('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 1, 'PLN'),
 ('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 1, 'PLN'),
 ('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 1, 'CHIPS');
+
+INSERT INTO Models (Name, Path, Difficulty) VALUES
+('First', 'dqn_model.onnx', 'Easy');
+
+INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
+('Bot_Adam', 'email1', 'password', 2147483647, 1);
+
+INSERT INTO UserModels (UserId, ModelId) VALUES
+(1,1);

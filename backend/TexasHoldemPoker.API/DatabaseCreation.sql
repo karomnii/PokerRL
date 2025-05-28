@@ -295,3 +295,12 @@ INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) V
 ('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 1, 'PLN'),
 ('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 1, 'PLN'),
 ('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 1, 'CHIPS');
+
+INSERT INTO Models (Name, Path, Difficulty) VALUES
+('First', 'dqn_model.onnx', 'Easy');
+
+INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
+('Bot_Adam', 'email1', 'password', 2147483647, 1);
+
+INSERT INTO UserModels (UserId, ModelId) VALUES
+(1,1);

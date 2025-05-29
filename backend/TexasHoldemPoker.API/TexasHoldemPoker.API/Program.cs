@@ -1,13 +1,13 @@
+using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using Microsoft.Extensions.Options;
 using Stripe;
+using TexasHoldemPoker.API.Helpers;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using TexasHoldemPoker.API.Services;
@@ -23,6 +23,7 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddHttpContextAccessor();
 
         // Add database context
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -45,17 +46,18 @@ public class Program
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        
+        builder.Services.AddScoped<Avatar>();
+
         // stripe 
-        
+
         builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
-        Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+        StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
         builder.Services.AddScoped<StripePaymentService>();
-        
+
         // socials
-        
-        builder.Services.AddHttpClient();  
-        
+
+        builder.Services.AddHttpClient();
+
         // Add authentication
         builder.Services.AddAuthentication(options =>
             {
@@ -83,12 +85,12 @@ public class Program
         //    facebookOptions.ClientId = builder.Configuration["Authentication:Facebook:AppId"];
         //    facebookOptions.ClientSecret = builder.Configuration["Authentication:Facebook:AppSecret"];
         //});
-        
-        
+
+
         // Add JSON options
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
-            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         });
 
 
@@ -139,18 +141,25 @@ public class Program
                             Id = "Bearer"
                         }
                     },
-                    new string[] {}
+                    new string[] { }
                 }
             });
         });
-        
+
         var app = builder.Build();
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(
+                Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
+            RequestPath = ""
+        });
 
         // Configure the HTTP request pipeline
         // if (app.Environment.IsDevelopment())
         // {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+        app.UseSwagger();
+        app.UseSwaggerUI();
         // }
 
         app.UseHttpsRedirection();

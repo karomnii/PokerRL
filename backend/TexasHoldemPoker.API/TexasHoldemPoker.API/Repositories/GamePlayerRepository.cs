@@ -43,7 +43,7 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<GamePlayer> AddPlayerToGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
         {
-            using var transaction = await context.Database.BeginTransactionAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
@@ -84,23 +84,6 @@ namespace TexasHoldemPoker.API.Repositories
                 await transaction.RollbackAsync();
                 throw;
             }
-        }
-
-        // TODO: create logic for adding a model
-        public async Task<GamePlayer> AddModelToGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
-        {
-            return new GamePlayer
-            {
-                GameId = gameId,
-                UserId = userId,
-                SeatPosition = seatPosition,
-                InitialChips = buyInAmount,
-                CurrentChips = buyInAmount,
-                IsActive = true,
-                IsDealer = false,
-                IsSmallBlind = false,
-                IsBigBlind = false
-            };
         }
 
         public async Task<bool> UpdatePlayerChipsAsync(int gamePlayerId, int amount)
@@ -238,15 +221,6 @@ namespace TexasHoldemPoker.API.Repositories
             }
         }
 
-        // TODO: create logic for removing a model
-
-        public async Task<bool> RemoveModelFromGameAsync(int gamePlayerId)
-        {
-            return true;
-        }
-
-        // TODO: might need to change logic to skip models
-
         public async Task<int> GetNextActivePlayerPositionAsync(int gameId, int currentPosition)
         {
             var players = await context.GamePlayers
@@ -289,6 +263,14 @@ namespace TexasHoldemPoker.API.Repositories
         {
             return await context.GamePlayers
                 .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.SeatPosition == seatPosition);
+        }
+
+        public async Task<IEnumerable<GamePlayer>> GetAllAgentsInGamesAsync()
+        {
+            return await context.GamePlayers
+                .Include(gp => gp.User)
+                .Where(gp => gp.User.IsBot == true)
+                .ToListAsync();
         }
     }
 }

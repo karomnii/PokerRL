@@ -23,6 +23,8 @@ namespace TexasHoldemPoker.API.Controllers
             _gameService = gameService;
             _gameRepository = gameRepository;
             _aiAgentService = aiAgentService;
+            
+            _gameService.InitializeAgentsPlayingInGames().GetAwaiter().GetResult();
         }
 
         [HttpGet]
@@ -145,21 +147,6 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
-        [HttpPost("{id}/moveAi/{userId}")]
-        public async Task<ActionResult> MakeMoveAiWithUserId(int id, int userId)
-        {
-            GameStateDto gameState = await _gameService.GetGameStateAsync(id, userId);
-
-            MoveDto move = await _aiAgentService.GetBestActionAsync(gameState);
-
-            var result = await _gameService.PlaceBetAsync(id, userId, move.ActionType, move.Amount);
-
-            if (!result)
-                return BadRequest("Invalid move or not your turn");
-
-            return NoContent();
-        }
-
         [HttpPost("{id}/leave/{userId}")]
         public async Task<ActionResult> LeaveGameWithUserId(int id, int userId)
         {
@@ -167,6 +154,24 @@ namespace TexasHoldemPoker.API.Controllers
 
             if (!result)
                 return BadRequest("Failed to leave game");
+
+            return NoContent();
+        }
+
+        [HttpGet("{id}/ai-agents")]
+        public async Task<ActionResult<IEnumerable<AgentDto>>> GetAiAgents(int id)
+        {
+            var agents = await _gameService.GetAvailableAgentsAsync(id);
+            return Ok(agents);
+        }
+
+        [HttpPost("{id}/add/{agentId}")]
+        public async Task<ActionResult> AddAiAgentToGame(int id, JoinGameDto joinDto, int agentId)
+        {
+            var result = await _gameService.AddModelToGameAsync(id, agentId, joinDto.SeatPosition, joinDto.BuyInAmount);
+
+            if (!result)
+                return BadRequest("Failed to join game");
 
             return NoContent();
         }

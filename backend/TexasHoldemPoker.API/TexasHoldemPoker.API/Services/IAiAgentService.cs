@@ -1,4 +1,5 @@
 ﻿using TexasHoldemPoker.API.DTOs;
+using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Services
 {

@@ -16,11 +16,13 @@ namespace TexasHoldemPoker.API.Controllers
     {
         private readonly IPokerGameService _gameService;
         private readonly IGameRepository _gameRepository;
+        private readonly IAiAgentService _aiAgentService;
 
-        public GamesController(IPokerGameService gameService, IGameRepository gameRepository)
+        public GamesController(IPokerGameService gameService, IGameRepository gameRepository, IAiAgentService aiAgentService)
         {
             _gameService = gameService;
             _gameRepository = gameRepository;
+            _aiAgentService = aiAgentService;
         }
 
         [HttpGet]
@@ -136,6 +138,21 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult> MakeMoveWithUserId(int id, MakeMoveDto moveDto, int userId)
         {
             var result = await _gameService.PlaceBetAsync(id, userId, moveDto.ActionType, moveDto.Amount);
+
+            if (!result)
+                return BadRequest("Invalid move or not your turn");
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/moveAi/{userId}")]
+        public async Task<ActionResult> MakeMoveAiWithUserId(int id, int userId)
+        {
+            GameStateDto gameState = await _gameService.GetGameStateAsync(id, userId);
+
+            MoveDto move = await _aiAgentService.GetBestActionAsync(gameState);
+
+            var result = await _gameService.PlaceBetAsync(id, userId, move.ActionType, move.Amount);
 
             if (!result)
                 return BadRequest("Invalid move or not your turn");

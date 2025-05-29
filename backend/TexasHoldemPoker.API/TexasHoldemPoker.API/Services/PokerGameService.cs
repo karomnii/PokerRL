@@ -20,10 +20,17 @@ namespace TexasHoldemPoker.API.Services
         private readonly IChipTransactionRepository chipTransactionRepository;
         private readonly IGameRoundRepository gameRoundRepository;
         private readonly IGameRoundWinnerRepository gameRoundWinnerRepository;
+        private readonly IModelRepository modelRepository;
+        private readonly IUserModelRepository userModelRepository;
+        private readonly IUserRepository UserRepository;
+        private readonly IAiAgentService aiAgentService;
         private readonly Random random = new Random();
 
         private static Dictionary<int, HashSet<int>>
             completedRoundAcknowledgments = new Dictionary<int, HashSet<int>>();
+
+        public static Dictionary<int, HashSet<int>>
+            agentsPlayingInGames = new Dictionary<int, HashSet<int>>();
 
         public PokerGameService(
             IGameRepository gameRepository,
@@ -32,7 +39,11 @@ namespace TexasHoldemPoker.API.Services
             IMoveRepository moveRepository,
             IChipTransactionRepository chipTransactionRepository,
             IGameRoundRepository gameRoundRepository,
-            IGameRoundWinnerRepository gameRoundWinnerRepository)
+            IGameRoundWinnerRepository gameRoundWinnerRepository,
+            IModelRepository modelRepository,
+            IUserModelRepository userModelRepository,
+            IAiAgentService aiAgentService,
+            IUserRepository userRepository)
         {
             this.gameRepository = gameRepository;
             this.gamePlayerRepository = gamePlayerRepository;
@@ -41,6 +52,10 @@ namespace TexasHoldemPoker.API.Services
             this.chipTransactionRepository = chipTransactionRepository;
             this.gameRoundRepository = gameRoundRepository;
             this.gameRoundWinnerRepository = gameRoundWinnerRepository;
+            this.modelRepository = modelRepository;
+            this.userModelRepository = userModelRepository;
+            this.aiAgentService = aiAgentService;
+            UserRepository = userRepository;
         }
 
         public async Task<Game> CreateGameAsync(int tableId)
@@ -59,7 +74,7 @@ namespace TexasHoldemPoker.API.Services
             }
 
             var gamePlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-            if (gamePlayers.Count() > game.Table.MaxPlayers-1)
+            if (gamePlayers.Count() > game.Table.MaxPlayers - 1)
             {
                 return false;
             }
@@ -79,6 +94,60 @@ namespace TexasHoldemPoker.API.Services
             {
                 return false;
             }
+        }
+
+        public async Task<bool> AddModelToGameAsync(int gameId, int userId, int seatPosition, int buyInAmount)
+        {
+            if (!await userModelRepository.IsUserAiAgent(userId)) return false;
+
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            bool areThereHumanPlayers =
+                (await gamePlayerRepository.GetPlayersByGameIdAsync(gameId)).Any(p =>
+                    p.User.IsBot != true && p.IsActive);
+
+            if (!areThereHumanPlayers)
+            {
+                return false;
+            }
+
+            var result = await JoinGameAsync(gameId, userId, seatPosition, buyInAmount);
+
+            if (!result) return false;
+
+            var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+
+            if (!agentsPlayingInGames.ContainsKey(gameId))
+            {
+                agentsPlayingInGames[gameId] = new HashSet<int>();
+            }
+
+            agentsPlayingInGames[gameId].Add(gamePlayer.GamePlayerId);
+            return true;
+        }
+
+        public async Task<bool> KickModelOutOfGameAsync(int gameId, int userId)
+        {
+            if (!await userModelRepository.IsUserAiAgent(userId)) return false;
+
+            var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+
+            if (gamePlayer == null) return false;
+
+            var gamePlayerId = gamePlayer.GamePlayerId;
+
+            if (!await LeaveGameAsync(gameId, userId)) return false;
+
+            if (agentsPlayingInGames.ContainsKey(gameId))
+            {
+                agentsPlayingInGames[gameId].Remove(gamePlayerId);
+                if (!agentsPlayingInGames[gameId].Any())
+                {
+                    agentsPlayingInGames.Remove(gameId);
+                }
+            }
+
+            return true;
         }
 
         public async Task<bool> LeaveGameAsync(int gameId, int userId)
@@ -141,12 +210,23 @@ namespace TexasHoldemPoker.API.Services
                 return false;
             }
 
+            bool areThereHumanPlayers =
+                (await gamePlayerRepository.GetPlayersByGameIdAsync(gameId)).Any(p =>
+                    p.User.IsBot != true && p.IsActive);
+
+            if (!areThereHumanPlayers)
+            {
+                return false;
+            }
+
             await SetInitialDealerAndBlindsAsync(gameId, activePlayers);
-            await DealInitialCardsAsync(gameId);
             gameRound = await gameRoundRepository.StartNewRoundAsync(gameId);
+            await DealInitialCardsAsync(gameId);
             await gameRepository.UpdateGameStateAsync(gameId, "PreFlop");
             await CollectBlindsAsync(gameId, activePlayers);
             await SetFirstPlayerToActAsync(gameId, "PreFlop");
+
+            await CheckAgentsTurns(gameId);
 
             return true;
         }
@@ -323,8 +403,8 @@ namespace TexasHoldemPoker.API.Services
                 completedRoundAcknowledgments[gameId].Add(userId);
 
                 var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                var relevantPlayers = playersInGame.ToList();
-
+                var relevantPlayers = playersInGame.Where(p => p.User.IsBot != true)
+                    .ToList();
 
                 if (relevantPlayers.Any() &&
                     relevantPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
@@ -400,10 +480,17 @@ namespace TexasHoldemPoker.API.Services
                     int minRaiseAmount = 2 * callAmount;
                     minRaiseAmount = Math.Max(minRaiseAmount,
                         (await gameRepository.GetGameTableAsync(gameId)).BigBlind);
-
-                    isValidMove = (callAmount > 0 || highestContributionInRound == 0) &&
-                                  amount >= minRaiseAmount &&
-                                  (currentPlayerContribution + amount) <= gamePlayer.CurrentChips;
+                    // for AI agent reasons, we allow rasig even if callAmount is 0, as long as the raise is valid
+                    if (amount >= gamePlayer.CurrentChips)
+                    {
+                        isValidMove = true;
+                        actionType = "AllIn";
+                        amount = gamePlayer.CurrentChips;
+                    }
+                    else
+                    {
+                        isValidMove = amount >= minRaiseAmount && amount <= gamePlayer.CurrentChips;
+                    }
 
                     if (isValidMove) effectiveAmount = amount;
                     break;
@@ -450,6 +537,8 @@ namespace TexasHoldemPoker.API.Services
                 await SetNextPlayerTurnAsync(gameId);
             }
 
+            await CheckAgentsTurns(gameId);
+
             return true;
         }
 
@@ -473,10 +562,11 @@ namespace TexasHoldemPoker.API.Services
                 return;
             }
 
-            var currentPlayer = activePlayersWithChips.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId) ?? activePlayers.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId);
+            var currentPlayer = activePlayersWithChips.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId) ??
+                                activePlayers.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId);
             if (currentPlayer == null)
             {
-                var originalPlayer = players.FirstOrDefault(p => p.UserId == game.CurrentTurnPlayerId);
+                var originalPlayer = players.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId);
                 int searchStartIndex = originalPlayer != null
                     ? players.OrderBy(p => p.SeatPosition).ToList().IndexOf(originalPlayer)
                     : -1;
@@ -495,7 +585,8 @@ namespace TexasHoldemPoker.API.Services
                     }
                 }
 
-                await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips?.First()?.UserId ?? activePlayers?.First()?.UserId);
+                await gameRepository.SetCurrentTurnAsync(gameId,
+                    activePlayersWithChips?.First()?.UserId ?? activePlayers?.First()?.UserId);
                 return;
             }
 
@@ -514,7 +605,7 @@ namespace TexasHoldemPoker.API.Services
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
             var activePlayersWithChips = activePlayers.Where(p => p.CurrentChips > 0).ToList();
-            
+
             if (activePlayersWithChips.Count == 0)
             {
                 return true;
@@ -798,6 +889,15 @@ namespace TexasHoldemPoker.API.Services
                 await gamePlayerRepository.SetPlayerStatusAsync(player.GamePlayerId, false);
             }
 
+            bool areThereHumanPlayers =
+                (await gamePlayerRepository.GetPlayersByGameIdAsync(gameId)).Any(p =>
+                    p.User.IsBot != true && p.IsActive);
+
+            if (!areThereHumanPlayers)
+            {
+                return false;
+            }
+
             await RotateDealerAndSetBlindsAsync(gameId);
             await gameRepository.UpdatePotSizeAsync(gameId, 0);
             var newRound = await gameRoundRepository.StartNewRoundAsync(gameId);
@@ -808,6 +908,8 @@ namespace TexasHoldemPoker.API.Services
             var currentPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             await CollectBlindsAsync(gameId, currentPlayers.Where(p => p.IsActive).ToList());
             await SetFirstPlayerToActAsync(gameId, "PreFlop");
+
+            await CheckAgentsTurns(gameId);
 
             return true;
         }
@@ -925,7 +1027,8 @@ namespace TexasHoldemPoker.API.Services
                     playerCardsRaw.Select(c => new CardDto { Suit = c.Suit, Value = c.Value }).ToList();
             }
 
-            bool showAllCards = currentRound != null && (currentRound?.CurrentState == "Showdown" || currentRound?.CurrentState == "Completed");
+            bool showAllCards = currentRound != null &&
+                                (currentRound?.CurrentState == "Showdown" || currentRound?.CurrentState == "Completed");
 
             int highestContributionInRound = playerContributions.Any() ? playerContributions.Values.Max() : 0;
             int requestingPlayerContribution = userId > 0 ? playerContributions.GetValueOrDefault(userId, 0) : 0;
@@ -967,7 +1070,7 @@ namespace TexasHoldemPoker.API.Services
                     MoveTime = m.MoveTime
                 }).ToList(),
                 RoundWinners = roundWinners.Select(rw => new RoundWinnerDto
-                { UserId = rw.UserId, Username = rw.User.Username, AmountWon = rw.AmountWon }).ToList(),
+                    { UserId = rw.UserId, Username = rw.User.Username, AmountWon = rw.AmountWon }).ToList(),
                 PlayerRoundContributions = playerContributions,
                 CallAmount = callAmount,
                 MinRaiseAmount = minRaiseAmount
@@ -989,6 +1092,115 @@ namespace TexasHoldemPoker.API.Services
             }
 
             return cards;
+        }
+
+        private async Task<bool> CheckAgentsTurns(int gameId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            if (game?.CurrentTurnPlayerId == null) return false;
+
+            var currentPlayer = game.CurrentTurnPlayer;
+
+            var currentTurnAgent = agentsPlayingInGames
+                .FirstOrDefault(g => g.Key == gameId && g.Value.Contains(currentPlayer.GamePlayerId));
+
+            if (currentTurnAgent.Value == null || !currentTurnAgent.Value.Any())
+            {
+                return false;
+            }
+
+            bool moveMade = true;
+            var result = await MakeAgentTurn(game.GameId, currentPlayer.GamePlayerId);
+            if (!result)
+            {
+                Console.WriteLine($"Agent {currentPlayer.UserId} could not make a move in game {game.GameId}");
+            }
+            if (moveMade)
+            {
+                await CheckAgentsTurns(gameId);
+            }
+            return moveMade;
+        }
+
+        private async Task<bool> MakeAgentTurn(int gameId, int GamePlayerId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            if (game == null || game.CurrentTurnPlayerId != GamePlayerId)
+            {
+                return false;
+            }
+
+            var userId = game.CurrentTurnPlayer.UserId;
+
+            GameStateDto gameState = await GetGameStateAsync(gameId, userId);
+
+            MoveDto move = await aiAgentService.GetBestActionAsync(gameState);
+
+            var result = await PlaceBetAsync(gameId, userId, move.ActionType, move.Amount);
+
+            if (!result)
+            {
+                Console.WriteLine(
+                    $"Agent {userId} tried to make a move {move.ActionType} with amount {move.Amount} in game {gameId}, but failed.");
+                await PlaceBetAsync(gameId, userId, "Fold", 0);
+            }
+            Console.WriteLine($"Agent {userId} made a move {move.ActionType} with amount {move.Amount} in game {gameId}.");
+
+            return result;
+        }
+
+        public async Task<IEnumerable<AgentDto>> GetAvailableAgentsAsync(int gameId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            bool areThereHumanPlayers =
+                (await gamePlayerRepository.GetPlayersByGameIdAsync(gameId)).Any(p =>
+                    p.User.IsBot != true && p.IsActive);
+
+            if (!areThereHumanPlayers)
+            {
+                return Enumerable.Empty<AgentDto>();
+            }
+
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var agentsInGame = players
+                .Where(p => p.User.IsBot == true)
+                .Select(p => p.User)
+                .ToList();
+
+            var allAgents = await userModelRepository.GetAllBotUsersAsync();
+            var availableAgents = allAgents
+                .Where(a => agentsInGame.All(ag => ag.UserId != a.UserId))
+                .ToList();
+
+            return availableAgents.Select(a => new AgentDto
+            {
+                UserId = a.UserId,
+                Username = a.Username,
+                Name = a.UserModels.FirstOrDefault()?.Model.Name ?? "Unknown",
+                Difficulty = a.UserModels.FirstOrDefault()?.Model.Difficulty ?? "Unknown"
+            });
+        }
+        public async Task<bool> InitializeAgentsPlayingInGames()
+        {
+            var agentsInGames = await gamePlayerRepository.GetAllAgentsInGamesAsync();
+
+            if (agentsInGames == null || !agentsInGames.Any())
+            {
+                return false;
+            }
+
+            foreach (var agent in agentsInGames)
+            {
+                if (!agentsPlayingInGames.ContainsKey(agent.GameId))
+                {
+                    agentsPlayingInGames[agent.GameId] = new HashSet<int>();
+                }
+                agentsPlayingInGames[agent.GameId].Add(agent.GamePlayerId);
+            }
+            return true;
         }
     }
 }

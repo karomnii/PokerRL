@@ -2,6 +2,7 @@
 using Microsoft.ML.OnnxRuntime;
 using TexasHoldemPoker.API.DTOs;
 using TexasHoldemPoker.API.Helpers;
+using TexasHoldemPoker.API.Repositories;
 
 namespace TexasHoldemPoker.API.Services
 {
@@ -10,6 +11,15 @@ namespace TexasHoldemPoker.API.Services
         private readonly InferenceSession _session;
         private readonly ILogger<AiAgentService> _logger;
         private bool _disposed = false;
+
+        private readonly IGameRepository gameRepository;
+        private readonly IGamePlayerRepository gamePlayerRepository;
+        private readonly ICardRepository cardRepository;
+        private readonly IMoveRepository moveRepository;
+        private readonly IChipTransactionRepository chipTransactionRepository;
+        private readonly IGameRoundRepository gameRoundRepository;
+        private readonly IGameRoundWinnerRepository gameRoundWinnerRepository;
+        private readonly Random random = new Random();
 
         public AiAgentService(ILogger<AiAgentService> logger)
         {

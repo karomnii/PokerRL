@@ -77,18 +77,22 @@ public class PokerGameService : IPokerGameService
         if (game == null) return false;
 
         var gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
-        if (gameRound != null && gameRound.CurrentState != "Waiting" &&
-            gameRound.CurrentState != "Completed") return false;
-        
-        if (gameRound.CurrentState == "Completed" && completedRoundAcknowledgments.ContainsKey(gameId))
+
+        if (gameRound != null &&
+            gameRound.CurrentState != "Waiting" &&
+            gameRound.CurrentState != "Completed")
+            return false;
+
+        if (gameRound?.CurrentState == "Completed" && completedRoundAcknowledgments.ContainsKey(gameId))
         {
             completedRoundAcknowledgments[gameId].Remove(userId);
+
             var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var remainingPlayers = playersInGame
-                .Where(p => p.UserId != userId && p.CurrentChips > 0) // tylko gracze z żetonami
+                .Where(p => p.UserId != userId && p.CurrentChips > 0)
                 .ToList();
 
-            if (remainingPlayers.Any() &&
+            if (remainingPlayers.Count >= 2 &&
                 remainingPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
             {
                 completedRoundAcknowledgments.Remove(gameId);
@@ -96,7 +100,31 @@ public class PokerGameService : IPokerGameService
             }
         }
 
+        if (game.CurrentTurnPlayer?.UserId == userId)
+        {
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var remainingActivePlayers = players
+                .Where(p => p.UserId != userId && p.IsActive && p.CurrentChips > 0)
+                .OrderBy(p => p.SeatPosition)
+                .ToList();
+
+            if (remainingActivePlayers.Any())
+                await gameRepository.SetCurrentTurnAsync(gameId, remainingActivePlayers.First().UserId);
+            else
+                await gameRepository.SetCurrentTurnAsync(gameId, null);
+        }
+
         var result = await gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
+
+        if (result)
+        {
+            var remainingPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+
+            if (remainingPlayers.Count() == 1 && gameRound?.CurrentState != "Waiting")
+                await DetermineWinnerAsync(gameId);
+            else if (!remainingPlayers.Any()) await gameRepository.EndGameAsync(gameId);
+        }
+
         return result;
     }
 
@@ -493,7 +521,7 @@ public class PokerGameService : IPokerGameService
             await gameRepository.SetCurrentTurnAsync(gameId, null);
             return;
         }
-        
+
         var currentPlayer = game.CurrentTurnPlayerId.HasValue
             ? players.FirstOrDefault(p => p.GamePlayerId == game.CurrentTurnPlayerId.Value)
             : null;
@@ -503,7 +531,7 @@ public class PokerGameService : IPokerGameService
             await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips.First().UserId);
             return;
         }
-        
+
         var currentPlayerIndex = activePlayersWithChips.FindIndex(p => p.UserId == currentPlayer.UserId);
 
         if (currentPlayerIndex == -1)
@@ -511,7 +539,7 @@ public class PokerGameService : IPokerGameService
             await gameRepository.SetCurrentTurnAsync(gameId, activePlayersWithChips.First().UserId);
             return;
         }
-        
+
         var nextPlayerIndex = (currentPlayerIndex + 1) % activePlayersWithChips.Count;
         var nextPlayer = activePlayersWithChips[nextPlayerIndex];
 
@@ -527,9 +555,9 @@ public class PokerGameService : IPokerGameService
         var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
         var activePlayers = players.Where(p => p.IsActive).ToList();
         var activePlayersWithChips = activePlayers.Where(p => p.CurrentChips > 0).ToList();
-        
+
         if (activePlayersWithChips.Count == 0) return true;
-        
+
         if (activePlayersWithChips.Count == 1) return true;
 
         var currentRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
@@ -541,34 +569,34 @@ public class PokerGameService : IPokerGameService
                 currentRound.CurrentState);
 
         var highestContribution = playerContributions.Any() ? playerContributions.Values.Max() : 0;
-        
+
         var lastAggressiveAction = movesThisRound
             .Where(m => m.ActionType == "Bet" || m.ActionType == "Raise")
             .OrderByDescending(m => m.MoveTime)
             .FirstOrDefault();
-        
+
         if (currentRound.CurrentState == "PreFlop")
         {
             var bbPlayer = activePlayersWithChips.FirstOrDefault(p => p.IsBigBlind);
             var table = await gameRepository.GetGameTableAsync(gameId);
-            
+
             if (highestContribution == table.BigBlind && bbPlayer != null)
             {
                 var bbActionsAfterBlinds = movesThisRound
                     .Where(m => m.PlayerId == bbPlayer.UserId && m.ActionType != "Blind")
                     .Any();
 
-                if (!bbActionsAfterBlinds) return false; 
+                if (!bbActionsAfterBlinds) return false;
             }
         }
-        
+
         if (lastAggressiveAction != null)
             foreach (var player in activePlayersWithChips)
             {
                 var contribution = playerContributions.GetValueOrDefault(player.UserId, 0);
-                
+
                 if (contribution < highestContribution && player.CurrentChips > 0) return false;
-                
+
                 if (player.UserId != lastAggressiveAction.PlayerId)
                 {
                     var actedAfterAggression = movesThisRound
@@ -700,7 +728,7 @@ public class PokerGameService : IPokerGameService
 
         var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
         var activePlayers = players.Where(p => p.IsActive).ToList();
-        
+
         if (activePlayers.Count == 1)
         {
             var totalPot = await gameRepository.GetPotSizeAsync(gameId);
@@ -710,11 +738,11 @@ public class PokerGameService : IPokerGameService
         else
         {
             if (gameRound.CurrentState != "Showdown") await gameRepository.UpdateGameStateAsync(gameId, "Showdown");
-            
+
             var sidePots = await CalculateSidePotsAsync(gameId, gameRound.GameRoundId);
-            
+
             var communityCards = await cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-            
+
             foreach (var sidePot in sidePots)
             {
                 var eligiblePlayers = activePlayers.Where(p => sidePot.EligiblePlayers.Contains(p.UserId)).ToList();
@@ -738,7 +766,7 @@ public class PokerGameService : IPokerGameService
                     }
 
                     playerHandRanks.Sort((p1, p2) => p2.Item2.CompareTo(p1.Item2));
-                    
+
                     var bestRank = playerHandRanks.First().Item2;
                     var potWinners = playerHandRanks.Where(p => p.Item2 == bestRank).Select(p => p.Item1).ToList();
 
@@ -778,12 +806,12 @@ public class PokerGameService : IPokerGameService
 
         return true;
     }
-    
+
     private async Task<List<SidePot>> CalculateSidePotsAsync(int gameId, int gameRoundId)
     {
         var sidePots = new List<SidePot>();
         var allMoves = await moveRepository.GetMovesByGameRoundIdAsync(gameRoundId);
-        
+
         var playerContributions = allMoves
             .Where(m => m.ActionType == "Bet" || m.ActionType == "Call" ||
                         m.ActionType == "Raise" || m.ActionType == "AllIn" ||
@@ -802,7 +830,7 @@ public class PokerGameService : IPokerGameService
 
             var eligiblePlayers = remainingContributions.Keys.ToList();
             var potAmount = 0;
-            
+
             foreach (var playerId in eligiblePlayers)
             {
                 var playerContribution = Math.Min(remainingContributions[playerId], contribution.TotalContribution);
@@ -816,7 +844,7 @@ public class PokerGameService : IPokerGameService
                     Amount = potAmount,
                     EligiblePlayers = eligiblePlayers
                 });
-            
+
             remainingContributions = remainingContributions
                 .Where(kvp => kvp.Value > 0)
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
@@ -948,7 +976,7 @@ public class PokerGameService : IPokerGameService
 
         return cards;
     }
-    
+
     public class SidePot
     {
         public int Amount { get; set; }

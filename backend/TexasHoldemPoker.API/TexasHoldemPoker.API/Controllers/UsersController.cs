@@ -42,7 +42,7 @@ namespace TexasHoldemPoker.API.Controllers
             {
                 Username = registerDto.Username,
                 Email = registerDto.Email,
-                ChipsBalance = 1000, // Starting chips
+                ChipsBalance = 5000,
                 RegistrationDate = DateTime.UtcNow,
                 IsActive = true,
                 AvatarImage = "/images/default.png"
@@ -50,7 +50,7 @@ namespace TexasHoldemPoker.API.Controllers
 
             user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
 
-            await _userRepository.CreateAsync(user);
+            await _userRepository.CreateUserAsync(user);
 
             return new UserDto
             {
@@ -58,7 +58,7 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
+                AvatarImage = "/images/default.png",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -77,9 +77,8 @@ namespace TexasHoldemPoker.API.Controllers
             if (result != PasswordVerificationResult.Success)
                 return Unauthorized("Invalid password");
 
-            // Update last login date
             user.LastLoginDate = DateTime.UtcNow;
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return new UserDto
             {
@@ -118,12 +117,12 @@ namespace TexasHoldemPoker.API.Controllers
                 {
                     Email = info.Email,
                     RegistrationDate = DateTime.UtcNow,
-                    ChipsBalance = 1000,
+                    ChipsBalance = 5000,
                     IsActive = true,
                     AvatarImage = "/images/default.png",
                     Username = null
                 };
-                await _userRepository.CreateAsync(user);
+                await _userRepository.CreateUserAsync(user);
             }
             if (string.IsNullOrWhiteSpace(user.Username))
             {
@@ -161,7 +160,7 @@ namespace TexasHoldemPoker.API.Controllers
             if (user == null) return NotFound();
 
             user.Username = dto.Username;
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return Ok(new UserDto
             {
@@ -204,21 +203,20 @@ namespace TexasHoldemPoker.API.Controllers
             if (user == null)
                 return NotFound();
 
-            // Update user properties
             if (!string.IsNullOrEmpty(updateDto.Email))
                 user.Email = updateDto.Email;
 
             if (!string.IsNullOrEmpty(updateDto.AvatarImage))
                 user.AvatarImage = updateDto.AvatarImage;
 
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateUserAsync(user);
 
             return NoContent();
         }
         
         
         [HttpGet("leaderboard/top")]
-        public async Task<ActionResult<IEnumerable<LeaderboardEntry>>> GetTopPlayers([FromQuery] int count = 10)
+        public async Task<ActionResult<IEnumerable<LeaderboardView>>> GetTopPlayers([FromQuery] int count = 10)
         {
             var topPlayers = await _leaderboardRepository.GetTopPlayersSortedAsync(count);
             return Ok(topPlayers);

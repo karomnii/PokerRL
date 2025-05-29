@@ -1,19 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class ShopItem
 {
-    public class ShopItem
-    {
-        [Key]
-        public int ItemId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public decimal Price { get; set; }
-        public string ItemType { get; set; }
-        public bool IsActive { get; set; }
-        public string Currency { get; set; }
+    public int ItemId { get; set; }
 
-        // Navigation properties
-        public ICollection<Purchase> Purchases { get; set; }
-    }
+    public string Name { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public decimal Price { get; set; }
+
+    public string Currency { get; set; } = null!;
+
+    public string ItemType { get; set; } = null!;
+
+    public bool IsActive { get; set; }
+
+    public virtual ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
 }

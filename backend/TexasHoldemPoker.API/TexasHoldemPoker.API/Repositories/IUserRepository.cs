@@ -7,12 +7,11 @@ namespace TexasHoldemPoker.API.Repositories
         Task<User> GetByIdAsync(int userId);
         Task<User> GetByUsernameAsync(string username);
         Task<User> GetByEmailAsync(string email);
-        Task<IEnumerable<User>> GetAllAsync();
-        Task<User> CreateAsync(User user);
-        Task UpdateAsync(User user);
-        Task<bool> UpdateChipsBalanceAsync(int userId, int amount);
-        Task<bool> DeleteAsync(int userId);
-        Task<bool> DeactivateAsync(int userId);
-        Task<bool> VerifyPasswordAsync(string username, string password);
+        Task<IEnumerable<User>> GetAllActiveAsync();
+        Task<User> CreateUserAsync(User user);
+        Task UpdateUserAsync(User user);
+        Task<bool> DeleteUserAsync(int userId);
+        Task<bool> AdjustChipsAsync(int userId, int amountDelta);
+        Task<bool> SaveChangesAsync();
     }
 }

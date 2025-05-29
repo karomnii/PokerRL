@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "TexasHoldemPoker.API": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:65463;http://localhost:65464"
+    }
+  }
+}

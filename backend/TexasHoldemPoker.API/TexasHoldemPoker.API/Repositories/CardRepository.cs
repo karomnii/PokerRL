@@ -1,32 +1,39 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class CardRepository : ICardRepository
     {
-        private readonly PokerDbContext _context;
+        private readonly ApplicationDbContext context;
 
-        public CardRepository(PokerDbContext context)
+        public CardRepository(ApplicationDbContext context)
         {
-            _context = context;
+            this.context = context;
         }
 
         public async Task<Card> GetCardByIdAsync(int cardId)
         {
-            return await _context.Cards.FindAsync(cardId);
+            return await context.Cards.FindAsync(cardId);
         }
 
         public async Task<IEnumerable<Card>> GetAllCardsAsync()
         {
-            return await _context.Cards.ToListAsync();
+            return await context.Cards.ToListAsync();
         }
 
         public async Task<IEnumerable<Card>> GetCommunityCardsByGameIdAsync(int gameId)
         {
-            return await _context.CommunityCards
-                .Where(cc => cc.GameId == gameId)
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return Enumerable.Empty<Card>();
+
+            return await context.CommunityCards
+                .Where(cc => cc.GameRoundId == gameRound.GameRoundId)
                 .Include(cc => cc.Card)
                 .OrderBy(cc => cc.Position)
                 .Select(cc => cc.Card)
@@ -35,8 +42,18 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<IEnumerable<Card>> GetPlayerCardsByGamePlayerIdAsync(int gamePlayerId)
         {
-            return await _context.PlayerCards
-                .Where(pc => pc.GamePlayerId == gamePlayerId)
+            var game = context.GamePlayers
+                .Where(gp => gp.GamePlayerId == gamePlayerId)
+                .Select(gp => gp.Game)
+                .FirstOrDefault();
+
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == game.GameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            return await context.PlayerCards
+                .Where(pc => pc.GamePlayerId == gamePlayerId && pc.GameRoundId == gameRound.GameRoundId)
                 .Include(pc => pc.Card)
                 .OrderBy(pc => pc.Position)
                 .Select(pc => pc.Card)
@@ -45,22 +62,27 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> DealCommunityCardAsync(int gameId, int cardId, int position)
         {
-            // Check if position is already taken
-            var existingCard = await _context.CommunityCards
-                .FirstOrDefaultAsync(cc => cc.GameId == gameId && cc.Position == position);
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return false;
+
+            var existingCard = await context.CommunityCards
+                .FirstOrDefaultAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.Position == position);
 
             if (existingCard != null)
                 return false;
 
-            // Check if card is already used in this game
-            var cardUsed = await _context.CommunityCards
-                .AnyAsync(cc => cc.GameId == gameId && cc.CardId == cardId);
+            var cardUsed = await context.CommunityCards
+                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
 
             if (cardUsed)
                 return false;
 
-            // Check if card is used by any player in this game
-            var cardUsedByPlayer = await _context.PlayerCards
+            var cardUsedByPlayer = await context.PlayerCards
                 .Include(pc => pc.GamePlayer)
                 .AnyAsync(pc => pc.GamePlayer.GameId == gameId && pc.CardId == cardId);
 
@@ -69,83 +91,64 @@ namespace TexasHoldemPoker.API.Repositories
 
             var communityCard = new CommunityCard
             {
-                GameId = gameId,
+                GameRoundId = gameRound.GameRoundId,
                 CardId = cardId,
                 Position = position
             };
 
-            _context.CommunityCards.Add(communityCard);
-            await _context.SaveChangesAsync();
+            context.CommunityCards.Add(communityCard);
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DealPlayerCardAsync(int gamePlayerId, int cardId, int position)
         {
-            // Check if position is already taken
-            var existingCard = await _context.PlayerCards
-                .FirstOrDefaultAsync(pc => pc.GamePlayerId == gamePlayerId && pc.Position == position);
+            var gamePlayer = await context.GamePlayers.FindAsync(gamePlayerId);
+            if (gamePlayer == null)
+                return false;
+
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gamePlayer.GameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            if (gameRound == null)
+                return false;
+
+            var existingCard = await context.PlayerCards
+                .FirstOrDefaultAsync(pc =>
+                    pc.GamePlayerId == gamePlayerId && pc.GameRoundId == gameRound.GameRoundId &&
+                    pc.Position == position);
 
             if (existingCard != null)
                 return false;
 
-            // Get game ID for this player
-            var gamePlayer = await _context.GamePlayers.FindAsync(gamePlayerId);
-            if (gamePlayer == null)
-                return false;
-
-            // Check if card is already used in community cards
-            var cardUsedInCommunity = await _context.CommunityCards
-                .AnyAsync(cc => cc.GameId == gamePlayer.GameId && cc.CardId == cardId);
+            var cardUsedInCommunity = await context.CommunityCards
+                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
 
             if (cardUsedInCommunity)
                 return false;
 
-            // Check if card is used by any other player in this game
-            var cardUsedByOtherPlayer = await _context.PlayerCards
+            var cardUsedByOtherPlayer = await context.PlayerCards
                 .Include(pc => pc.GamePlayer)
-                .AnyAsync(pc => pc.GamePlayer.GameId == gamePlayer.GameId &&
-                               pc.CardId == cardId &&
-                               pc.GamePlayer.GamePlayerId != gamePlayerId);
+                .AnyAsync(pc => pc.GameRoundId == gameRound.GameRoundId &&
+                                pc.CardId == cardId &&
+                                pc.GamePlayer.GamePlayerId != gamePlayerId);
 
             if (cardUsedByOtherPlayer)
                 return false;
 
             var playerCard = new PlayerCard
             {
+                GameRoundId = gameRound.GameRoundId,
                 GamePlayerId = gamePlayerId,
+                UserId = gamePlayer.UserId,
                 CardId = cardId,
                 Position = position
             };
 
-            _context.PlayerCards.Add(playerCard);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> ClearGameCardsAsync(int gameId)
-        {
-            // Remove community cards
-            var communityCards = await _context.CommunityCards
-                .Where(cc => cc.GameId == gameId)
-                .ToListAsync();
-
-            _context.CommunityCards.RemoveRange(communityCards);
-
-            // Remove player cards
-            var gamePlayers = await _context.GamePlayers
-                .Where(gp => gp.GameId == gameId)
-                .ToListAsync();
-
-            foreach (var gamePlayer in gamePlayers)
-            {
-                var playerCards = await _context.PlayerCards
-                    .Where(pc => pc.GamePlayerId == gamePlayer.GamePlayerId)
-                    .ToListAsync();
-
-                _context.PlayerCards.RemoveRange(playerCards);
-            }
-
-            await _context.SaveChangesAsync();
+            context.PlayerCards.Add(playerCard);
+            await context.SaveChangesAsync();
             return true;
         }
     }

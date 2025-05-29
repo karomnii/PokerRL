@@ -1,20 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class Move
 {
-    public class Move
-    {
-        [Key]
-        public int MoveId { get; set; }
-        public int GameId { get; set; }
-        public int PlayerId { get; set; }
-        public string ActionType { get; set; }
-        public int Amount { get; set; }
-        public DateTime MoveTime { get; set; }
-        public string Round { get; set; }
+    public int MoveId { get; set; }
 
-        // Navigation properties
-        public Game Game { get; set; }
-        public User Player { get; set; }
-    }
+    public int GameRoundId { get; set; }
+
+    public int PlayerId { get; set; }
+
+    public string ActionType { get; set; } = null!;
+
+    public int Amount { get; set; }
+
+    public DateTime MoveTime { get; set; }
+
+    public string Round { get; set; } = null!;
+
+    public virtual GameRound GameRound { get; set; } = null!;
+
+    public virtual User Player { get; set; } = null!;
 }

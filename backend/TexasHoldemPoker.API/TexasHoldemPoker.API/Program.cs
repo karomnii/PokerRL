@@ -45,9 +45,10 @@ public class Program
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        
+        builder.Services.AddScoped<IAiAgentService, AiAgentService>();
+
         // stripe 
-        
+
         builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
         Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
         builder.Services.AddScoped<StripePaymentService>();

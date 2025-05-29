@@ -300,7 +300,11 @@ INSERT INTO Models (Name, Path, Difficulty) VALUES
 ('First', 'dqn_model.onnx', 'Easy');
 
 INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
-('Bot_Adam', 'email1', 'password', 2147483647, 1);
+('Bot_Adam', 'email1', 'password', 2147483647, 1),
+('Bot_Michal', 'email2', 'password', 2147483647, 1),
+('Bot_Eva', 'email3', 'password', 2147483647, 1);
 
 INSERT INTO UserModels (UserId, ModelId) VALUES
-(1,1);
+(1,1),
+(2,1),
+(3,1);

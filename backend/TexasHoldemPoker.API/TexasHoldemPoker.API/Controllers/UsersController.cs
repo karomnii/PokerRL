@@ -6,6 +6,7 @@ using TexasHoldemPoker.API.DTOs;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using TexasHoldemPoker.API.Services;
+using TexasHoldemPoker.API.Helpers;
 
 namespace TexasHoldemPoker.API.Controllers
 {
@@ -17,16 +18,19 @@ namespace TexasHoldemPoker.API.Controllers
         private readonly IPasswordHasher<User> _passwordHasher;
         private readonly ITokenService _tokenService;
         private readonly ILeaderboardRepository _leaderboardRepository;
+        private readonly ProfileAvatarHelper _avatar;
         public UsersController(
             IUserRepository userRepository,
             IPasswordHasher<User> passwordHasher,
             ITokenService tokenService,
-            ILeaderboardRepository leaderboardRepository)
+            ILeaderboardRepository leaderboardRepository,
+            ProfileAvatarHelper avatar)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _leaderboardRepository = leaderboardRepository ?? throw new ArgumentNullException(nameof(leaderboardRepository));
+            _avatar = avatar;
         }
 
         [HttpPost("register")]
@@ -213,7 +217,24 @@ namespace TexasHoldemPoker.API.Controllers
 
             return NoContent();
         }
-        
+
+        [HttpPut("profile/{userId}")]
+        public async Task<ActionResult<UserDto>> GetProfile(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { message = "User does not exist" });
+
+            return new UserDto
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage = _avatar.GetFullAvatarUrl(user.AvatarImage),
+                Token = _tokenService.CreateToken(user)
+            };
+        }
         
         [HttpGet("leaderboard/top")]
         public async Task<ActionResult<IEnumerable<LeaderboardView>>> GetTopPlayers([FromQuery] int count = 10)

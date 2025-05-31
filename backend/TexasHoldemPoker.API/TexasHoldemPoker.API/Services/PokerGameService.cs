@@ -174,17 +174,36 @@ namespace TexasHoldemPoker.API.Services
                 // Check if this triggers the next round start
                 var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
                 var remainingPlayers =
-                    playersInGame.Where(p => p.UserId != userId).ToList(); // Players remaining after leave
-                if (remainingPlayers.Any() &&
+                    playersInGame.Where(p => p.UserId != userId && p.CurrentChips > 0).ToList(); // Players remaining after leave
+                if (remainingPlayers.Count() >= 2 &&
                     remainingPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
                 {
                     completedRoundAcknowledgments.Remove(gameId);
                     await StartNewHandAsync(gameId);
                 }
             }
+            if (game.CurrentTurnPlayer?.UserId == userId)
+            {
+                var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+                var remainingActivePlayers = players
+                    .Where(p => p.UserId != userId && p.IsActive && p.CurrentChips > 0)
+                    .OrderBy(p => p.SeatPosition)
+                    .ToList();
 
+                if (remainingActivePlayers.Any())
+                    await gameRepository.SetCurrentTurnAsync(gameId, remainingActivePlayers.First().UserId);
+                else
+                    await gameRepository.SetCurrentTurnAsync(gameId, null);
+            }
 
             var result = await gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
+            if (result)
+            {
+                var remainingPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+                if (remainingPlayers.Count() == 1 && gameRound?.CurrentState != "Waiting")
+                    await DetermineWinnerAsync(gameId);
+                else if (!remainingPlayers.Any()) await gameRepository.EndGameAsync(gameId);
+            }
             return result;
         }
 
@@ -403,8 +422,8 @@ namespace TexasHoldemPoker.API.Services
                 completedRoundAcknowledgments[gameId].Add(userId);
 
                 var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                var relevantPlayers = playersInGame.Where(p => p.User.IsBot != true)
-                    .ToList();
+                var relevantPlayers = playersInGame.Where(p => p.User.IsBot != true
+                                                               && p.CurrentChips > 0).ToList();
 
                 if (relevantPlayers.Any() &&
                     relevantPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
@@ -770,7 +789,71 @@ namespace TexasHoldemPoker.API.Services
                     currentCommunityCardCount + i + 1);
             }
         }
+        public class SidePot
+        {
+            public int Amount { get; set; }
+            public List<int> EligiblePlayers { get; set; } = new List<int>();
+        }
 
+        private async Task<List<SidePot>> CalculateSidePotsAsync(int gameId, int gameRoundId)
+        {
+            var sidePods = new List<SidePot>();
+            var allmoves = await moveRepository.GetMovesByGameIdAsync(gameId);
+
+            var playercontr = new Dictionary<int, int>();
+            foreach(var move in allmoves.Where(m =>
+                        m.ActionType == "Bet" || m.ActionType == "Call" || 
+                        m.ActionType == "Raise" || m.ActionType == "AllIn" || 
+                        m.ActionType == "Blind")){
+                if (!playercontr.ContainsKey(move.PlayerId))
+                {
+                    playercontr[move.PlayerId] = 0;
+                }
+                playercontr[move.PlayerId] += move.Amount;
+            }
+            var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+            var activePlayers = players.Where(p => p.IsActive).Select(p => p.UserId).ToList();
+            var contributingPlayers = playercontr
+                .Where(kvp => activePlayers.Contains(kvp.Key))
+                .OrderBy(kvp => kvp.Value)
+                .ToList();
+            while (contributingPlayers.Any())
+            {
+                var smallestContribution = contributingPlayers.First();
+                var potAmount = 0;
+                var eligiblePlayers = new List<int>();
+                
+                foreach (var player in contributingPlayers.ToList())
+                {
+                    var contribution = Math.Min(player.Value, smallestContribution.Value);
+                    potAmount += contribution;
+                    eligiblePlayers.Add(player.Key);
+                    
+                    if (player.Value <= smallestContribution.Value)
+                    {
+                        contributingPlayers.Remove(player);
+                    }
+                    else
+                    {
+                        var index = contributingPlayers.FindIndex(kvp => kvp.Key == player.Key);
+                        contributingPlayers[index] = new KeyValuePair<int, int>(
+                            player.Key, 
+                            player.Value - smallestContribution.Value);
+                    }
+                }
+
+                if (potAmount > 0)
+                {
+                    sidePods.Add(new SidePot
+                    {
+                        Amount = potAmount,
+                        EligiblePlayers = eligiblePlayers
+                    });
+                }
+            }
+
+            return sidePods;
+        }
         public async Task<bool> DetermineWinnerAsync(int gameId)
         {
             var game = await gameRepository.GetByIdAsync(gameId);
@@ -788,13 +871,10 @@ namespace TexasHoldemPoker.API.Services
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).ToList();
 
-            List<int> winnerIds = new List<int>();
-            int totalPot = await gameRepository.GetPotSizeAsync(gameId);
-
-
             if (activePlayers.Count == 1)
             {
-                winnerIds.Add(activePlayers.Single().UserId);
+                int totalPot = await gameRepository.GetPotSizeAsync(gameId);
+                await gameRoundWinnerRepository.AddWinnerAsync(gameRound.GameRoundId, activePlayers.Single().UserId, totalPot);
             }
             else
             {
@@ -802,59 +882,78 @@ namespace TexasHoldemPoker.API.Services
                 {
                     await gameRepository.UpdateGameStateAsync(gameId, "Showdown");
                 }
-
+                
+                var sidePots = await CalculateSidePotsAsync(gameId, gameRound.GameRoundId);
+                
                 var communityCards = await cardRepository.GetCommunityCardsByGameIdAsync(gameId);
-                var playerHandRanks = new List<Tuple<int, int>>();
-
+                
+                var playerHandRanks = new Dictionary<int, int>();
                 foreach (var player in activePlayers)
                 {
                     var playerCards = await cardRepository.GetPlayerCardsByGamePlayerIdAsync(player.GamePlayerId);
                     var allCards = communityCards.Concat(playerCards).ToList();
-
                     int handRank = PokerHandEvaluator.EvaluateHand(allCards);
-                    playerHandRanks.Add(Tuple.Create(player.UserId, handRank));
+                    playerHandRanks[player.UserId] = handRank;
                 }
-
-                playerHandRanks.Sort((p1, p2) => p2.Item2.CompareTo(p1.Item2));
-
-                int bestRank = playerHandRanks.First().Item2;
-                winnerIds = playerHandRanks.Where(p => p.Item2 == bestRank).Select(p => p.Item1).ToList();
-            }
-
-            if (winnerIds.Any())
-            {
-                if (winnerIds.Count == 1)
+                
+                foreach (var sidePot in sidePots)
                 {
-                    // TODO: Handle case with AllIn player having less chips(player can win max 2 times the amount of chips if he did not match the bet)
-                    await gameRoundWinnerRepository.AddWinnerAsync(gameRound.GameRoundId, winnerIds.First(),
-                        totalPot);
-                }
-                else
-                {
-                    int potPerWinner = totalPot / winnerIds.Count;
-                    int remainder = totalPot % winnerIds.Count;
-                    var winnerAmounts = winnerIds.ToDictionary(id => id, id => potPerWinner);
+                    var eligiblePlayers = activePlayers
+                        .Where(p => sidePot.EligiblePlayers.Contains(p.UserId))
+                        .ToList();
 
-                    if (remainder > 0)
+                    if (eligiblePlayers.Count == 0) continue;
+
+                    if (eligiblePlayers.Count == 1)
                     {
-                        var dealer = players.FirstOrDefault(p => p.IsDealer);
-                        int dealerPos = dealer?.SeatPosition ?? 0;
-
-                        var orderedWinners = winnerIds
-                            .Select(id => players.First(p => p.UserId == id))
-                            .OrderBy(p => (p.SeatPosition - dealerPos + players.Count()) % players.Count())
+                        await gameRoundWinnerRepository.AddWinnerAsync(gameRound.GameRoundId, 
+                            eligiblePlayers.First().UserId, sidePot.Amount);
+                    }
+                    else
+                    {
+                        var eligibleHandRanks = eligiblePlayers
+                            .Select(p => new { UserId = p.UserId, Rank = playerHandRanks[p.UserId] })
+                            .OrderByDescending(x => x.Rank)
                             .ToList();
 
-                        for (int i = 0; i < remainder; i++)
+                        int bestRank = eligibleHandRanks.First().Rank;
+                        var potWinners = eligibleHandRanks
+                            .Where(x => x.Rank == bestRank)
+                            .Select(x => x.UserId)
+                            .ToList();
+
+                        if (potWinners.Count == 1)
                         {
-                            winnerAmounts[orderedWinners[i].UserId]++;
+                            await gameRoundWinnerRepository.AddWinnerAsync(gameRound.GameRoundId, 
+                                potWinners.First(), sidePot.Amount);
+                        }
+                        else
+                        {
+                            int potPerWinner = sidePot.Amount / potWinners.Count;
+                            int remainder = sidePot.Amount % potWinners.Count;
+                            var winnerAmounts = potWinners.ToDictionary(id => id, id => potPerWinner);
+                            
+                            if (remainder > 0)
+                            {
+                                var dealer = players.FirstOrDefault(p => p.IsDealer);
+                                int dealerPos = dealer?.SeatPosition ?? 0;
+
+                                var orderedWinners = potWinners
+                                    .Select(id => players.First(p => p.UserId == id))
+                                    .OrderBy(p => (p.SeatPosition - dealerPos + players.Count()) % players.Count())
+                                    .ToList();
+
+                                for (int i = 0; i < remainder; i++)
+                                {
+                                    winnerAmounts[orderedWinners[i].UserId]++;
+                                }
+                            }
+
+                            await gameRoundWinnerRepository.AddMultipleWinnersAsync(gameRound.GameRoundId, winnerAmounts);
                         }
                     }
-
-                    await gameRoundWinnerRepository.AddMultipleWinnersAsync(gameRound.GameRoundId, winnerAmounts);
                 }
             }
-
 
             await gameRoundRepository.EndRoundAsync(gameRound.GameRoundId);
             await gameRepository.UpdateGameStateAsync(gameId, "Completed");

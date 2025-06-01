@@ -24,17 +24,19 @@ namespace TexasHoldemPoker.API.Repositories
                 .ThenInclude(gr => gr.GameRoundWinners) // Include winners of the most recent round
                 .FirstOrDefaultAsync(g => g.GameId == gameId);
         }
-
         public async Task<IEnumerable<Game>> GetActiveGamesAsync()
         {
-            return await context.Games
+            var games = await context.Games
+                .Where(g => g.EndTime == null)
                 .Include(g => g.Table)
-                .Include(g => g.GameRounds)
-                .Where(g => !g.GameRounds.Any() || g.GameRounds
-                    .OrderByDescending(gr => gr.RoundNumber)
-                    .FirstOrDefault().CurrentState == "Waiting")
-                .Include(g => g.GamePlayers)
                 .ToListAsync();
+
+            foreach (var game in games)
+            {
+                game.Table.Games = new List<Game>();
+            }
+
+            return games;
         }
 
         public async Task<IEnumerable<Game>> GetGamesByTableIdAsync(int tableId)

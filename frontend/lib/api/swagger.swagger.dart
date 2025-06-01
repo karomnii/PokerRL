@@ -55,7 +55,7 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Get(path: '/api/Games')
+  @GET(path: '/api/Games')
   Future<chopper.Response<List<Game>>> _apiGamesGet();
 
   ///
@@ -66,7 +66,7 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Post(
+  @POST(
     path: '/api/Games',
     optionalBody: true,
   )
@@ -84,7 +84,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Get(path: '/api/Games/{id}')
+  @GET(path: '/api/Games/{id}')
   Future<chopper.Response<GameStateDto>> _apiGamesIdGet(
       {@Path('id') required int? id});
 
@@ -100,7 +100,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Get(path: '/api/Games/{id}/public')
+  @GET(path: '/api/Games/{id}/public')
   Future<chopper.Response<GameStateDto>> _apiGamesIdPublicGet(
       {@Path('id') required int? id});
 
@@ -115,7 +115,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Post(
+  @POST(
     path: '/api/Games/{id}/join',
     optionalBody: true,
   )
@@ -132,7 +132,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Post(
+  @POST(
     path: '/api/Games/{id}/leave',
     optionalBody: true,
   )
@@ -146,7 +146,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Post(
+  @POST(
     path: '/api/Games/{id}/start',
     optionalBody: true,
   )
@@ -163,7 +163,7 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  @Post(
+  @POST(
     path: '/api/Games/{id}/move',
     optionalBody: true,
   )
@@ -188,7 +188,7 @@ abstract class Swagger extends ChopperService {
   ///
   ///@param id
   ///@param userId
-  @Get(path: '/api/Games/{id}/{userId}')
+  @GET(path: '/api/Games/{id}/{userId}')
   Future<chopper.Response<GameStateDto>> _apiGamesIdUserIdGet({
     @Path('id') required int? id,
     @Path('userId') required int? userId,
@@ -208,7 +208,7 @@ abstract class Swagger extends ChopperService {
   ///
   ///@param id
   ///@param userId
-  @Post(
+  @POST(
     path: '/api/Games/{id}/join/{userId}',
     optionalBody: true,
   )
@@ -232,7 +232,7 @@ abstract class Swagger extends ChopperService {
   ///
   ///@param id
   ///@param userId
-  @Post(
+  @POST(
     path: '/api/Games/{id}/move/{userId}',
     optionalBody: true,
   )
@@ -255,7 +255,7 @@ abstract class Swagger extends ChopperService {
   ///
   ///@param id
   ///@param userId
-  @Post(
+  @POST(
     path: '/api/Games/{id}/leave/{userId}',
     optionalBody: true,
   )
@@ -263,6 +263,87 @@ abstract class Swagger extends ChopperService {
     @Path('id') required int? id,
     @Path('userId') required int? userId,
   });
+
+  ///
+  ///@param id
+  Future<chopper.Response<List<AgentDto>>> apiGamesIdAiAgentsGet(
+      {required int? id}) {
+    generatedMapping.putIfAbsent(AgentDto, () => AgentDto.fromJsonFactory);
+
+    return _apiGamesIdAiAgentsGet(id: id);
+  }
+
+  ///
+  ///@param id
+  @GET(path: '/api/Games/{id}/ai-agents')
+  Future<chopper.Response<List<AgentDto>>> _apiGamesIdAiAgentsGet(
+      {@Path('id') required int? id});
+
+  ///
+  ///@param id
+  ///@param agentId
+  Future<chopper.Response> apiGamesIdAddAgentIdPost({
+    required int? id,
+    required int? agentId,
+    required JoinGameDto? body,
+  }) {
+    return _apiGamesIdAddAgentIdPost(id: id, agentId: agentId, body: body);
+  }
+
+  ///
+  ///@param id
+  ///@param agentId
+  @POST(
+    path: '/api/Games/{id}/add/{agentId}',
+    optionalBody: true,
+  )
+  Future<chopper.Response> _apiGamesIdAddAgentIdPost({
+    @Path('id') required int? id,
+    @Path('agentId') required int? agentId,
+    @Body() required JoinGameDto? body,
+  });
+
+  ///
+  Future<chopper.Response> apiPaymentsCreateCheckoutSessionPost(
+      {required int? body}) {
+    return _apiPaymentsCreateCheckoutSessionPost(body: body);
+  }
+
+  ///
+  @POST(
+    path: '/api/Payments/create-checkout-session',
+    optionalBody: true,
+  )
+  Future<chopper.Response> _apiPaymentsCreateCheckoutSessionPost(
+      {@Body() required int? body});
+
+  ///
+  ///@param session_id
+  ///@param itemId
+  Future<chopper.Response> apiPaymentsSuccessGet({
+    String? sessionId,
+    int? itemId,
+  }) {
+    return _apiPaymentsSuccessGet(sessionId: sessionId, itemId: itemId);
+  }
+
+  ///
+  ///@param session_id
+  ///@param itemId
+  @GET(path: '/api/Payments/success')
+  Future<chopper.Response> _apiPaymentsSuccessGet({
+    @Query('session_id') String? sessionId,
+    @Query('itemId') int? itemId,
+  });
+
+  ///
+  Future<chopper.Response> apiPaymentsCancelGet() {
+    return _apiPaymentsCancelGet();
+  }
+
+  ///
+  @GET(path: '/api/Payments/cancel')
+  Future<chopper.Response> _apiPaymentsCancelGet();
 
   ///
   Future<chopper.Response<UserDto>> apiUsersRegisterPost(
@@ -273,7 +354,7 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Post(
+  @POST(
     path: '/api/Users/register',
     optionalBody: true,
   )
@@ -289,12 +370,44 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Post(
+  @POST(
     path: '/api/Users/login',
     optionalBody: true,
   )
   Future<chopper.Response<UserDto>> _apiUsersLoginPost(
       {@Body() required LoginDto? body});
+
+  ///
+  Future<chopper.Response<UserDto>> apiUsersSocialLoginPost(
+      {required SocialLoginDto? body}) {
+    generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
+
+    return _apiUsersSocialLoginPost(body: body);
+  }
+
+  ///
+  @POST(
+    path: '/api/Users/social-login',
+    optionalBody: true,
+  )
+  Future<chopper.Response<UserDto>> _apiUsersSocialLoginPost(
+      {@Body() required SocialLoginDto? body});
+
+  ///
+  Future<chopper.Response<UserDto>> apiUsersChooseUsernamePost(
+      {required ChooseUsernameDto? body}) {
+    generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
+
+    return _apiUsersChooseUsernamePost(body: body);
+  }
+
+  ///
+  @POST(
+    path: '/api/Users/choose-username',
+    optionalBody: true,
+  )
+  Future<chopper.Response<UserDto>> _apiUsersChooseUsernamePost(
+      {@Body() required ChooseUsernameDto? body});
 
   ///
   Future<chopper.Response<UserDto>> apiUsersProfileGet() {
@@ -304,7 +417,7 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Get(path: '/api/Users/profile')
+  @GET(path: '/api/Users/profile')
   Future<chopper.Response<UserDto>> _apiUsersProfileGet();
 
   ///
@@ -314,12 +427,59 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  @Put(
+  @PUT(
     path: '/api/Users/profile',
     optionalBody: true,
   )
   Future<chopper.Response> _apiUsersProfilePut(
       {@Body() required UpdateProfileDto? body});
+
+  ///
+  ///@param userId
+  Future<chopper.Response<UserDto>> apiUsersProfileUserIdPut(
+      {required int? userId}) {
+    generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
+
+    return _apiUsersProfileUserIdPut(userId: userId);
+  }
+
+  ///
+  ///@param userId
+  @PUT(
+    path: '/api/Users/profile/{userId}',
+    optionalBody: true,
+  )
+  Future<chopper.Response<UserDto>> _apiUsersProfileUserIdPut(
+      {@Path('userId') required int? userId});
+
+  ///
+  ///@param count
+  Future<chopper.Response<List<LeaderboardView>>> apiUsersLeaderboardTopGet(
+      {int? count}) {
+    generatedMapping.putIfAbsent(
+        LeaderboardView, () => LeaderboardView.fromJsonFactory);
+
+    return _apiUsersLeaderboardTopGet(count: count);
+  }
+
+  ///
+  ///@param count
+  @GET(path: '/api/Users/leaderboard/top')
+  Future<chopper.Response<List<LeaderboardView>>> _apiUsersLeaderboardTopGet(
+      {@Query('count') int? count});
+
+  ///
+  ///@param userId
+  Future<chopper.Response> apiUsersLeaderboardPlayerInfoUserIdGet(
+      {required int? userId}) {
+    return _apiUsersLeaderboardPlayerInfoUserIdGet(userId: userId);
+  }
+
+  ///
+  ///@param userId
+  @GET(path: '/api/Users/leaderboard/player-info/{userId}')
+  Future<chopper.Response> _apiUsersLeaderboardPlayerInfoUserIdGet(
+      {@Path('userId') required int? userId});
 }
 
 typedef $JsonFactory<T> = T Function(Map<String, dynamic> json);

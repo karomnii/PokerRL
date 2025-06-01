@@ -145,7 +145,8 @@ namespace TexasHoldemPoker.API.Repositories
 
             gameRound.CurrentState = "Completed";
             gameRound.EndTime = DateTime.UtcNow;
-
+            
+            game.CurrentTurnPlayer = null;
             game.EndTime = DateTime.UtcNow;
 
             await context.SaveChangesAsync();

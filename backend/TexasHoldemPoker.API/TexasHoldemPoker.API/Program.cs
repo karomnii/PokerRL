@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Stripe;
 using TexasHoldemPoker.API.Models;
@@ -148,7 +149,14 @@ public class Program
         });
         
         var app = builder.Build();
-
+        
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(
+                Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
+            RequestPath = ""
+        });
+        
         // Configure the HTTP request pipeline
         // if (app.Environment.IsDevelopment())
         // {

@@ -1,8 +1,13 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "TexasHoldemPoker.API",
-    "version": "1.0"
+    "title": "Texas Hold'em Poker API",
+    "description": "API for Texas Hold'em Poker game",
+    "contact": {
+      "name": "Your Name",
+      "email": "your.email@example.com"
+    },
+    "version": "v1"
   },
   "paths": {
     "/api/Games": {
@@ -482,6 +487,181 @@
         }
       }
     },
+    "/api/Games/{id}/ai-agents": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/add/{agentId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Payments/create-checkout-session": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Payments/success": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Payments/cancel": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Users/register": {
       "post": {
         "tags": [
@@ -578,6 +758,102 @@
         }
       }
     },
+    "/api/Users/social-login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/choose-username": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseUsernameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseUsernameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseUsernameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Users/profile": {
       "get": {
         "tags": [
@@ -635,15 +911,145 @@
           }
         }
       }
+    },
+    "/api/Users/profile/{userId}": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/leaderboard/top": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardView"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardView"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LeaderboardView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/leaderboard/player-info/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AgentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Card": {
-        "required": [
-          "suit",
-          "value"
-        ],
         "type": "object",
         "properties": {
           "cardId": {
@@ -651,14 +1057,26 @@
             "format": "int32"
           },
           "suit": {
-            "maxLength": 10,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "value": {
-            "maxLength": 5,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "communityCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCard"
+            },
+            "nullable": true
+          },
+          "playerCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerCard"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -678,9 +1096,6 @@
         "additionalProperties": false
       },
       "ChipTransaction": {
-        "required": [
-          "transactionType"
-        ],
         "type": "object",
         "properties": {
           "transactionId": {
@@ -691,17 +1106,13 @@
             "type": "integer",
             "format": "int32"
           },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
           "amount": {
             "type": "integer",
             "format": "int32"
           },
           "transactionType": {
-            "maxLength": 50,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "referenceId": {
             "type": "integer",
@@ -713,7 +1124,19 @@
             "format": "date-time"
           },
           "description": {
-            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChooseUsernameDto": {
+        "type": "object",
+        "properties": {
+          "username": {
             "type": "string",
             "nullable": true
           }
@@ -727,23 +1150,23 @@
             "type": "integer",
             "format": "int32"
           },
-          "gameId": {
+          "gameRoundId": {
             "type": "integer",
             "format": "int32"
           },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
           "cardId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
             "type": "integer",
             "format": "int32"
           },
           "card": {
             "$ref": "#/components/schemas/Card"
           },
-          "position": {
-            "type": "integer",
-            "format": "int32"
+          "gameRound": {
+            "$ref": "#/components/schemas/GameRound"
           }
         },
         "additionalProperties": false
@@ -762,9 +1185,6 @@
         "additionalProperties": false
       },
       "Game": {
-        "required": [
-          "currentState"
-        ],
         "type": "object",
         "properties": {
           "gameId": {
@@ -775,9 +1195,6 @@
             "type": "integer",
             "format": "int32"
           },
-          "table": {
-            "$ref": "#/components/schemas/PokerTable"
-          },
           "startTime": {
             "type": "string",
             "format": "date-time"
@@ -787,41 +1204,22 @@
             "format": "date-time",
             "nullable": true
           },
-          "currentState": {
-            "maxLength": 20,
-            "minLength": 1,
-            "type": "string"
+          "currentTurnPlayerId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           },
           "potSize": {
             "type": "integer",
             "format": "int32"
           },
-          "currentTurnUserId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "currentTurnUser": {
-            "$ref": "#/components/schemas/User"
+          "currentTurnPlayer": {
+            "$ref": "#/components/schemas/GamePlayer"
           },
           "gamePlayers": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GamePlayer"
-            },
-            "nullable": true
-          },
-          "moves": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Move"
-            },
-            "nullable": true
-          },
-          "communityCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunityCard"
             },
             "nullable": true
           },
@@ -831,6 +1229,9 @@
               "$ref": "#/components/schemas/GameRound"
             },
             "nullable": true
+          },
+          "table": {
+            "$ref": "#/components/schemas/PokerTable"
           }
         },
         "additionalProperties": false
@@ -846,15 +1247,9 @@
             "type": "integer",
             "format": "int32"
           },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
           "userId": {
             "type": "integer",
             "format": "int32"
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
           },
           "seatPosition": {
             "type": "integer",
@@ -880,12 +1275,25 @@
           "isBigBlind": {
             "type": "boolean"
           },
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "games": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            },
+            "nullable": true
+          },
           "playerCards": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PlayerCard"
             },
             "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -901,12 +1309,13 @@
             "type": "integer",
             "format": "int32"
           },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
           "roundNumber": {
             "type": "integer",
             "format": "int32"
+          },
+          "currentState": {
+            "type": "string",
+            "nullable": true
           },
           "startTime": {
             "type": "string",
@@ -921,10 +1330,34 @@
             "type": "integer",
             "format": "int32"
           },
-          "winners": {
+          "communityCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCard"
+            },
+            "nullable": true
+          },
+          "game": {
+            "$ref": "#/components/schemas/Game"
+          },
+          "gameRoundWinners": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GameRoundWinner"
+            },
+            "nullable": true
+          },
+          "moves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Move"
+            },
+            "nullable": true
+          },
+          "playerCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerCard"
             },
             "nullable": true
           }
@@ -942,19 +1375,19 @@
             "type": "integer",
             "format": "int32"
           },
-          "gameRound": {
-            "$ref": "#/components/schemas/GameRound"
-          },
           "userId": {
             "type": "integer",
             "format": "int32"
           },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
           "amountWon": {
             "type": "integer",
             "format": "int32"
+          },
+          "gameRound": {
+            "$ref": "#/components/schemas/GameRound"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -1063,6 +1496,43 @@
         },
         "additionalProperties": false
       },
+      "LeaderboardView": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "chipsBalance": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "avatarImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "gamesWon": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "gamesPlayed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "winRatio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginDto": {
         "required": [
           "password",
@@ -1098,42 +1568,53 @@
         },
         "additionalProperties": false
       },
+      "Model": {
+        "type": "object",
+        "properties": {
+          "modelId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          },
+          "userModels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Move": {
-        "required": [
-          "actionType",
-          "round"
-        ],
         "type": "object",
         "properties": {
           "moveId": {
             "type": "integer",
             "format": "int32"
           },
-          "gameId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
           "gameRoundId": {
             "type": "integer",
             "format": "int32"
-          },
-          "gameRound": {
-            "$ref": "#/components/schemas/GameRound"
           },
           "playerId": {
             "type": "integer",
             "format": "int32"
           },
-          "player": {
-            "$ref": "#/components/schemas/User"
-          },
           "actionType": {
-            "maxLength": 20,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "amount": {
             "type": "integer",
@@ -1144,9 +1625,14 @@
             "format": "date-time"
           },
           "round": {
-            "maxLength": 20,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
+          },
+          "gameRound": {
+            "$ref": "#/components/schemas/GameRound"
+          },
+          "player": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -1184,19 +1670,33 @@
             "type": "integer",
             "format": "int32"
           },
-          "gamePlayer": {
-            "$ref": "#/components/schemas/GamePlayer"
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "gameRoundId": {
+            "type": "integer",
+            "format": "int32"
           },
           "cardId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "position": {
             "type": "integer",
             "format": "int32"
           },
           "card": {
             "$ref": "#/components/schemas/Card"
           },
-          "position": {
-            "type": "integer",
-            "format": "int32"
+          "gamePlayer": {
+            "$ref": "#/components/schemas/GamePlayer"
+          },
+          "gameRound": {
+            "$ref": "#/components/schemas/GameRound"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -1243,10 +1743,6 @@
         "additionalProperties": false
       },
       "PokerTable": {
-        "required": [
-          "difficultyLevel",
-          "name"
-        ],
         "type": "object",
         "properties": {
           "tableId": {
@@ -1254,9 +1750,8 @@
             "format": "int32"
           },
           "name": {
-            "maxLength": 50,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "entryFee": {
             "type": "integer",
@@ -1283,9 +1778,8 @@
             "format": "int32"
           },
           "difficultyLevel": {
-            "maxLength": 20,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "isActive": {
             "type": "boolean"
@@ -1311,15 +1805,9 @@
             "type": "integer",
             "format": "int32"
           },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
           "itemId": {
             "type": "integer",
             "format": "int32"
-          },
-          "shopItem": {
-            "$ref": "#/components/schemas/ShopItem"
           },
           "purchaseDate": {
             "type": "string",
@@ -1336,6 +1824,12 @@
           "transactionId": {
             "type": "string",
             "nullable": true
+          },
+          "item": {
+            "$ref": "#/components/schemas/ShopItem"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -1385,10 +1879,6 @@
         "additionalProperties": false
       },
       "ShopItem": {
-        "required": [
-          "itemType",
-          "name"
-        ],
         "type": "object",
         "properties": {
           "itemId": {
@@ -1396,12 +1886,10 @@
             "format": "int32"
           },
           "name": {
-            "maxLength": 100,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
-            "maxLength": 500,
             "type": "string",
             "nullable": true
           },
@@ -1409,10 +1897,13 @@
             "type": "number",
             "format": "double"
           },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
           "itemType": {
-            "maxLength": 50,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "isActive": {
             "type": "boolean"
@@ -1422,6 +1913,20 @@
             "items": {
               "$ref": "#/components/schemas/Purchase"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SocialLoginDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "token": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -1443,11 +1948,6 @@
         "additionalProperties": false
       },
       "User": {
-        "required": [
-          "email",
-          "passwordHash",
-          "username"
-        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -1455,25 +1955,26 @@
             "format": "int32"
           },
           "username": {
-            "maxLength": 50,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "email": {
-            "maxLength": 100,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "passwordHash": {
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "chipsBalance": {
             "type": "integer",
             "format": "int32"
           },
           "avatarImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarType": {
             "type": "string",
             "nullable": true
           },
@@ -1489,10 +1990,42 @@
           "isActive": {
             "type": "boolean"
           },
+          "isBot": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "chipTransactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChipTransaction"
+            },
+            "nullable": true
+          },
           "gamePlayers": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GamePlayer"
+            },
+            "nullable": true
+          },
+          "gameRoundWinners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameRoundWinner"
+            },
+            "nullable": true
+          },
+          "moves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Move"
+            },
+            "nullable": true
+          },
+          "playerCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerCard"
             },
             "nullable": true
           },
@@ -1503,17 +2036,10 @@
             },
             "nullable": true
           },
-          "chipTransactions": {
+          "userModels": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ChipTransaction"
-            },
-            "nullable": true
-          },
-          "gameRoundWinners": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GameRoundWinner"
+              "$ref": "#/components/schemas/UserModel"
             },
             "nullable": true
           }
@@ -1549,7 +2075,43 @@
           }
         },
         "additionalProperties": false
+      },
+      "UserModel": {
+        "type": "object",
+        "properties": {
+          "userModelId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "modelId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Model"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Enter 'Bearer {token}'",
+        "scheme": "bearer"
       }
     }
-  }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
 }

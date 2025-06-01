@@ -9,6 +9,7 @@ using System.Text;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Stripe;
+using TexasHoldemPoker.API.Helpers;
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using TexasHoldemPoker.API.Services;
@@ -49,6 +50,8 @@ public class Program
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAiAgentService, AiAgentService>();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<ProfileAvatarHelper>();
 
         // stripe 
 

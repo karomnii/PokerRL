@@ -150,12 +150,24 @@ namespace TexasHoldemPoker.API.Controllers
         [HttpPost("{id}/leave/{userId}")]
         public async Task<ActionResult> LeaveGameWithUserId(int id, int userId)
         {
+            var game = await _gameRepository.GetByIdAsync(id);
+            if (game == null)
+                return NotFound(new { message = "Game not found" });
+
+            var gamePlayer = game.GamePlayers.FirstOrDefault(p => p.UserId == userId);
+            if (gamePlayer == null)
+                return BadRequest(new { message = "Player not in this game" });
+
             var result = await _gameService.LeaveGameAsync(id, userId);
 
             if (!result)
-                return BadRequest("Failed to leave game");
+                return BadRequest(new { message = "Failed to leave game" });
 
-            return NoContent();
+            return Ok(new
+            {
+                message = $"Player {userId} successfully removed from game",
+                refundedChips = gamePlayer.InitialChips
+            });
         }
 
         [HttpGet("{id}/ai-agents")]

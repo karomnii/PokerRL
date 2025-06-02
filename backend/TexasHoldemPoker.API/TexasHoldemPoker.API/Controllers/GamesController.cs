@@ -166,7 +166,7 @@ namespace TexasHoldemPoker.API.Controllers
             return Ok(new
             {
                 message = $"Player {userId} successfully removed from game",
-                refundedChips = gamePlayer.InitialChips
+                refundedChips = gamePlayer.CurrentChips,
             });
         }
 

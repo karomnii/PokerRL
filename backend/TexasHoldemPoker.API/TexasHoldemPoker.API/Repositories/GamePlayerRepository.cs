@@ -184,6 +184,7 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<bool> RemovePlayerFromGameAsync(int gamePlayerId)
         {
             var gamePlayer = await context.GamePlayers
+                .Include(gp => gp.PlayerCards) 
                 .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
 
             var gameRound = await context.GameRounds
@@ -201,12 +202,19 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
+                if (gamePlayer.PlayerCards != null && gamePlayer.PlayerCards.Any())
+                {
+                    context.PlayerCards.RemoveRange(gamePlayer.PlayerCards);
+                }
+                
                 var user = await context.Users.FindAsync(gamePlayer.UserId);
-                user.ChipsBalance += gamePlayer.InitialChips;
+                user.ChipsBalance += gamePlayer.CurrentChips;
 
-                await chipTransactionRepository.RecordGameRefundAsync(gamePlayer.UserId, gamePlayer.GameId,
+                await chipTransactionRepository.RecordGameRefundAsync(
+                    gamePlayer.UserId, 
+                    gamePlayer.GameId,
                     gamePlayer.InitialChips);
-
+                
                 context.GamePlayers.Remove(gamePlayer);
 
                 await context.SaveChangesAsync();

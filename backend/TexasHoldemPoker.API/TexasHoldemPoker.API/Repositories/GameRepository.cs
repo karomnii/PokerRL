@@ -1,48 +1,56 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TexasHoldemPoker.API.Data;
+
 using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
     public class GameRepository : IGameRepository
     {
-        private readonly PokerDbContext _context;
-
-        public GameRepository(PokerDbContext context)
+        private readonly ApplicationDbContext context;
+       public GameRepository(ApplicationDbContext context)
         {
-            _context = context;
+            this.context = context;
         }
 
         public async Task<Game> GetByIdAsync(int gameId)
         {
-            return await _context.Games
+            return await context.Games
                 .Include(g => g.Table)
                 .Include(g => g.GamePlayers)
-                    .ThenInclude(gp => gp.User)
-                .Include(g => g.CommunityCards)
-                    .ThenInclude(cc => cc.Card)
+                .ThenInclude(gp => gp.User)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
+                .ThenInclude(gr => gr.CommunityCards)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
+                .ThenInclude(gr => gr.GameRoundWinners) // Include winners of the most recent round
                 .FirstOrDefaultAsync(g => g.GameId == gameId);
         }
-
         public async Task<IEnumerable<Game>> GetActiveGamesAsync()
         {
-            return await _context.Games
+            var games = await context.Games
                 .Where(g => g.EndTime == null)
                 .Include(g => g.Table)
                 .ToListAsync();
+
+            foreach (var game in games)
+            {
+                game.Table.Games = new List<Game>();
+            }
+
+            return games;
         }
 
         public async Task<IEnumerable<Game>> GetGamesByTableIdAsync(int tableId)
         {
-            return await _context.Games
+            return await context.Games
                 .Where(g => g.TableId == tableId)
                 .Include(g => g.GamePlayers)
+                .Include(g => g.GameRounds.OrderByDescending(gr => gr.RoundNumber).Take(1))
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Game>> GetGamesByUserIdAsync(int userId)
         {
-            return await _context.Games
+            return await context.Games
                 .Where(g => g.GamePlayers.Any(gp => gp.UserId == userId))
                 .Include(g => g.Table)
                 .ToListAsync();
@@ -51,82 +59,135 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<Game> CreateGameAsync(Game game)
         {
             game.StartTime = DateTime.UtcNow;
-            game.CurrentState = "Waiting";
+            //game.CurrentState = "Waiting";
             game.PotSize = 0;
 
-            _context.Games.Add(game);
-            await _context.SaveChangesAsync();
+            context.Games.Add(game);
+            await context.SaveChangesAsync();
+
             return game;
         }
 
+        // TODO: Check if it works with GameRound modifications
         public async Task UpdateGameAsync(Game game)
         {
-            _context.Entry(game).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> EndGameAsync(int gameId, int winnerId)
-        {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    var game = await _context.Games.FindAsync(gameId);
-                    if (game == null) return false;
-
-                    var winner = await _context.Users.FindAsync(winnerId);
-                    if (winner == null) return false;
-
-                    game.EndTime = DateTime.UtcNow;
-                    game.CurrentState = "Completed";
-                    game.WinnerId = winnerId;
-
-                    // Update winner's chips
-                    winner.ChipsBalance += game.PotSize;
-
-                    // Log transaction
-                    var chipTransaction = new ChipTransaction
-                    {
-                        UserId = winnerId,
-                        Amount = game.PotSize,
-                        TransactionType = "GameWin",
-                        ReferenceId = gameId,
-                        TransactionDate = DateTime.UtcNow,
-                        Description = $"Winnings from game {gameId}"
-                    };
-
-                    _context.ChipTransactions.Add(chipTransaction);
-                    await _context.SaveChangesAsync();
-
-                    await transaction.CommitAsync();
-                    return true;
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
+            context.Entry(game).State = EntityState.Modified;
+            await context.SaveChangesAsync();
         }
 
         public async Task<bool> UpdatePotSizeAsync(int gameId, int amount)
         {
-            var game = await _context.Games.FindAsync(gameId);
-            if (game == null) return false;
+            var game = await context.Games.FindAsync(gameId);
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+            if (game == null)
+                return false;
+            if (gameRound == null)
+                return false;
 
-            game.PotSize += amount;
-            await _context.SaveChangesAsync();
+            gameRound.PotSize = amount;
+            game.PotSize = amount;
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UpdateGameStateAsync(int gameId, string newState)
         {
-            var game = await _context.Games.FindAsync(gameId);
-            if (game == null) return false;
+            var game = await context.Games.FindAsync(gameId);
+            if (game == null)
+                return false;
 
-            game.CurrentState = newState;
-            await _context.SaveChangesAsync();
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+
+            gameRound.CurrentState = newState;
+            await context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> SetCurrentTurnAsync(int gameId, int? userId)
+        {
+            var game = await context.Games.FindAsync(gameId);
+            if (game == null)
+                return false;
+
+            var gamePlayer = await context.GamePlayers
+                .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
+            if (gamePlayer == null)
+                return false;
+
+            game.CurrentTurnPlayerId = gamePlayer.GamePlayerId;
+            await context.SaveChangesAsync();
+            return true;
+        }
+
+        //TODO: Handle change to GamePlayerId
+        public async Task<int?> GetCurrentTurnUserIdAsync(int gameId)
+        {
+            var game = await context.Games.FindAsync(gameId);
+            return game?.CurrentTurnPlayerId;
+        }
+
+        public async Task<bool> EndGameAsync(int gameId)
+        {
+            var game = await context.Games.FindAsync(gameId);
+            if (game == null)
+                return false;
+
+            var gameRound = await context.GameRounds.
+                Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+            if (gameRound == null)
+                return false;
+
+            gameRound.CurrentState = "Completed";
+            gameRound.EndTime = DateTime.UtcNow;
+            
+            game.CurrentTurnPlayer = null;
+            game.EndTime = DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<PokerTable> GetGameTableAsync(int gameId)
+        {
+            var game = await context.Games
+                .Include(g => g.Table)
+                .FirstOrDefaultAsync(g => g.GameId == gameId);
+
+            return game?.Table;
+        }
+
+        public async Task<int> GetPotSizeAsync(int gameId)
+        {
+            var game = await context.Games.FindAsync(gameId);
+            return game?.PotSize ?? 0;
+        }
+
+        public async Task<string> GetGameStateAsync(int gameId)
+        {
+            var game = await context.Games.FindAsync(gameId);
+            if(game == null)
+                return string.Empty;
+            var gameRound = await context.GameRounds
+                .Where(gr => gr.GameId == gameId)
+                .OrderByDescending(gr => gr.RoundNumber)
+                .FirstOrDefaultAsync();
+            if (gameRound == null)
+                return string.Empty;
+
+            return gameRound.CurrentState;
+        }
+
+        public async Task<bool> SaveChangesAsync()
+        {
+            return await context.SaveChangesAsync() > 0;
         }
     }
 }

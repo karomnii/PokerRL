@@ -1,59 +1,100 @@
-﻿-- Create database
+﻿USE master;
+GO
+-- Drop and recreate database for development
+IF EXISTS (SELECT name FROM sys.databases WHERE name = N'TexasHoldemPoker')
+BEGIN
+    ALTER DATABASE TexasHoldemPoker SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE TexasHoldemPoker;
+END
+GO
 CREATE DATABASE TexasHoldemPoker;
 GO
-
 USE TexasHoldemPoker;
 GO
 
 -- Users Table
 CREATE TABLE Users (
-    UserId INT IDENTITY(1,1) PRIMARY KEY,
-    Username NVARCHAR(50) NOT NULL UNIQUE,
-    Email NVARCHAR(100) NOT NULL UNIQUE,
+    UserId INT IDENTITY(1,1),
+    Username NVARCHAR(50) NOT NULL,
+    Email NVARCHAR(100) NOT NULL,
     PasswordHash NVARCHAR(128) NOT NULL,
-    ChipsBalance INT NOT NULL DEFAULT 1000,
+    ChipsBalance INT NOT NULL DEFAULT 5000,
     AvatarImage NVARCHAR(255),
+    AvatarType NVARCHAR(20) NOT NULL DEFAULT 'Standard',
     RegistrationDate DATETIME NOT NULL DEFAULT GETDATE(),
     LastLoginDate DATETIME,
-    IsActive BIT NOT NULL DEFAULT 1
+    IsActive BIT NOT NULL DEFAULT 1,
+	IsBot BIT DEFAULT 0
 );
-
-ALTER TABLE Users
-ADD AvatarType NVARCHAR(20) NOT NULL DEFAULT 'Uzytkownik';
-
 GO
 
--- Tables Table
+-- Models Table
+CREATE TABLE Models (
+    ModelId INT IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL,
+    Path NVARCHAR(255) NULL,
+	Difficulty NVARCHAR(100) NULL
+);
+GO
+
+-- UserModels Table
+CREATE TABLE UserModels (
+    UserModelId INT IDENTITY(1,1),
+    UserId INT NOT NULL,
+	ModelId INT NOT NULL
+);
+GO
+
+-- PokerTables Table
 CREATE TABLE PokerTables (
-    TableId INT IDENTITY(1,1) PRIMARY KEY,
+    TableId INT IDENTITY(1,1),
     Name NVARCHAR(50) NOT NULL,
     EntryFee INT NOT NULL,
     MinBuyIn INT NOT NULL,
     MaxBuyIn INT NOT NULL,
     SmallBlind INT NOT NULL,
     BigBlind INT NOT NULL,
-    MaxPlayers INT NOT NULL DEFAULT 9,
-    DifficultyLevel NVARCHAR(20) CHECK (DifficultyLevel IN ('Beginner', 'Intermediate', 'Advanced', 'Pro')),
+    MaxPlayers INT NOT NULL DEFAULT 4,
+    DifficultyLevel NVARCHAR(20),
     IsActive BIT NOT NULL DEFAULT 1
 );
 GO
 
 -- Games Table
 CREATE TABLE Games (
-    GameId INT IDENTITY(1,1) PRIMARY KEY,
-    TableId INT NOT NULL FOREIGN KEY REFERENCES PokerTables(TableId),
+    GameId INT IDENTITY(1,1),
+    TableId INT NOT NULL,
     StartTime DATETIME NOT NULL DEFAULT GETDATE(),
     EndTime DATETIME,
-    CurrentState NVARCHAR(20) NOT NULL CHECK (CurrentState IN ('Waiting', 'PreFlop', 'Flop', 'Turn', 'River', 'Showdown', 'Completed')),
-    PotSize INT NOT NULL DEFAULT 0,
-    WinnerId INT FOREIGN KEY REFERENCES Users(UserId),
-    CONSTRAINT FK_Games_Tables FOREIGN KEY (TableId) REFERENCES PokerTables(TableId)
+    CurrentTurnPlayerId INT NULL,
+    PotSize INT NOT NULL DEFAULT 0
 );
 GO
 
--- GamePlayers Table (tracks players in each game and their positions)
+-- GameRounds Table
+CREATE TABLE GameRounds (
+    GameRoundId INT IDENTITY(1,1),
+    GameId INT NOT NULL,
+    RoundNumber INT NOT NULL,
+	CurrentState NVARCHAR(20) NOT NULL,
+    StartTime DATETIME NOT NULL DEFAULT GETDATE(),
+    EndTime DATETIME,
+    PotSize INT NOT NULL DEFAULT 0
+);
+GO
+
+-- GameRoundWinners Table
+CREATE TABLE GameRoundWinners (
+    GameRoundWinnerId INT IDENTITY(1,1),
+    GameRoundId INT NOT NULL,
+    UserId INT NOT NULL,
+    AmountWon INT NOT NULL
+);
+GO
+
+-- GamePlayers Table
 CREATE TABLE GamePlayers (
-    GamePlayerId INT IDENTITY(1,1) PRIMARY KEY,
+    GamePlayerId INT IDENTITY(1,1),
     GameId INT NOT NULL,
     UserId INT NOT NULL,
     SeatPosition INT NOT NULL,
@@ -62,99 +103,145 @@ CREATE TABLE GamePlayers (
     IsActive BIT NOT NULL DEFAULT 1,
     IsDealer BIT NOT NULL DEFAULT 0,
     IsSmallBlind BIT NOT NULL DEFAULT 0,
-    IsBigBlind BIT NOT NULL DEFAULT 0,
-    CONSTRAINT FK_GamePlayers_Games FOREIGN KEY (GameId) REFERENCES Games(GameId),
-    CONSTRAINT FK_GamePlayers_Users FOREIGN KEY (UserId) REFERENCES Users(UserId),
-    CONSTRAINT UQ_GamePlayers_Game_User UNIQUE (GameId, UserId),
-    CONSTRAINT UQ_GamePlayers_Game_Position UNIQUE (GameId, SeatPosition)
+    IsBigBlind BIT NOT NULL DEFAULT 0
 );
 GO
 
 -- Cards Table
 CREATE TABLE Cards (
-    CardId INT IDENTITY(1,1) PRIMARY KEY,
-    Suit NVARCHAR(10) NOT NULL CHECK (Suit IN ('Hearts', 'Diamonds', 'Clubs', 'Spades')),
-    Value NVARCHAR(5) NOT NULL CHECK (Value IN ('2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'))
+    CardId INT IDENTITY(1,1),
+    Suit NVARCHAR(10) NOT NULL,
+    Value NVARCHAR(5) NOT NULL
 );
 GO
 
--- CommunityCards Table (for flop, turn, river)
+-- CommunityCards Table
 CREATE TABLE CommunityCards (
-    CommunityCardId INT IDENTITY(1,1) PRIMARY KEY,
-    GameId INT NOT NULL,
+    CommunityCardId INT IDENTITY(1,1),
+    GameRoundId INT NOT NULL,
     CardId INT NOT NULL,
-    Position INT NOT NULL CHECK (Position BETWEEN 1 AND 5),
-    CONSTRAINT FK_CommunityCards_Games FOREIGN KEY (GameId) REFERENCES Games(GameId),
-    CONSTRAINT FK_CommunityCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId),
-    CONSTRAINT UQ_CommunityCards_Game_Position UNIQUE (GameId, Position)
+    Position INT NOT NULL
 );
 GO
 
--- PlayerCards Table (hole cards)
+-- PlayerCards Table
 CREATE TABLE PlayerCards (
-    PlayerCardId INT IDENTITY(1,1) PRIMARY KEY,
+    PlayerCardId INT IDENTITY(1,1),
     GamePlayerId INT NOT NULL,
+	UserId INT NOT NULL,
+	GameRoundId INT NOT NULL,
     CardId INT NOT NULL,
-    Position INT NOT NULL CHECK (Position IN (1, 2)),
-    CONSTRAINT FK_PlayerCards_GamePlayers FOREIGN KEY (GamePlayerId) REFERENCES GamePlayers(GamePlayerId),
-    CONSTRAINT FK_PlayerCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId),
-    CONSTRAINT UQ_PlayerCards_GamePlayer_Position UNIQUE (GamePlayerId, Position)
+    Position INT NOT NULL
 );
 GO
 
 -- Moves Table
 CREATE TABLE Moves (
-    MoveId INT IDENTITY(1,1) PRIMARY KEY,
-    GameId INT NOT NULL,
+    MoveId INT IDENTITY(1,1),
+    GameRoundId INT NOT NULL,
     PlayerId INT NOT NULL,
-    ActionType NVARCHAR(20) NOT NULL CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn')),
+    ActionType NVARCHAR(20) NOT NULL,
     Amount INT NOT NULL DEFAULT 0,
     MoveTime DATETIME NOT NULL DEFAULT GETDATE(),
-    Round NVARCHAR(20) NOT NULL CHECK (Round IN ('PreFlop', 'Flop', 'Turn', 'River')),
-    CONSTRAINT FK_Moves_Games FOREIGN KEY (GameId) REFERENCES Games(GameId),
-    CONSTRAINT FK_Moves_Users FOREIGN KEY (PlayerId) REFERENCES Users(UserId)
+    Round NVARCHAR(20) NOT NULL
 );
 GO
 
 -- ShopItems Table
 CREATE TABLE ShopItems (
-    ItemId INT IDENTITY(1,1) PRIMARY KEY,
+    ItemId INT IDENTITY(1,1),
     Name NVARCHAR(100) NOT NULL,
     Description NVARCHAR(500),
     Price DECIMAL(10, 2) NOT NULL,
-    ItemType NVARCHAR(50) NOT NULL CHECK (ItemType IN ('Chips', 'Avatar', 'TableTheme', 'CardDeck', 'Emote')),
+    Currency NVARCHAR(10) NOT NULL DEFAULT 'PLN',
+    ItemType NVARCHAR(50) NOT NULL,
     IsActive BIT NOT NULL DEFAULT 1
 );
 GO
 
-ALTER TABLE ShopItems
-ADD Currency NVARCHAR(10) NOT NULL CHECK (Currency IN ('PLN', 'CHIPS')) DEFAULT 'PLN';
-go
 -- Purchases Table
 CREATE TABLE Purchases (
-    PurchaseId INT IDENTITY(1,1) PRIMARY KEY,
+    PurchaseId INT IDENTITY(1,1),
     UserId INT NOT NULL,
     ItemId INT NOT NULL,
     PurchaseDate DATETIME NOT NULL DEFAULT GETDATE(),
     Price DECIMAL(10, 2) NOT NULL,
     PaymentMethod NVARCHAR(50),
-    TransactionId NVARCHAR(100),
-    CONSTRAINT FK_Purchases_Users FOREIGN KEY (UserId) REFERENCES Users(UserId),
-    CONSTRAINT FK_Purchases_ShopItems FOREIGN KEY (ItemId) REFERENCES ShopItems(ItemId)
+    TransactionId NVARCHAR(100)
 );
 GO
 
 -- ChipTransactions Table
 CREATE TABLE ChipTransactions (
-    TransactionId INT IDENTITY(1,1) PRIMARY KEY,
+    TransactionId INT IDENTITY(1,1),
     UserId INT NOT NULL,
     Amount INT NOT NULL,
-    TransactionType NVARCHAR(50) NOT NULL CHECK (TransactionType IN ('Purchase', 'GameWin', 'GameLoss', 'Bonus', 'Gift', 'Refund')),
-    ReferenceId INT,  -- Can reference GameId or PurchaseId depending on TransactionType
+    TransactionType NVARCHAR(50) NOT NULL,
+    ReferenceId INT,
     TransactionDate DATETIME NOT NULL DEFAULT GETDATE(),
-    Description NVARCHAR(255),
-    CONSTRAINT FK_ChipTransactions_Users FOREIGN KEY (UserId) REFERENCES Users(UserId)
+    Description NVARCHAR(255)
 );
+GO
+
+-- Primary Key Constraints
+ALTER TABLE Users ADD CONSTRAINT PK_Users PRIMARY KEY (UserId);
+ALTER TABLE Models ADD CONSTRAINT PK_Models PRIMARY KEY (ModelId);
+ALTER TABLE UserModels ADD CONSTRAINT PK_UserModels PRIMARY KEY (UserModelId);
+ALTER TABLE PokerTables ADD CONSTRAINT PK_PokerTables PRIMARY KEY (TableId);
+ALTER TABLE Games ADD CONSTRAINT PK_Games PRIMARY KEY (GameId);
+ALTER TABLE GameRounds ADD CONSTRAINT PK_GameRounds PRIMARY KEY (GameRoundId);
+ALTER TABLE GameRoundWinners ADD CONSTRAINT PK_GameRoundWinners PRIMARY KEY (GameRoundWinnerId);
+ALTER TABLE GamePlayers ADD CONSTRAINT PK_GamePlayers PRIMARY KEY (GamePlayerId);
+ALTER TABLE Cards ADD CONSTRAINT PK_Cards PRIMARY KEY (CardId);
+ALTER TABLE CommunityCards ADD CONSTRAINT PK_CommunityCards PRIMARY KEY (CommunityCardId);
+ALTER TABLE PlayerCards ADD CONSTRAINT PK_PlayerCards PRIMARY KEY (PlayerCardId);
+ALTER TABLE Moves ADD CONSTRAINT PK_Moves PRIMARY KEY (MoveId);
+ALTER TABLE ShopItems ADD CONSTRAINT PK_ShopItems PRIMARY KEY (ItemId);
+ALTER TABLE Purchases ADD CONSTRAINT PK_Purchases PRIMARY KEY (PurchaseId);
+ALTER TABLE ChipTransactions ADD CONSTRAINT PK_ChipTransactions PRIMARY KEY (TransactionId);
+
+-- Foreign Key Constraints
+ALTER TABLE UserModels ADD CONSTRAINT FK_UserModels_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+ALTER TABLE UserModels ADD CONSTRAINT FK_UserModels_Models FOREIGN KEY (ModelId) REFERENCES Models(ModelId);
+ALTER TABLE Games ADD CONSTRAINT FK_Games_PokerTables FOREIGN KEY (TableId) REFERENCES PokerTables(TableId);
+ALTER TABLE Games ADD CONSTRAINT FK_Games_GamePlayers FOREIGN KEY (CurrentTurnPlayerId) REFERENCES GamePlayers(GamePlayerId);
+ALTER TABLE GameRounds ADD CONSTRAINT FK_GameRounds_Games FOREIGN KEY (GameId) REFERENCES Games(GameId);
+ALTER TABLE GameRoundWinners ADD CONSTRAINT FK_GameRoundWinners_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE GameRoundWinners ADD CONSTRAINT FK_GameRoundWinners_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+ALTER TABLE GamePlayers ADD CONSTRAINT FK_GamePlayers_Games FOREIGN KEY (GameId) REFERENCES Games(GameId);
+ALTER TABLE GamePlayers ADD CONSTRAINT FK_GamePlayers_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE CommunityCards ADD CONSTRAINT FK_CommunityCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GamePlayers FOREIGN KEY (GamePlayerId) REFERENCES GamePlayers(GamePlayerId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+ALTER TABLE PlayerCards ADD CONSTRAINT FK_PlayerCards_Cards FOREIGN KEY (CardId) REFERENCES Cards(CardId);
+ALTER TABLE Moves ADD CONSTRAINT FK_Moves_GameRounds FOREIGN KEY (GameRoundId) REFERENCES GameRounds(GameRoundId);
+ALTER TABLE Moves ADD CONSTRAINT FK_Moves_Users FOREIGN KEY (PlayerId) REFERENCES Users(UserId);
+ALTER TABLE Purchases ADD CONSTRAINT FK_Purchases_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+ALTER TABLE Purchases ADD CONSTRAINT FK_Purchases_ShopItems FOREIGN KEY (ItemId) REFERENCES ShopItems(ItemId);
+ALTER TABLE ChipTransactions ADD CONSTRAINT FK_ChipTransactions_Users FOREIGN KEY (UserId) REFERENCES Users(UserId);
+
+-- Unique Constraints
+ALTER TABLE Users ADD CONSTRAINT UQ_Users_Username UNIQUE (Username);
+ALTER TABLE Users ADD CONSTRAINT UQ_Users_Email UNIQUE (Email);
+ALTER TABLE Models ADD CONSTRAINT UQ_Models_Name UNIQUE (Name);
+ALTER TABLE GamePlayers ADD CONSTRAINT UQ_GamePlayers_GameUser UNIQUE (GameId, UserId);
+ALTER TABLE GamePlayers ADD CONSTRAINT UQ_GamePlayers_GamePosition UNIQUE (GameId, SeatPosition);
+ALTER TABLE CommunityCards ADD CONSTRAINT UQ_CommunityCards_GamePosition UNIQUE (GameRoundId, Position);
+ALTER TABLE PlayerCards ADD CONSTRAINT UQ_PlayerCards_GamePlayerPosition UNIQUE (GameRoundId, GamePlayerId, Position);
+
+-- Check Constraints
+ALTER TABLE GameRounds ADD CONSTRAINT CK_GameRounds_CurrentState CHECK (CurrentState IN ('Waiting', 'PreFlop', 'Flop', 'Turn', 'River', 'Showdown', 'Completed'));
+ALTER TABLE Cards ADD CONSTRAINT CK_Cards_Suit CHECK (Suit IN ('Hearts', 'Diamonds', 'Clubs', 'Spades'));
+ALTER TABLE Cards ADD CONSTRAINT CK_Cards_Value CHECK (Value IN ('2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'));
+ALTER TABLE CommunityCards ADD CONSTRAINT CK_CommunityCards_Position CHECK (Position BETWEEN 1 AND 5);
+ALTER TABLE PlayerCards ADD CONSTRAINT CK_PlayerCards_Position CHECK (Position IN (1, 2));
+ALTER TABLE Moves ADD CONSTRAINT CK_Moves_ActionType CHECK (ActionType IN ('Fold', 'Check', 'Call', 'Bet', 'Raise', 'AllIn', 'Blind'));
+ALTER TABLE Moves ADD CONSTRAINT CK_Moves_Round CHECK (Round IN ('PreFlop', 'Flop', 'Turn', 'River'));
+ALTER TABLE ShopItems ADD CONSTRAINT CK_ShopItems_ItemType CHECK (ItemType IN ('Chips', 'Avatar', 'TableTheme', 'CardDeck', 'Emote'));
+ALTER TABLE ShopItems ADD CONSTRAINT CK_ShopItems_Currency CHECK (Currency IN ('PLN', 'CHIPS'));
+ALTER TABLE ChipTransactions ADD CONSTRAINT CK_ChipTransactions_TransactionType CHECK (TransactionType IN ('Purchase', 'GameWin', 'GameLoss', 'Bonus', 'Gift', 'Refund'));
 GO
 
 -- Leaderboard View
@@ -164,165 +251,60 @@ SELECT
     u.Username,
     u.ChipsBalance,
     u.AvatarImage,
-    (SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS GamesWon,
-    (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS GamesPlayed,
+    (SELECT COUNT(*) FROM GameRoundWinners WHERE UserId = u.UserId) AS GamesWon,
+    (SELECT COUNT(*) FROM GameRounds as GR INNER JOIN PlayerCards as PC ON GR.GameRoundId=PC.GameRoundId WHERE PC.UserId = u.UserId) AS GamesPlayed,
     CASE 
-        WHEN (SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) = 0 THEN 0
-        ELSE CAST((SELECT COUNT(*) FROM Games WHERE WinnerId = u.UserId) AS FLOAT) /
-             CAST((SELECT COUNT(*) FROM GamePlayers WHERE UserId = u.UserId) AS FLOAT)
+        WHEN (SELECT COUNT(*) FROM GameRoundWinners WHERE UserId = u.UserId) = 0 THEN 0
+        ELSE CAST((SELECT COUNT(*) FROM GameRoundWinners WHERE UserId = u.UserId) AS FLOAT) /
+             CAST((SELECT COUNT(*) FROM GameRounds as GR INNER JOIN PlayerCards as PC ON GR.GameRoundId=PC.GameRoundId WHERE PC.UserId = u.UserId) AS FLOAT)
     END AS WinRatio
 FROM Users u
 WHERE u.IsActive = 1;
+GO
 
--- Indexes for better performance
+-- Indexes
 CREATE INDEX IX_Games_TableId ON Games(TableId);
-CREATE INDEX IX_Games_WinnerId ON Games(WinnerId);
 CREATE INDEX IX_GamePlayers_GameId ON GamePlayers(GameId);
 CREATE INDEX IX_GamePlayers_UserId ON GamePlayers(UserId);
-CREATE INDEX IX_Moves_GameId ON Moves(GameId);
 CREATE INDEX IX_Moves_PlayerId ON Moves(PlayerId);
 CREATE INDEX IX_Purchases_UserId ON Purchases(UserId);
 CREATE INDEX IX_ChipTransactions_UserId ON ChipTransactions(UserId);
 GO
 
--- Create a new game
-CREATE PROCEDURE CreateGame
-    @TableId INT,
-    @CurrentState NVARCHAR(20) = 'Waiting'
-AS
-BEGIN
-    INSERT INTO Games (TableId, CurrentState)
-    VALUES (@TableId, @CurrentState);
-    
-    RETURN SCOPE_IDENTITY();
-END;
-GO
-
--- Add player to game
-CREATE PROCEDURE AddPlayerToGame
-    @GameId INT,
-    @UserId INT,
-    @SeatPosition INT,
-    @BuyInAmount INT
-AS
-BEGIN
-    -- Check if user has enough chips
-    DECLARE @UserChips INT;
-    SELECT @UserChips = ChipsBalance FROM Users WHERE UserId = @UserId;
-    
-    IF @UserChips < @BuyInAmount
-    BEGIN
-        RAISERROR('Not enough chips for buy-in', 16, 1);
-        RETURN;
-    END
-    
-    BEGIN TRANSACTION;
-    
-    -- Deduct chips from user balance
-    UPDATE Users
-    SET ChipsBalance = ChipsBalance - @BuyInAmount
-    WHERE UserId = @UserId;
-    
-    -- Add player to game
-    INSERT INTO GamePlayers (GameId, UserId, SeatPosition, InitialChips, CurrentChips)
-    VALUES (@GameId, @UserId, @SeatPosition, @BuyInAmount, @BuyInAmount);
-    
-    -- Log transaction
-    INSERT INTO ChipTransactions (UserId, Amount, TransactionType, ReferenceId, Description)
-    VALUES (@UserId, -@BuyInAmount, 'GameLoss', @GameId, 'Buy-in for game');
-    
-    COMMIT TRANSACTION;
-END;
-GO
-
--- Record player move
-CREATE PROCEDURE RecordMove
-    @GameId INT,
-    @PlayerId INT,
-    @ActionType NVARCHAR(20),
-    @Amount INT,
-    @Round NVARCHAR(20)
-AS
-BEGIN
-    INSERT INTO Moves (GameId, PlayerId, ActionType, Amount, Round)
-    VALUES (@GameId, @PlayerId, @ActionType, @Amount, @Round);
-    
-    -- Update pot size
-    IF @ActionType IN ('Bet', 'Call', 'Raise', 'AllIn')
-    BEGIN
-        UPDATE Games
-        SET PotSize = PotSize + @Amount
-        WHERE GameId = @GameId;
-        
-        -- Update player's current chips
-        UPDATE GamePlayers
-        SET CurrentChips = CurrentChips - @Amount
-        WHERE GameId = @GameId AND UserId = @PlayerId;
-    END
-END;
-GO
-
--- End game and distribute winnings
-CREATE PROCEDURE EndGame
-    @GameId INT,
-    @WinnerId INT
-AS
-BEGIN
-    DECLARE @PotSize INT;
-    SELECT @PotSize = PotSize FROM Games WHERE GameId = @GameId;
-    
-    BEGIN TRANSACTION;
-    
-    -- Update game
-    UPDATE Games
-    SET EndTime = GETDATE(),
-        CurrentState = 'Completed',
-        WinnerId = @WinnerId
-    WHERE GameId = @GameId;
-    
-    -- Add chips to winner
-    UPDATE Users
-    SET ChipsBalance = ChipsBalance + @PotSize
-    WHERE UserId = @WinnerId;
-    
-    -- Log transaction
-    INSERT INTO ChipTransactions (UserId, Amount, TransactionType, ReferenceId, Description)
-    VALUES (@WinnerId, @PotSize, 'GameWin', @GameId, 'Winnings from game');
-    
-    COMMIT TRANSACTION;
-END;
-GO
-
 -- Populate Cards Table
-INSERT INTO Cards (Suit, Value) VALUES 
-('Hearts', '2'), ('Hearts', '3'), ('Hearts', '4'), ('Hearts', '5'), ('Hearts', '6'),
-('Hearts', '7'), ('Hearts', '8'), ('Hearts', '9'), ('Hearts', '10'), ('Hearts', 'J'),
-('Hearts', 'Q'), ('Hearts', 'K'), ('Hearts', 'A'),
-('Diamonds', '2'), ('Diamonds', '3'), ('Diamonds', '4'), ('Diamonds', '5'), ('Diamonds', '6'),
-('Diamonds', '7'), ('Diamonds', '8'), ('Diamonds', '9'), ('Diamonds', '10'), ('Diamonds', 'J'),
-('Diamonds', 'Q'), ('Diamonds', 'K'), ('Diamonds', 'A'),
-('Clubs', '2'), ('Clubs', '3'), ('Clubs', '4'), ('Clubs', '5'), ('Clubs', '6'),
-('Clubs', '7'), ('Clubs', '8'), ('Clubs', '9'), ('Clubs', '10'), ('Clubs', 'J'),
-('Clubs', 'Q'), ('Clubs', 'K'), ('Clubs', 'A'),
-('Spades', '2'), ('Spades', '3'), ('Spades', '4'), ('Spades', '5'), ('Spades', '6'),
-('Spades', '7'), ('Spades', '8'), ('Spades', '9'), ('Spades', '10'), ('Spades', 'J'),
-('Spades', 'Q'), ('Spades', 'K'), ('Spades', 'A');
+INSERT INTO Cards (Suit, Value) VALUES
+('Hearts', '2'), ('Hearts', '3'), ('Hearts', '4'), ('Hearts', '5'), ('Hearts', '6'), ('Hearts', '7'), ('Hearts', '8'), ('Hearts', '9'), ('Hearts', '10'), ('Hearts', 'J'), ('Hearts', 'Q'), ('Hearts', 'K'), ('Hearts', 'A'),
+('Diamonds', '2'), ('Diamonds', '3'), ('Diamonds', '4'), ('Diamonds', '5'), ('Diamonds', '6'), ('Diamonds', '7'), ('Diamonds', '8'), ('Diamonds', '9'), ('Diamonds', '10'), ('Diamonds', 'J'), ('Diamonds', 'Q'), ('Diamonds', 'K'), ('Diamonds', 'A'),
+('Clubs', '2'), ('Clubs', '3'), ('Clubs', '4'), ('Clubs', '5'), ('Clubs', '6'), ('Clubs', '7'), ('Clubs', '8'), ('Clubs', '9'), ('Clubs', '10'), ('Clubs', 'J'), ('Clubs', 'Q'), ('Clubs', 'K'), ('Clubs', 'A'),
+('Spades', '2'), ('Spades', '3'), ('Spades', '4'), ('Spades', '5'), ('Spades', '6'), ('Spades', '7'), ('Spades', '8'), ('Spades', '9'), ('Spades', '10'), ('Spades', 'J'), ('Spades', 'Q'), ('Spades', 'K'), ('Spades', 'A');
+GO
 
 -- Populate PokerTables Table
-INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive) VALUES 
-('Beginner Table', 100, 500, 1000, 10, 20, 9, 'Beginner', 1),
-('Intermediate Table', 500, 1000, 5000, 50, 100, 9, 'Intermediate', 1),
-('Pro Table', 1000, 5000, 10000, 100, 200, 9, 'Pro', 1);
+INSERT INTO PokerTables (Name, EntryFee, MinBuyIn, MaxBuyIn, SmallBlind, BigBlind, MaxPlayers, DifficultyLevel, IsActive) VALUES
+('Beginner Table', 100, 500, 1000, 10, 20, 4, 'Beginner', 1),
+('Intermediate Table', 500, 1000, 5000, 50, 100, 4, 'Intermediate', 1),
+('Pro Table', 1000, 5000, 10000, 100, 200, 4, 'Pro', 1);
+GO
 
 -- Populate ShopItems Table
 INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) VALUES 
 ('Basic Chips Pack', 'Get 1000 chips.', 4.99, 'Chips', 1, 'PLN'),
 ('Premium Chips Pack', 'Get 5000 chips.', 19.99, 'Chips', 1, 'PLN'),
 ('Golden Avatar', 'Unlock a golden avatar.', 9.99, 'Avatar', 1, 'PLN'),
-('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1, 'CHIPS');
+('Luxury Card Deck', 'Upgrade your card deck to a luxury theme.', 14.99, 'CardDeck', 1, 'CHIPS'),
+('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 1, 'PLN'),
+('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 1, 'PLN'),
+('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 1, 'CHIPS');
 
+INSERT INTO Models (Name, Path, Difficulty) VALUES
+('First', 'dqn_model.onnx', 'Easy');
 
-INSERT INTO ShopItems (Name, Description, Price, ItemType, Currency, IsActive) VALUES 
-('Premium', 'Unlock a premium avatar for your profile.', 9.99, 'Avatar', 'PLN', 1),
-('Pro', 'Unlock a pro avatar for your profile.', 14.99, 'Avatar', 'PLN', 1),
-('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 'CHIPS', 1);
+INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
+('Bot_Adam', 'email1', 'password', 2147483647, 1),
+('Bot_Michal', 'email2', 'password', 2147483647, 1),
+('Bot_Eva', 'email3', 'password', 2147483647, 1);
+
+INSERT INTO UserModels (UserId, ModelId) VALUES
+(1,1),
+(2,1),
+(3,1);

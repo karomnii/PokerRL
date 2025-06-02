@@ -10,6 +10,5 @@ namespace TexasHoldemPoker.API.Repositories
         Task<IEnumerable<Card>> GetPlayerCardsByGamePlayerIdAsync(int gamePlayerId);
         Task<bool> DealCommunityCardAsync(int gameId, int cardId, int position);
         Task<bool> DealPlayerCardAsync(int gamePlayerId, int cardId, int position);
-        Task<bool> ClearGameCardsAsync(int gameId);
     }
 }

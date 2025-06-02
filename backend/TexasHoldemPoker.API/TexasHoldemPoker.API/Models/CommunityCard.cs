@@ -1,17 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TexasHoldemPoker.API.Models
+namespace TexasHoldemPoker.API.Models;
+
+public partial class CommunityCard
 {
-    public class CommunityCard
-    {
-        [Key]
-        public int CommunityCardId { get; set; }
-        public int GameId { get; set; }
-        public int CardId { get; set; }
-        public int Position { get; set; }
+    public int CommunityCardId { get; set; }
 
-        // Navigation properties
-        public Game Game { get; set; }
-        public Card Card { get; set; }
-    }
+    public int GameRoundId { get; set; }
+
+    public int CardId { get; set; }
+
+    public int Position { get; set; }
+
+    public virtual Card Card { get; set; } = null!;
+
+    public virtual GameRound GameRound { get; set; } = null!;
 }

@@ -4,8 +4,6 @@ namespace TexasHoldemPoker.API.DTOs
 {
     public class CreateGameDto
     {
-        [Required]
-        public int TableId { get; set; }
+        [Required] public int TableId { get; set; }
     }
-
 }

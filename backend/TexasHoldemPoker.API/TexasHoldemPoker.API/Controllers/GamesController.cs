@@ -28,10 +28,18 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Game>>> GetActiveGames()
+        public async Task<ActionResult<IEnumerable<ActiveGameDto>>> GetActiveGames()
         {
             var games = await _gameRepository.GetActiveGamesAsync();
-            return Ok(games);
+
+            var gameDtos = games.Select(game => new ActiveGameDto
+            {
+                GameId = game.GameId,
+                TableName = game.Table.Name,
+                TableDifficulty = game.Table.DifficultyLevel ?? "Unknown"
+            });
+
+            return Ok(gameDtos);
         }
 
         [HttpGet("{id}")]

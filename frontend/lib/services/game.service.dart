@@ -21,7 +21,7 @@ class GameService extends GetxService {
     return this;
   }
 
-  Future<List<Game>> getGames() async {
+  Future<List<ActiveGameDto>> getGames() async {
     final response = await _api.apiGamesGet();
 
     if (response.isSuccessful) {
@@ -33,7 +33,7 @@ class GameService extends GetxService {
     }
   }
 
-  Future<Game> createGame(CreateGameDto body) async {
+  Future<ActiveGameDto> createGame(CreateGameDto body) async {
     final response = await _api.apiGamesPost(body: body);
 
     if (response.isSuccessful) {

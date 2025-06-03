@@ -182,10 +182,8 @@ class GamesPageView extends GetView<GamesPageController> {
                                             ascending;
 
                                         controller.games.sort((a, b) {
-                                          final aDiff =
-                                              a.table?.difficultyLevel ?? '';
-                                          final bDiff =
-                                              b.table?.difficultyLevel ?? '';
+                                          final aDiff = a.tableDifficulty ?? '';
+                                          final bDiff = b.tableDifficulty ?? '';
                                           return ascending
                                               ? aDiff.compareTo(bDiff)
                                               : bDiff.compareTo(aDiff);
@@ -196,21 +194,19 @@ class GamesPageView extends GetView<GamesPageController> {
                                     const DataColumn(label: Text('')),
                                   ],
                                   rows: controller.games.map((game) {
-                                    final ownerName = game.gamePlayers
-                                            ?.firstWhereOrNull(
-                                                (gp) => gp.isActive ?? false)
-                                            ?.user
-                                            ?.username ??
-                                        'Unknown';
+                                    // final ownerName = game.gamePlayers
+                                    //         ?.firstWhereOrNull(
+                                    //             (gp) => gp.isActive ?? false)
+                                    //         ?.user
+                                    //         ?.username ??
+                                    //     'Unknown';
 
                                     return DataRow(cells: [
                                       DataCell(Text(game.gameId.toString())),
-                                      DataCell(Text(ownerName)),
+                                      DataCell(Text('')),
                                       DataCell(Text(
-                                          game.table?.difficultyLevel ??
-                                              'Unknown')),
-                                      DataCell(Text(
-                                          '${game.gamePlayers?.length ?? 0}/4')),
+                                          game.tableDifficulty ?? 'Unknown')),
+                                      DataCell(Text('0/4')),
                                       DataCell(
                                         FilledButton.icon(
                                           icon: const Icon(

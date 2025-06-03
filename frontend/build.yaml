@@ -7,3 +7,10 @@ targets:
           output_folder: 'lib/api'
           separate_models: true
           enums_case_sensitive: true
+          default_values_map:
+            - type_name: string
+              default_value: ''
+            - type_name: int
+              default_value: '0'
+            - type_name: bool
+              default_value: 'false'

@@ -47,9 +47,6 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<UserModel> UserModels { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:DefaultConnection");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Card>(entity =>
@@ -203,7 +200,8 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<PlayerCard>(entity =>
         {
-            entity.HasIndex(e => new { e.GameRoundId, e.GamePlayerId, e.Position }, "UQ_PlayerCards_GamePlayerPosition").IsUnique();
+            entity.HasIndex(e => new { e.GameRoundId, e.GamePlayerId, e.Position }, "UQ_PlayerCards_GamePlayerPosition")
+                .IsUnique();
 
             entity.HasOne(d => d.Card).WithMany(p => p.PlayerCards)
                 .HasForeignKey(d => d.CardId)
@@ -312,70 +310,4 @@ public partial class ApplicationDbContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
-
-    private void SeedCards(ModelBuilder modelBuilder)
-    {
-        var cards = new List<Card>();
-        int id = 1;
-        foreach (var suit in new[] { "Hearts", "Diamonds", "Clubs", "Spades" })
-        {
-            foreach (var value in new[] { "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" })
-            {
-                cards.Add(new Card { CardId = id++, Suit = suit, Value = value });
-            }
-        }
-
-        modelBuilder.Entity<Card>().HasData(cards);
-    }
-
-    private void SeedPokerTables(ModelBuilder modelBuilder)
-    {
-        var pokerTables = new List<PokerTable>
-        {
-            new PokerTable
-            {
-                TableId = 1, Name = "Beginner Table", EntryFee = 100, MinBuyIn = 500, MaxBuyIn = 1000,
-                SmallBlind = 10, BigBlind = 20, MaxPlayers = 9, DifficultyLevel = "Beginner", IsActive = true
-            },
-            new PokerTable
-            {
-                TableId = 2, Name = "Intermediate Table", EntryFee = 500, MinBuyIn = 1000, MaxBuyIn = 5000,
-                SmallBlind = 50, BigBlind = 100, MaxPlayers = 9, DifficultyLevel = "Intermediate", IsActive = true
-            },
-            new PokerTable
-            {
-                TableId = 3, Name = "Pro Table", EntryFee = 1000, MinBuyIn = 5000, MaxBuyIn = 10000,
-                SmallBlind = 100, BigBlind = 200, MaxPlayers = 9, DifficultyLevel = "Pro", IsActive = true
-            }
-        };
-        modelBuilder.Entity<PokerTable>().HasData(pokerTables);
-    }
-
-    private void SeedShopItems(ModelBuilder modelBuilder)
-    {
-        var shopItems = new List<ShopItem>
-        {
-            new ShopItem
-            {
-                ItemId = 1, Name = "Basic Chips Pack", Description = "Get 1000 chips.", Price = 4.99m,
-                ItemType = "Chips", IsActive = true
-            },
-            new ShopItem
-            {
-                ItemId = 2, Name = "Premium Chips Pack", Description = "Get 5000 chips.", Price = 19.99m,
-                ItemType = "Chips", IsActive = true
-            },
-            new ShopItem
-            {
-                ItemId = 3, Name = "Golden Avatar", Description = "Unlock a golden avatar.", Price = 9.99m,
-                ItemType = "Avatar", IsActive = true
-            },
-            new ShopItem
-            {
-                ItemId = 4, Name = "Luxury Card Deck", Description = "Upgrade your card deck to a luxury theme.",
-                Price = 14.99m, ItemType = "CardDeck", IsActive = true
-            }
-        };
-        modelBuilder.Entity<ShopItem>().HasData(shopItems);
-    }
 }

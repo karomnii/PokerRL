@@ -95,4 +95,17 @@ class GameService extends GetxService {
       throw Exception(error);
     }
   }
+
+  Future<void> leaveGame(int gameId, int userId) async {
+    final response =
+        await _api.apiGamesIdLeaveUserIdPost(id: gameId, userId: userId);
+
+    if (response.isSuccessful) {
+      return;
+    } else {
+      final error = 'Failed to leave game: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
 }

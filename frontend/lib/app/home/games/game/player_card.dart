@@ -11,16 +11,24 @@ class PlayerCard extends StatelessWidget {
     super.key,
     this.player,
     this.joinGame,
+    this.addBot,
+    this.fetchBots,
+    required this.buyIn,
     required this.seatId,
+    required this.gameId,
     required this.currentPlayerId,
     required this.showHaveCards,
   });
 
   final api.PlayerStateDto? player;
   final int seatId;
+  final int gameId;
   final int currentPlayerId;
+  final int buyIn;
 
   final VoidCallback? joinGame;
+  final Future<void> Function(int, int, api.JoinGameDto)? addBot;
+  final Future<List<api.AgentDto>> Function()? fetchBots;
 
   final bool showHaveCards;
 
@@ -30,12 +38,108 @@ class PlayerCard extends StatelessWidget {
       return PageCard(
         title: 'Seat $seatId',
         child: Center(
-          child: ElevatedButton(
-            onPressed: joinGame,
-            child: Icon(
-              Icons.play_arrow_sharp,
-              size: 50,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
+            children: [
+              ElevatedButton(
+                onPressed: joinGame,
+                child: Icon(
+                  Icons.play_arrow_sharp,
+                  size: 50,
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final bots = await fetchBots!();
+
+                  final selectedBot = await showDialog<api.AgentDto>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Wybierz bota'),
+                        content: SizedBox(
+                          width: 500,
+                          height: 500,
+                          child: Column(
+                            children: [
+                              // Nagłówek kolumn
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                child: Row(
+                                  children: const [
+                                    Expanded(
+                                      child: Text(
+                                        'Username',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        'Name',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Divider(height: 1),
+                              Expanded(
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: bots.length,
+                                  itemBuilder: (context, index) {
+                                    final bot = bots[index];
+                                    return InkWell(
+                                      onTap: () => Navigator.pop(context, bot),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 12),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(bot.username ?? ''),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                bot.name ?? '',
+                                                textAlign: TextAlign.right,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+
+                  if (selectedBot != null) {
+                    addBot?.call(
+                        gameId,
+                        selectedBot.userId!,
+                        api.JoinGameDto(
+                          buyInAmount: buyIn,
+                          seatPosition: seatId,
+                        ));
+                  }
+                },
+                child: const Icon(
+                  Icons.smart_toy_sharp,
+                  size: 50,
+                ),
+              ),
+            ],
           ),
         ),
       );

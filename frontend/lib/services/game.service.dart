@@ -108,4 +108,29 @@ class GameService extends GetxService {
       throw Exception(error);
     }
   }
+
+  Future<List<AgentDto>> getBots(int gameId) async {
+    final response = await _api.apiGamesIdAiAgentsGet(id: gameId);
+
+    if (response.isSuccessful) {
+      return response.body ?? [];
+    } else {
+      final error = 'Failed to fetch bots: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
+
+  Future<void> addBot(int gameId, int agentId, JoinGameDto body) async {
+    final response = await _api.apiGamesIdAddAgentIdPost(
+        id: gameId, agentId: agentId, body: body);
+
+    if (response.isSuccessful) {
+      return response.body ?? [];
+    } else {
+      final error = 'Failed to fetch bots: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
 }

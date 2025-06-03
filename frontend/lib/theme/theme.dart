@@ -163,6 +163,21 @@ class AppTheme {
             ),
           ),
         ),
+        dialogTheme: const DialogTheme(
+          backgroundColor: Color(0xFF131212),
+          titleTextStyle: TextStyle(
+            color: Color.fromARGB(255, 255, 242, 242),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+          contentTextStyle: TextStyle(
+            color: Color.fromARGB(255, 255, 242, 242),
+            fontSize: 16,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+        ),
         extensions: const <ThemeExtension<dynamic>>[
           AppCustomTheme(
               backgroundImageAsset: "background_gold_and_silver_dimmed2.png"),

@@ -49,7 +49,7 @@ public class Program
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        builder.Services.AddScoped<IAiAgentService, AiAgentService>();
+        builder.Services.AddSingleton<IAiAgentService, AiAgentService>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ProfileAvatarHelper>();
 

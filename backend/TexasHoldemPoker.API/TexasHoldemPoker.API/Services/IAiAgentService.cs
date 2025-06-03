@@ -5,7 +5,7 @@ namespace TexasHoldemPoker.API.Services
 {
     public interface IAiAgentService
     {
-        Task<float[]> PredictActionAsync(float[] gameState);
-        Task<MoveDto> GetBestActionAsync(GameStateDto gameState);
+        Task<float[]> PredictActionAsync(float[] gameState, string modelId);
+        Task<MoveDto> GetBestActionAsync(GameStateDto gameState, string modelId);
     }
 }

@@ -1233,9 +1233,11 @@ namespace TexasHoldemPoker.API.Services
 
             var userId = game.CurrentTurnPlayer.UserId;
 
+            var model = await userModelRepository.GetModelByUserAsync(userId);
+
             GameStateDto gameState = await GetGameStateAsync(gameId, userId);
 
-            MoveDto move = await aiAgentService.GetBestActionAsync(gameState);
+            MoveDto move = await aiAgentService.GetBestActionAsync(gameState, model.ModelId.ToString());
 
             var result = await PlaceBetAsync(gameId, userId, move.ActionType, move.Amount);
 

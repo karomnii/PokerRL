@@ -106,7 +106,7 @@ public class Program
             {
                 policy.AllowAnyHeader()
                     .AllowAnyMethod()
-                    .WithOrigins("http://localhost:3000") // Replace with your Flutter web app URL
+                    .WithOrigins("http://localhost:8000") // Replace with your Flutter web app URL
                     .AllowCredentials();
             });
         });

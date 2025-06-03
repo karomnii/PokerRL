@@ -1237,6 +1237,9 @@ namespace TexasHoldemPoker.API.Services
 
             MoveDto move = await aiAgentService.GetBestActionAsync(gameState);
 
+            await Task.Delay(3000);
+
+
             var result = await PlaceBetAsync(gameId, userId, move.ActionType, move.Amount);
 
             if (!result)
@@ -1246,7 +1249,6 @@ namespace TexasHoldemPoker.API.Services
                 await PlaceBetAsync(gameId, userId, "Fold", 0);
             }
             Console.WriteLine($"Agent {userId} made a move {move.ActionType} with amount {move.Amount} in game {gameId}.");
-
             return result;
         }
 

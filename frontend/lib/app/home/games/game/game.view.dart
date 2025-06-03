@@ -250,6 +250,28 @@ class GamePageView extends GetView<GamePageController> {
                         ),
                       ],
               ),
+              SizedBox(
+                height: 50,
+              ),
+              PageRow(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (!controller.isGameWaiting)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        if (controller.isGameOver) {
+                          await controller.leaveGame();
+                          Get.back();
+                        } else {
+                          Get.snackbar(
+                              'Error', "You can't leave during the game!");
+                        }
+                      },
+                      label: Text('Exit'),
+                      icon: Icon(Icons.exit_to_app),
+                    ),
+                ],
+              ),
             ],
           ),
         );

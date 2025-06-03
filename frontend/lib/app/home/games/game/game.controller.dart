@@ -15,6 +15,8 @@ class GamePageController extends GetxController {
   // Spin-bar tylko przy pierwszym wczytaniu
   final RxBool isInitialLoading = false.obs;
 
+  bool get isGameOver => gameState.value.currentState == 'Completed';
+  bool get isGameWaiting => gameState.value.currentState == 'Waiting';
   // Dyskretny „refresh” – np. do pull-to-refresh albo ikonki odświeżania
   final RxBool isRefreshing = false.obs;
 
@@ -96,6 +98,14 @@ class GamePageController extends GetxController {
       await GameService.to.makeMove(
           gameState.value.gameId!, AuthService.to.userId!, actionType, amount);
       await getGame();
+    } finally {}
+  }
+
+  Future<void> leaveGame() async {
+    try {
+      final gameId = gameState.value.gameId!;
+      final userId = AuthService.to.userId!;
+      await GameService.to.leaveGame(gameId, userId);
     } finally {}
   }
 

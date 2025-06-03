@@ -53,6 +53,10 @@ class GamePageView extends GetView<GamePageController> {
                   children: [
                     Expanded(
                         child: PlayerCard(
+                      gameId: controller.gameState.value.gameId ?? 0,
+                      buyIn: controller.buyIn,
+                      addBot: controller.addBot,
+                      fetchBots: controller.getBots,
                       currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       seatId: 1,
@@ -65,6 +69,10 @@ class GamePageView extends GetView<GamePageController> {
                     )),
                     Expanded(
                         child: PlayerCard(
+                      gameId: controller.gameState.value.gameId ?? 0,
+                      buyIn: controller.buyIn,
+                      addBot: controller.addBot,
+                      fetchBots: controller.getBots,
                       currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players
@@ -82,6 +90,10 @@ class GamePageView extends GetView<GamePageController> {
                   children: [
                     Expanded(
                         child: PlayerCard(
+                      gameId: controller.gameState.value.gameId ?? 0,
+                      buyIn: controller.buyIn,
+                      addBot: controller.addBot,
+                      fetchBots: controller.getBots,
                       currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players
@@ -94,6 +106,10 @@ class GamePageView extends GetView<GamePageController> {
                     )),
                     Expanded(
                         child: PlayerCard(
+                      gameId: controller.gameState.value.gameId ?? 0,
+                      buyIn: controller.buyIn,
+                      addBot: controller.addBot,
+                      fetchBots: controller.getBots,
                       currentPlayerId:
                           controller.gameState.value.currentTurnUserId ?? 0,
                       player: controller.gameState.value.players

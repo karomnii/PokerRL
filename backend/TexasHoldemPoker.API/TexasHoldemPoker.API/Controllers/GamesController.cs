@@ -68,10 +68,16 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Game>> CreateGame(CreateGameDto createDto)
+        public async Task<ActionResult<ActiveGameDto>> CreateGame(CreateGameDto createDto)
         {
             var game = await _gameService.CreateGameAsync(createDto.TableId);
-            return CreatedAtAction(nameof(GetGame), new { id = game.GameId }, game);
+            var gameDto = new ActiveGameDto
+            {
+                GameId = game.GameId,
+                TableName = "None",
+                TableDifficulty = "None"
+            };
+            return CreatedAtAction(nameof(GetGame), new { id = game.GameId }, gameDto);
         }
 
         [HttpPost("{id}/join")]

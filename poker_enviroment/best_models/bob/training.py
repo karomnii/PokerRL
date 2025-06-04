@@ -3,44 +3,35 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from sympy.physics.units import action
 
 from torch.utils.tensorboard import SummaryWriter
-
-from agents.aggresive_agent import AggressiveAgent
-from agents.pseudo_inteligent_agent import PseudoIntelligent
 from agents.random_agent import RandomAgent
 from game.poker_game import Action, PokerGame
 from enviroment.poker_env import PokerEnv
-from impoved_dqn_agent import DQNAgent
+from dqn_agent import DQNAgent
 
 class PokerTrainer:
     def __init__(self):
-        self.update_grace_period = 5000
         self.num_episodes = 500_000
-        self.update_target_every = 50
-        self.save_every = 10_000
+        self.update_target_every = 5
+        self.save_every = 5000
         self.print_stats_every = 50
         self.window_size = 100
         self.total_earnings = 0
+        self.frequent_update_threshold = 5000
 
         self.episode_losses = []
         self.episode_rewards = []
-        self.episode_earnings = []
-        self.episode_epsilon = []
-        self.episode_actions = []
         self.win_history = []
         self.earnings_history = []
         self.moving_avg_loss = []
         self.moving_avg_reward = []
-        self.moving_avg_earnings = []
-        self.moving_avg_actions = []
-
+        
         self.writer = SummaryWriter()
         
         self.dqn_agent = DQNAgent(player_id=0)
 
-        self.agents = [self.dqn_agent] + [RandomAgent(), PseudoIntelligent(), AggressiveAgent()]
+        self.agents = [self.dqn_agent] + [RandomAgent() for _ in range(3)]
 
         # self.agents = [self.dqn_agent] + [DQNAgent(player_id=i+1) for i in range(2)] + [RandomAgent()]
         #
@@ -49,7 +40,7 @@ class PokerTrainer:
         # self.agents[1].epsilon=0
         # self.agents[2].model.load_state_dict(torch.load('./models/2025-04-19_13-11-31-302/dqn_model.pth'))
         # self.agents[2].epsilon=0
-        # self.num_episodes += 1
+        self.num_episodes += 1
         
 
 
@@ -87,33 +78,36 @@ class PokerTrainer:
     def _calculate_reward(self, env, dqn_player_id, folded):
         net_chips = env.game.get_chip_earning_data()[dqn_player_id]
         self.total_earnings+=net_chips
-        scale_factor = env.game.big_blind * 20
-        fold_bonus: float = 0.3
-        fold_penalty: float = -0.3
-        chip_reward = np.clip(net_chips / scale_factor, -1.0, 1.0)
+        scale_factor = env.game.big_blind * 20  # Normalize by 10x BB
 
-        if folded:
-            if abs(net_chips) < scale_factor:
-                would_have_won = self._would_have_won(env, dqn_player_id)
-                if would_have_won:
-                    return fold_penalty
-                else:
-                    return 0
-        return chip_reward
+        if not folded:
+            # Showdown: reward = scaled net chips
+            return np.clip(net_chips / scale_factor, -1.0, 1.0)
+        else:
+            # Agent folded. Check if it was a dumb or smart fold.
+            # Use our newly implemented _would_have_won to see if the agent
+            # would have had the best hand if it had stayed in.
+            would_have_won = self._would_have_won(env, dqn_player_id)
+            if would_have_won:
+                # Dumb fold: you had a winning hand but folded.
+                return np.clip((net_chips / scale_factor)-0.1, -1.0, 1.0)
+            else:
+                # Smart fold: zero or minimal penalty
+                return 0.05
 
 
-
-    def _assign_rewards(self, transitions, final_reward, gamma=0.95):
+    def _assign_rewards(self, transitions, final_reward, gamma=0.99):
         """
         N-step / Monte Carlo style with discounting: 
         The last action sees final_reward, the step before sees gamma * final_reward, etc.
         """
         transitions_with_rewards = []
-        cumulative = final_reward
+        cumulative = 0.0
         # Start from the last step, moving backwards
         for transition in reversed(transitions):
             # The last step sees final_reward, 
             # earlier steps get successively discounted
+            cumulative = final_reward + gamma * cumulative
             # Build a new dict so as not to mutate the original
             transition_with_reward = {
                 'state': transition['state'],
@@ -123,8 +117,6 @@ class PokerTrainer:
                 'reward': cumulative
             }
             transitions_with_rewards.append(transition_with_reward)
-            cumulative *= gamma
-
         # Reverse back to chronological order
         transitions_with_rewards.reverse()
         return transitions_with_rewards
@@ -134,8 +126,9 @@ class PokerTrainer:
         env = PokerEnv(self.agents)
         env.reset()
         episode_transitions = []
+        episode_reward = 0
         dqn_player_id = self.dqn_agent.player_id
-
+        
         folded = False  # Track if the DQN agent ended up folding
         
         while not env.game.chip_data_flag:
@@ -163,6 +156,7 @@ class PokerTrainer:
         # --------------------------------------------
         # Once hand is over, calculate the final reward
         final_reward = self._calculate_reward(env, dqn_player_id, folded)
+        episode_reward = final_reward
         # Now assign that final_reward to the last transition only
         transitions_with_rewards = self._assign_rewards(episode_transitions, final_reward)
         
@@ -186,24 +180,22 @@ class PokerTrainer:
             won = True
 
         
-        return won, final_reward, len(episode_transitions),env.game.get_chip_earning_data()[dqn_player_id]
+        return won, episode_reward, len(episode_transitions),env.game.get_chip_earning_data()[dqn_player_id]
 
     
 
     def train(self):
         for episode in range(self.num_episodes):
             won, episode_reward, num_actions, net_chips = self.run_episode()
-
+            
             loss = self.dqn_agent.update_model()
             
             if loss is not None:
                 self.episode_losses.append(loss)
                 self.episode_rewards.append(episode_reward)
-                self.episode_earnings.append(net_chips)
-                self.episode_epsilon.append(self.dqn_agent.epsilon)
-                self.episode_actions.append(num_actions)
                 self.win_history.append(won)
-
+                self.earnings_history.append(net_chips)
+                
                 if len(self.episode_losses) >= self.window_size:
                     self.moving_avg_loss.append(
                         sum(self.episode_losses[-self.window_size:])/self.window_size
@@ -211,33 +203,32 @@ class PokerTrainer:
                     self.moving_avg_reward.append(
                         sum(self.episode_rewards[-self.window_size:])/self.window_size
                     )
-                    self.moving_avg_earnings.append(
-                        sum(self.episode_earnings[-self.window_size:])/self.window_size
-                    )
-                    self.moving_avg_actions.append(
-                        sum(self.episode_actions[-self.window_size:]) / self.window_size
-                    )
-
-            if episode > self.update_grace_period:
-                if episode % self.save_every == 0 and episode > 0:
-                    self.dqn_agent.save_model()
+            
+            if (episode % self.update_target_every == 0 and episode > 0 ) or episode < self.frequent_update_threshold :
+                self.dqn_agent.update_target_network()
+            
+            if episode % self.save_every == 0 and episode > 0:
+                self.dqn_agent.save_model()
             
             if loss is not None:
                 self.writer.add_scalar('Loss/train', loss, episode)
                 self.writer.add_scalar('Reward/episode', episode_reward, episode)
+                self.writer.add_scalar('Wins/outcome', int(won), episode)
                 self.writer.add_scalar('Exploration/epsilon', self.dqn_agent.epsilon, episode)
             
             if episode % self.print_stats_every == 0 and episode > 0:
                 recent_wins = sum(self.win_history[-self.print_stats_every:])
-                recent_earnings = sum(self.episode_earnings[-self.print_stats_every:])
+                recent_earnings = sum(self.earnings_history)
+                self.earnings_history=[]
                 avg_loss = sum(self.episode_losses[-self.print_stats_every:]) / self.print_stats_every
                 avg_reward = sum(self.episode_rewards[-self.print_stats_every:]) / self.print_stats_every
                 
                 print(f"Episode {episode}/{self.num_episodes} | "
                       f"Avg Loss: {avg_loss:.4f} | "
                       f"Avg Reward: {avg_reward:.2f} | "
+                      f"Wins: {recent_wins}/{self.print_stats_every} | "
                       f"Epsilon: {self.dqn_agent.epsilon:.3f} | "
-                      f"Actions: {sum(self.episode_actions[-self.window_size:]) / self.window_size} | "
+                      f"Actions: {num_actions} | "
                       f"AVG Net Chips: {recent_earnings/self.print_stats_every} | ")
         
         self._final_report()
@@ -257,57 +248,35 @@ class PokerTrainer:
         print(f"Average Reward: {avg_reward:.2f}")
         print(f"Total earnings: {self.total_earnings}")
         print(f"Avrage earnings: {self.total_earnings/self.num_episodes}")
-
-        plt.figure(figsize=(18, 10))  # Larger figure to fit 6 plots
-
-        plt.subplot(2, 3, 1)
+        
+        plt.figure(figsize=(15, 5))
+        plt.subplot(1, 3, 1)
         plt.title('Training Loss')
         plt.plot(self.episode_losses, label='Loss')
-        plt.legend()
-
-        plt.subplot(2, 3, 2)
-        plt.title('Moving Avg Loss')
         if self.moving_avg_loss:
             plt.plot(
-                range(self.window_size - 1, len(self.moving_avg_loss) + self.window_size - 1),
+                range(self.window_size-1, len(self.moving_avg_loss)+self.window_size-1), 
                 self.moving_avg_loss, label='Moving Avg'
             )
-            plt.legend()
-
-        plt.subplot(2, 3, 3)
-        plt.title('Episode Epsilon')
-        plt.plot(self.episode_epsilon, label='Epsilon')
         plt.legend()
-
-        plt.subplot(2, 3, 4)
-        plt.title('Moving Avg Reward')
+        
+        plt.subplot(1, 3, 2)
+        plt.title('Episode Rewards')
+        plt.plot(self.episode_rewards, label='Reward')
         if self.moving_avg_reward:
             plt.plot(
-                range(self.window_size - 1, len(self.moving_avg_reward) + self.window_size - 1),
+                range(self.window_size-1, len(self.moving_avg_reward)+self.window_size-1),
                 self.moving_avg_reward, label='Moving Avg'
             )
-            plt.legend()
-
-        plt.subplot(2, 3, 5)
-        plt.title('Actions')
-        plt.plot(
-            range(self.window_size - 1, len(self.moving_avg_actions) + self.window_size - 1),
-            self.moving_avg_actions, label='Moving Actions Avg'
-        )
-
-        plt.subplot(2, 3, 6)
-        plt.title('Moving Avg Net Chips')
-        if self.moving_avg_earnings:
-            plt.plot(
-                range(self.window_size - 1, len(self.moving_avg_earnings) + self.window_size - 1),
-                self.moving_avg_earnings, label='Moving Chip Avg'
-            )
-            plt.legend()
-
+        plt.legend()
+        
+        plt.subplot(1, 3, 3)
+        plt.title('Win Rate (Rolling 100)')
+        rolling_win = [sum(self.win_history[i:i+100]) for i in range(len(self.win_history))]
+        plt.plot(rolling_win)
         plt.tight_layout()
         plt.savefig('training_results.png')
         plt.close()
-
 
 if __name__ == "__main__":
     trainer = PokerTrainer()

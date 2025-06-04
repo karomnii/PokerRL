@@ -1,5 +1,3 @@
-from collections import deque
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -65,10 +63,9 @@ class DQNAgent(IAgent):
     def __init__(self,
                  player_id=0,
                  gamma=0.99,
-                 epsilon_start=1,
-                 epsilon_end=0.2,
-                 epsilon_decay=0.99999):
-
+                 epsilon_start=1.0,
+                 epsilon_end=0.05,
+                 epsilon_decay=0.9999):
         super().__init__()
         self.player_id = player_id
 
@@ -78,7 +75,7 @@ class DQNAgent(IAgent):
         self.target_model.load_state_dict(self.model.state_dict())
 
         # Optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4, betas=(0.8, 0.999))
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-4)
 
         # Hyperparameters
         self.gamma = gamma
@@ -87,9 +84,8 @@ class DQNAgent(IAgent):
         self.epsilon_decay = epsilon_decay
 
         # Replay buffer and related
-        self.replay_buffer = deque(maxlen=100_000)
-        self.batch_size = 128
-        self.min_buffer_size = 1000
+        self.replay_buffer = []
+        self.batch_size = 64
 
         # For tracking training
         self.loss_history = []
@@ -101,11 +97,13 @@ class DQNAgent(IAgent):
 
         If the community has fewer than 5 cards, the remainder are zero-padded.
         """
-        hand = observation['hand']
-        community = observation['community_cards']
+        hand = observation['hand']            # up to 2 cards
+        community = observation['community_cards']  # up to 5 cards
         all_cards = hand + community
 
         # If there are fewer than 7 total cards, pad with zeros
+        # If there are more than 7 for some reason (extreme game variation),
+        # we'll just take the first 7. (Typically not needed for Texas Hold'em)
         max_cards = 7
 
         card_vectors = []
@@ -161,7 +159,8 @@ class DQNAgent(IAgent):
 
         Returns: The loss value (float) if an update happened, otherwise None.
         """
-        if len(self.replay_buffer) < self.min_buffer_size:
+
+        if len(self.replay_buffer) < self.batch_size:
             return None
 
         batch = random.sample(self.replay_buffer, self.batch_size)
@@ -190,7 +189,7 @@ class DQNAgent(IAgent):
 
         self.optimizer.zero_grad()
         loss.backward()
-        #torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         self.optimizer.step()
 
         # Epsilon decay
@@ -217,10 +216,10 @@ class DQNAgent(IAgent):
         try:
             os.makedirs(folder, exist_ok=True)
             filepath = os.path.join(folder, path)
-            torch.save(self.target_model.state_dict(), filepath)
+            torch.save(self.model.state_dict(), filepath)
             print(f"Model saved to {filepath}")
         except OSError as e:
             print(f"Error saving model to {folder}: {e}")
             # Fall back to saving directly as path
-            torch.save(self.target_model.state_dict(), path)
+            torch.save(self.model.state_dict(), path)
             print(f"Model saved to {path}")

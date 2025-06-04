@@ -29,7 +29,7 @@ def encode_card(card: int) -> torch.Tensor:
 class ImprovedDQN(nn.Module):
     def __init__(
         self,
-        input_dim=119+13+13,#119 for cards, 13 for chips, 13 for pot
+        input_dim=119+17*4+20+3,#119 for cards, 17 for chips for 4 players, 20 for pot
         hidden_layers=[256, 256, 128, 128, 64],
         output_dim=3
     ):
@@ -122,11 +122,18 @@ class DQNAgent(IAgent):
         pot = int(observation['pot'])
         chips = int(observation['chips'])
 
-        pot_tensor = self.int_to_binary_tensor(pot, 13)  # 13-bit
-        chips_tensor = self.int_to_binary_tensor(chips, 13)  # 13-bit
+        chips_tensor = self.int_to_binary_tensor(chips, 17)  # 17-bit
+        chips_tensor1 = self.int_to_binary_tensor(observation['others_chips'][0], 17)  # 17-bit
+        fold1 = 1 if observation['others_folded'][0] else 0
+        chips_tensor2 = self.int_to_binary_tensor(observation['others_chips'][1], 17)  # 17-bit
+        fold2 = 1 if observation['others_folded'][1] else 0
+        chips_tensor3 = self.int_to_binary_tensor(observation['others_chips'][2], 17)  # 17-bit
+        fold3 = 1 if observation['others_folded'][2] else 0
+
+        pot_tensor = self.int_to_binary_tensor(pot, 20)  # 20-bit
 
         # Concatenate all tensors into one vector
-        return torch.cat(card_vectors + [pot_tensor, chips_tensor])
+        return torch.cat(card_vectors + [pot_tensor, chips_tensor,chips_tensor1,fold1, chips_tensor2,fold2, chips_tensor3,fold3])
 
     def act(self, observation: dict) -> Tuple[Action, Optional[int]]:
         """

@@ -48,6 +48,9 @@ class PokerEnv:
         current_bet = player.current_bet
         call_amount = max(p.current_bet for p in self.game.players if not p.folded) - current_bet
 
+        others_chips=[player.chips for player in self.game.players if not player.player_id == player_index]
+        others_folds=[player.folded for player in self.game.players if not player.player_id == player_index]
+
         while len(community_encoded) < 5:
             community_encoded.append(-1)
         observation = {
@@ -58,6 +61,8 @@ class PokerEnv:
             "round_stage": self.game.round_stage,
             "current_bet": current_bet,
             "call_amount": call_amount,
+            "others_chips":others_chips,
+            "others_folded":others_folds
         }
         return observation
 

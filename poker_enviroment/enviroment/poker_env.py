@@ -64,7 +64,7 @@ class PokerEnv:
     def render(self) -> None:
         """Simple textual render of the current game state."""
         print("==== Poker Game State ====")
-        print(f"Round Stage: {self.game.round_stage}, Dealer Index: {self.game.dealer_index}")
+        print(f"Round Stage: {self.game.round_stage}, Dealer Index: {self.game.dealer_index}, Current Player Index: {self.game.current_player_index}")
         print(f"Pot: {self.game.pot}")
         print("Community Cards:", [str(card) for card in self.game.community_cards])
         for p in self.game.players:

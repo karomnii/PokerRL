@@ -1,5 +1,9 @@
 import time
 import torch
+
+from agents.aggresive_agent import AggressiveAgent
+from agents.cautious_agent import CautiousAgent
+from agents.pseudo_inteligent_agent import PseudoIntelligent
 from agents.random_agent import RandomAgent
 from dqn_agent import DQNAgent
 from game.poker_game import PokerGame, Action
@@ -16,7 +20,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
     dqn_agent.model.load_state_dict(torch.load(model_path))
     dqn_agent.model.eval()
     
-    agents = [dqn_agent] + [RandomAgent() for _ in range(3)]
+    agents = [AggressiveAgent()] + [AggressiveAgent(),CautiousAgent(),PseudoIntelligent()]
     num_players = len(agents)
     
     # Player statistics tracking
@@ -76,6 +80,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
                 player_stats[current_idx]['raises'] += 1
             
             env.render()
+            input()
             time.sleep(render_speed)
         
         # Calculate chip changes

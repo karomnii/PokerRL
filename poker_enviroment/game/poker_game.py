@@ -391,7 +391,7 @@ class PokerGame:
                 return None
 
     def test(self):
-        """ For testin purposes """
+        """ For testing purposes """
         h1=[Card(Suit.HEARTS,Rank.ACE),Card(Suit.HEARTS,Rank.FOUR),Card(Suit.HEARTS,Rank.FIVE),Card(Suit.HEARTS,Rank.TWO),Card(Suit.HEARTS,Rank.THREE)]
         h2=[Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.THREE),Card(Suit.HEARTS,Rank.SIX),Card(Suit.HEARTS,Rank.SIX)]
         print(self.compare_hands([6,5,4,3,2],[13,12,11,10,9],4))

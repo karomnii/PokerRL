@@ -33,7 +33,7 @@ class CautiousAgent(IAgent):
                     label_action = Action.CALL
             else:
                 # Some randomness to play bad cards
-                if random.random()<0.2:
+                if random.random()<0.4:
                     return Action.CALL, None
 
             if label_action == Action.RAISE:

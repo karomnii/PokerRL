@@ -33,7 +33,7 @@ class PseudoIntelligent(IAgent):
                     label_action = Action.CALL
             else:
                 # Some randomness to play bad cards
-                if random.random()<0.3:
+                if random.random() < 0.5:
                     return Action.CALL, None
             if label_action == Action.RAISE:
                 if observation["chips"] < 300:

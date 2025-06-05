@@ -43,7 +43,7 @@ class AggressiveAgent(IAgent):
                     return action, random.randint(40, 80)
             else:
                 # Some randomness to play bad cards
-                if random.random()<0.45:
+                if random.random()<0.6:
                     return Action.CALL, None
             return action, None
 

@@ -1,12 +1,11 @@
 import time
 
-from tensorflow.python.keras.backend import epsilon
-
 from agents.pseudo_inteligent_agent import PseudoIntelligent
 from agents.random_agent import RandomAgent
 from agents.console_player import ConsolePlayer
-from dqn_agent import DQNAgent
+from impoved_dqn_agent import DQNAgent
 import torch
+from game.poker_game import Action
 
 from enviroment import PokerEnv
 
@@ -19,7 +18,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
     dqn_agent.model.eval()
     dqn_agent.epsilon=0
 
-    agents = [PseudoIntelligent()] + [PseudoIntelligent() for _ in range(3)]
+    agents = [dqn_agent] + [PseudoIntelligent() for _ in range(3)]
     # agents = [dqn_agent] + [DQNAgent(player_id=i + 1) for i in range(2)] + [RandomAgent()]
     #
     # # Load models
@@ -32,6 +31,11 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
     env = PokerEnv(agents)
     env.reset()
     recent_earnings=0
+    actions_made = {
+        Action.CALL: 0,
+        Action.RAISE: 0,
+        Action.FOLD: 0
+    }
     print("Starting a new sim...\n")
     #env.render()
     while hands_played < num_hands:
@@ -43,6 +47,8 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
         #print(f"Player {current_index} takes action: {action_str}\n")
 
         env.game.step(action, amount)
+        if current_index == 0:
+            actions_made[action] += 1
         if env.game.chip_data_flag:
             earnings = env.game.get_chip_earning_data()[0]
             recent_earnings+= earnings
@@ -52,18 +58,18 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
             if hands_played % print_stats_every == 0 and hands_played > 0:
                 print(f"Episode{hands_played}/{num_hands}   Recent Earnings: {recent_earnings}, Average earnings {recent_earnings / print_stats_every}")
                 recent_earnings = 0
-        env.render()
+        # env.render()
 
         # Waiting input
-        input()
+        # input()
+    print(f"Actions made: {actions_made}")
     print(f"Sim finished model earned: {model_earnings} Per Hand {model_earnings/hands_played}")
-
 
 if __name__ == "__main__":
     play_with_model(
         #model_path='./models/2025-05-08_21-27-41-675/dqn_model.pth',
         #Goat
-        model_path='./models/2025-04-22_23-51-42-711/dqn_model.pth',
+        model_path='./models/2025-06-05_21-33-19-904/dqn_model.pth',
         num_hands=10_000,
         render_speed=0  # Set to 0 for fast execution
     )

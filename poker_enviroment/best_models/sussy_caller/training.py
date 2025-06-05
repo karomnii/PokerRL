@@ -42,7 +42,7 @@ class PokerTrainer:
         self.dqn_agent = DQNAgent(player_id=0)
 
         self.agents = [self.dqn_agent] + [CautiousAgent(), PseudoIntelligent(), AggressiveAgent()]
-        self.agents[0].model.load_state_dict(torch.load('./best_models/sussy_caller/dqn_model.pth'))
+
         # self.agents = [self.dqn_agent] + [DQNAgent(player_id=i+1) for i in range(2)] + [RandomAgent()]
         #
         # #Load models

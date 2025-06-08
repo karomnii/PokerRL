@@ -38,6 +38,9 @@ class HomePageView extends GetView<HomePageController> {
             ),
             onSelected: (value) {
               switch (value) {
+                case 'profile':
+                  Get.toNamed('/profile/');
+                  break;
                 case 'logout':
                   AuthService.to.logout();
                   Get.offAllNamed('/');
@@ -54,6 +57,11 @@ class HomePageView extends GetView<HomePageController> {
               final loggedIn = AuthService.to.isLoggedIn;
               return loggedIn
                   ? [
+                      const PopupMenuItem(
+                        value: 'profile',
+                        child: Text('Profile',
+                            style: TextStyle(color: Colors.white)),
+                      ),
                       const PopupMenuItem(
                         value: 'logout',
                         child: Text('Logout',

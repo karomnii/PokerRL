@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:frontend/app/home/games/game/game.binding.dart';
 import 'package:frontend/app/home/games/game/game.view.dart';
+import 'package:frontend/app/home/profile/profile.binding.dart';
+import 'package:frontend/app/home/profile/profile.view.dart';
 import 'package:get/get.dart';
 
 import '../app/home/home.binding.dart';
@@ -52,6 +54,7 @@ abstract class Routes {
   // private pages
   static const games = '/games';
   static const shop = '/shop';
+  static const profile = '/profile';
 }
 
 /* ───────────────  Page table  ─────────────── */
@@ -88,7 +91,12 @@ final List<GetPage<dynamic>> appPages = [
     binding: ShopPageBinding(),
     middlewares: [AuthGuard()],
   ),
-
+  GetPage(
+    name: Routes.profile,
+    page: () => const ProfilePageView(),
+    binding: ProfilePageBinding(),
+    middlewares: [AuthGuard()],
+  ),
   /* --------  AUTH SUB-TREE (public)  -------- */
   GetPage(
     name: Routes.auth,

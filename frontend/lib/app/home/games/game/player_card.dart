@@ -185,6 +185,16 @@ class PlayerCard extends StatelessWidget {
       Text('${player!.currentChips ?? 0} 🪙',
           style: theme.textTheme.bodyMedium),
       const SizedBox(width: 8),
+      Center(
+        child: Icon(
+          Icons.dangerous_sharp,
+          size: 50,
+          color: player!.isActive!
+              ? const Color.fromARGB(255, 61, 61, 61)
+              : Colors.redAccent,
+        ),
+      ),
+      const SizedBox(width: 8),
       // Status badges (Dealer, SB, BB)
       _buildStatusBadges(),
     ];

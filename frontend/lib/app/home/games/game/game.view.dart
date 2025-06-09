@@ -286,6 +286,13 @@ class GamePageView extends GetView<GamePageController> {
                       label: Text('Exit'),
                       icon: Icon(Icons.exit_to_app),
                     ),
+                  ElevatedButton.icon(
+                    onPressed: controller.isGameOver
+                        ? () => controller.makeMove('Check', 0)
+                        : null,
+                    label: Text('Next'),
+                    icon: Icon(Icons.double_arrow_sharp),
+                  ),
                 ],
               ),
             ],

@@ -18,11 +18,25 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
 
   static const _w = 110.0, _h = 150.0;
 
+  void _resetTable() {
+    for (final c in _ctrl) {
+      c.dispose();
+    }
+    _cards.clear();
+    _ctrl.clear();
+  }
+
   @override
   void didUpdateWidget(covariant GameTable oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     final incoming = widget.game.communityCards ?? <api.CardDto>[];
+
+    if (incoming.isEmpty && _cards.isNotEmpty) {
+      _resetTable(); // absolutny reset
+      setState(() {}); // odmaluj pusty stół
+      return;
+    }
 
     if (incoming.length < _cards.length) {
       for (final c in _ctrl) {
@@ -87,7 +101,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
                 final ctrl = _ctrl[i];
 
                 final slide = Tween<Offset>(
-                  begin: const Offset(1.4, 0), // 140 % szerokości w prawo
+                  begin: const Offset(1.4, 0),
                   end: Offset.zero,
                 ).animate(
                   CurvedAnimation(parent: ctrl, curve: Curves.easeOutBack),
@@ -120,6 +134,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('⚡  State     : ${widget.game.currentState}'),
                   Text('💰 Pot size  : ${widget.game.potSize} 🪙'),
                   Text('💀 Level     : ${widget.game.tableName}'),
                   Text('↗  Min raise : ${widget.game.minRaiseAmount} 🪙'),

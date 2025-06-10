@@ -4,6 +4,7 @@ import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/widgets/cards/playing_card.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
+import 'package:collection/collection.dart';
 import 'dart:math' show min, pi;
 
 class PlayerCard extends StatelessWidget {
@@ -230,9 +231,14 @@ class PlayerCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(
           2,
-          (_) => const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: FlippableCard(width: w, height: h, frontAsset: null),
+          (i) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: FlippableCard(
+              key: ValueKey('back_${seatId}_$i'), // 👈 NOWE
+              width: w,
+              height: h,
+              frontAsset: null,
+            ),
           ),
         ),
       );
@@ -241,12 +247,17 @@ class PlayerCard extends StatelessWidget {
     // 3️⃣ visible cards (yours or showdown)
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: cards.take(2).map((card) {
+      children: cards.take(2).mapIndexed((i, card) {
         final asset = 'assets/cards/${card.$value == "10" ? "T" : card.$value}'
             '${card.suit![0]}.png';
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: FlippableCard(width: w, height: h, frontAsset: asset),
+          child: FlippableCard(
+            key: ValueKey('${seatId}_${asset}_$i'), // 👈 NOWE
+            width: w,
+            height: h,
+            frontAsset: asset,
+          ),
         );
       }).toList(),
     );
@@ -323,6 +334,23 @@ class _FlippableCardState extends State<FlippableCard>
       _ctrl.forward(); // z 0 → 1  (π → 0)
       _alreadyFlipped = true;
     }
+
+    if (_alreadyFlipped &&
+        oldWidget.frontAsset != null &&
+        widget.frontAsset == null) {
+      _resetCard(); // wróć do rewersu i zapomnij, że był front
+    }
+  }
+
+  void _resetCard() {
+    if (!mounted) return;
+
+    setState(() {
+      // cofnij animację na początek (wartość 0 == obrót π rad → rewers)
+      _ctrl.value = 0.0;
+      // flaga pilnująca, by animacja zadziałała ponownie
+      _alreadyFlipped = false;
+    });
   }
 
   @override

@@ -183,30 +183,47 @@ namespace TexasHoldemPoker.API.Repositories
 
         public async Task<bool> RemovePlayerFromGameAsync(int gamePlayerId)
         {
-            var gamePlayer = await context.GamePlayers
-                .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
-
-            var gameRound = await context.GameRounds
-                .Where(gr => gr.GameId == gamePlayer.GameId)
-                .OrderByDescending(gr => gr.RoundNumber)
-                .FirstOrDefaultAsync();
-
-            if (gamePlayer == null)
-                return false;
-
-            if (gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
-                return false;
-
             using var transaction = await context.Database.BeginTransactionAsync();
 
             try
             {
+                var gamePlayer = await context.GamePlayers
+                    .Include(gp => gp.PlayerCards)
+                    .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
+
+                if (gamePlayer == null)
+                    return false;
+
+                var gameRound = await context.GameRounds
+                    .Where(gr => gr.GameId == gamePlayer.GameId)
+                    .OrderByDescending(gr => gr.RoundNumber)
+                    .FirstOrDefaultAsync();
+
+                if (gameRound != null && 
+                    gameRound.CurrentState != "Waiting" && 
+                    gameRound.CurrentState != "Completed")
+                    return false;
+                
+                var playerCards = await context.PlayerCards
+                    .Where(pc => pc.GamePlayerId == gamePlayerId)
+                    .ToListAsync();
+        
+                if (playerCards.Any())
+                {
+                    context.PlayerCards.RemoveRange(playerCards);
+                }
+
                 var user = await context.Users.FindAsync(gamePlayer.UserId);
-                user.ChipsBalance += gamePlayer.InitialChips;
-
-                await chipTransactionRepository.RecordGameRefundAsync(gamePlayer.UserId, gamePlayer.GameId,
-                    gamePlayer.InitialChips);
-
+                if (user != null)
+                {
+                    user.ChipsBalance += gamePlayer.CurrentChips;
+                }
+                
+                await chipTransactionRepository.RecordGameRefundAsync(
+                    gamePlayer.UserId, 
+                    gamePlayer.GameId,
+                    gamePlayer.CurrentChips);
+                
                 context.GamePlayers.Remove(gamePlayer);
 
                 await context.SaveChangesAsync();
@@ -214,9 +231,10 @@ namespace TexasHoldemPoker.API.Repositories
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"[ERROR] RemovePlayerFromGameAsync: {ex.Message}");
                 throw;
             }
         }

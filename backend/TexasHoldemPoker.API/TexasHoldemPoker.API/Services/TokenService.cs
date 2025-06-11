@@ -1,6 +1,8 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text;
 using Newtonsoft.Json;
 using TexasHoldemPoker.API.Models;
@@ -14,6 +16,7 @@ namespace TexasHoldemPoker.API.Services
         private readonly IHttpClientFactory _httpFactory;
         private readonly ILogger<TokenService> _logger;
         private readonly string _googleClientId;
+        private readonly string _configuration;
 
         public TokenService(IConfiguration config,
             IHttpClientFactory httpFactory,
@@ -25,6 +28,7 @@ namespace TexasHoldemPoker.API.Services
             _httpFactory = httpFactory;
             _logger = logger;
             _googleClientId = config["Authentication:Google:ClientId"];
+            _configuration = config["Authentication:Facebook:AppSecret"];
         }
 
         public string CreateToken(User user)
@@ -70,40 +74,79 @@ namespace TexasHoldemPoker.API.Services
         {
             try
             {
-                var payload = await GoogleJsonWebSignature.ValidateAsync(
-                    idToken,
-                    new GoogleJsonWebSignature.ValidationSettings
-                    {
-                        Audience = new[] { _googleClientId }
-                    });
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadJwtToken(idToken);
+                var tokenAudience = jsonToken.Claims.FirstOrDefault(c => c.Type == "aud")?.Value;
+        
+                _logger.LogInformation($"Token audience: {tokenAudience}");
+                _logger.LogInformation($"Configured ClientId: {_googleClientId}");
+                
+                var settings = new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _googleClientId }
+                };
+                
+                if (!string.IsNullOrEmpty(tokenAudience) && tokenAudience != _googleClientId)
+                {
+                    _logger.LogWarning($"Token audience ({tokenAudience}) doesn't match configured ClientId ({_googleClientId})");
+                    
+                    settings.Audience = new[] { tokenAudience, _googleClientId };
+                }
+
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+
+                _logger.LogInformation($"Google token validated successfully for user: {payload.Email}");
 
                 return new SocialUserInfo
                 {
                     Email = payload.Email,
-                    Name  = payload.Name
+                    Name = payload.Name
                 };
             }
             catch (InvalidJwtException ex)
             {
-                _logger.LogInformation(ex, "Invalid Google id_token");
+                _logger.LogError(ex, $"Invalid Google id_token. Details: {ex.Message}");
                 return null;
             }
         }
         private async Task<SocialUserInfo?> ValidateFacebookAsync(string accessToken)
         {
+            var appSecret = _configuration;
+            if (string.IsNullOrEmpty(appSecret))
+                throw new ArgumentNullException("Facebook AppSecret not configured");
+
+            var appSecretProof = GenerateAppSecretProof(accessToken, appSecret);
             var client = _httpFactory.CreateClient(nameof(FacebookUserInfo));
             client.Timeout = TimeSpan.FromSeconds(5);
 
-            var url = $"https://graph.facebook.com/me?fields=email,name&access_token={accessToken}";
+            var url = $"https://graph.facebook.com/me?fields=email,name&access_token={accessToken}&appsecret_proof={appSecretProof}";
             var resp = await client.GetAsync(url);
 
             if (!resp.IsSuccessStatusCode) return null;
 
             var json = await resp.Content.ReadAsStringAsync();
-            var fb   = JsonConvert.DeserializeObject<FacebookUserInfo>(json);
+            var fb = JsonConvert.DeserializeObject<FacebookUserInfo>(json);
+            
+            if (string.IsNullOrWhiteSpace(fb?.Email))
+            {
+                _logger.LogError("Facebook nie zwrócił adresu email dla użytkownika");
+                return null; 
+            }
 
-            return new SocialUserInfo { Email = fb?.Email, Name = fb?.Name };
+            return new SocialUserInfo { Email = fb.Email, Name = fb.Name };
         }
+        private string GenerateAppSecretProof(string accessToken, string appSecret)
+        {
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(appSecret)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(accessToken));
+                var sb = new StringBuilder();
+                foreach (var b in hash)
+                    sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
     }
 
 }

@@ -26,7 +26,7 @@ public class GamePlayerRepository : IGamePlayerRepository
     public async Task<IEnumerable<GamePlayer>> GetPlayersByGameIdAsync(int gameId)
     {
         return await context.GamePlayers
-            .Where(gp => gp.GameId == gameId && gp.User.IsActive)
+            .Where(gp => gp.GameId == gameId && gp.IsActive)
             .Include(gp => gp.User)
             .OrderBy(gp => gp.SeatPosition)
             .ToListAsync();
@@ -51,7 +51,9 @@ public class GamePlayerRepository : IGamePlayerRepository
                 throw new InvalidOperationException("User doesn't have enough chips for buy-in");
 
             var seatTaken = await context.GamePlayers
-                .AnyAsync(gp => gp.GameId == gameId && gp.SeatPosition == seatPosition);
+                .AnyAsync(gp => gp.GameId == gameId &&
+                                gp.SeatPosition == seatPosition &&
+                                gp.IsActive);
 
             if (seatTaken)
                 throw new InvalidOperationException("Seat position is already taken");
@@ -181,35 +183,41 @@ public class GamePlayerRepository : IGamePlayerRepository
     {
         var gamePlayer = await context.GamePlayers
             .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
-        
-        if(gamePlayer == null)
+
+        if (gamePlayer == null)
+        {
+            Console.WriteLine($"Game player {gamePlayerId} doesn't exist");
             return false;
-    
+        }
+
         var gameRound = await context.GameRounds
             .Where(gr => gr.GameId == gamePlayer.GameId)
             .OrderByDescending(gr => gr.RoundNumber)
             .FirstOrDefaultAsync();
-    
+
         if (gameRound != null && gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
             return false;
 
         using var transaction = await context.Database.BeginTransactionAsync();
-    
+
         try
         {
             await chipTransactionRepository.RecordGameRefundAsync(
-                gamePlayer.UserId, 
+                gamePlayer.UserId,
                 gamePlayer.GameId,
                 gamePlayer.CurrentChips);
-            
+
             gamePlayer.IsActive = false;
+            gamePlayer.IsDealer = false;
+            gamePlayer.IsSmallBlind = false;
+            gamePlayer.IsBigBlind = false;
 
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return true;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync();
             Console.WriteLine($"[ERROR] RemovePlayerFromGameAsync: {ex.Message}");

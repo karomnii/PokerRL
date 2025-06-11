@@ -112,7 +112,14 @@ namespace TexasHoldemPoker.API.Repositories
             var game = await context.Games.FindAsync(gameId);
             if (game == null)
                 return false;
-
+            
+            if (userId == null)
+            {
+                game.CurrentTurnPlayerId = null;
+                await context.SaveChangesAsync();
+                return true;
+            }
+            
             var gamePlayer = await context.GamePlayers
                 .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
             if (gamePlayer == null)

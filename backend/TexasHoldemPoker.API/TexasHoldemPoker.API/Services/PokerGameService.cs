@@ -150,62 +150,84 @@ namespace TexasHoldemPoker.API.Services
             return true;
         }
 
-        public async Task<bool> LeaveGameAsync(int gameId, int userId)
+public async Task<bool> LeaveGameAsync(int gameId, int userId)
+{
+    var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+    if (gamePlayer == null)
+    {
+        return false;
+    }
+
+    var game = await gameRepository.GetByIdAsync(gameId);
+    if (game == null) return false;
+
+    var gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
+    if (gameRound != null && gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
+    {
+        return false;
+    }
+    
+    // If leaving during completed state, remove from acknowledgements if present
+    if (gameRound?.CurrentState == "Completed" && completedRoundAcknowledgments.ContainsKey(gameId))
+    {
+        completedRoundAcknowledgments[gameId].Remove(userId);
+        // Check if this triggers the next round start
+        var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+        var remainingPlayers =
+            playersInGame.Where(p => p.UserId != userId && p.CurrentChips > 0).ToList();
+        if (remainingPlayers.Count >= 2 &&
+            remainingPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
         {
-            var gamePlayer = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
-            if (gamePlayer == null)
-            {
-                return false;
-            }
-
-            var game = await gameRepository.GetByIdAsync(gameId);
-            if (game == null) return false;
-
-            var gameRound = await gameRoundRepository.GetCurrentRoundAsync(gameId);
-            if (gameRound != null && gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
-            {
-                return false;
-            }
-
-            // If leaving during completed state, remove from acknowledgements if present
-            if (gameRound.CurrentState == "Completed" && completedRoundAcknowledgments.ContainsKey(gameId))
-            {
-                completedRoundAcknowledgments[gameId].Remove(userId);
-                // Check if this triggers the next round start
-                var playersInGame = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                var remainingPlayers =
-                    playersInGame.Where(p => p.UserId != userId && p.CurrentChips > 0).ToList(); // Players remaining after leave
-                if (remainingPlayers.Count() >= 2 &&
-                    remainingPlayers.All(p => completedRoundAcknowledgments[gameId].Contains(p.UserId)))
-                {
-                    completedRoundAcknowledgments.Remove(gameId);
-                    await StartNewHandAsync(gameId);
-                }
-            }
-            if (game.CurrentTurnPlayer?.UserId == userId)
-            {
-                var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                var remainingActivePlayers = players
-                    .Where(p => p.UserId != userId && p.IsActive && p.CurrentChips > 0)
-                    .OrderBy(p => p.SeatPosition)
-                    .ToList();
-
-                if (remainingActivePlayers.Any())
-                    await gameRepository.SetCurrentTurnAsync(gameId, remainingActivePlayers.First().UserId);
-                else
-                    await gameRepository.SetCurrentTurnAsync(gameId, null);
-            }
-
-            var result = await gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
-            if (result)
-            {
-                var remainingPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
-                if (remainingPlayers.Count() == 1 && gameRound?.CurrentState != "Waiting")
-                    await DetermineWinnerAsync(gameId);
-                else if (!remainingPlayers.Any()) await gameRepository.EndGameAsync(gameId);
-            }
-            return result;
+            completedRoundAcknowledgments.Remove(gameId);
+            await StartNewHandAsync(gameId);
         }
+    }
+    
+    if (game.CurrentTurnPlayerId == gamePlayer.GamePlayerId)
+    {
+        var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+        var remainingActivePlayers = players
+            .Where(p => p.GamePlayerId != gamePlayer.GamePlayerId && p.IsActive && p.CurrentChips > 0)
+            .OrderBy(p => p.SeatPosition)
+            .ToList();
+
+        if (remainingActivePlayers.Any())
+        {
+            await SetNextPlayerTurnAsync(gameId);
+        }
+        else
+        {
+            await gameRepository.SetCurrentTurnAsync(gameId, null);
+        }
+    }
+    
+    if (agentsPlayingInGames.ContainsKey(gameId))
+    {
+        agentsPlayingInGames[gameId].Remove(gamePlayer.GamePlayerId);
+        if (!agentsPlayingInGames[gameId].Any())
+        {
+            agentsPlayingInGames.Remove(gameId);
+        }
+    }
+
+    var result = await gamePlayerRepository.RemovePlayerFromGameAsync(gamePlayer.GamePlayerId);
+    
+    if (result)
+    {
+        var remainingPlayers = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
+        
+        if (remainingPlayers.Count() == 1 && gameRound?.CurrentState != "Waiting")
+        {
+            await DetermineWinnerAsync(gameId);
+        }
+        else if (!remainingPlayers.Any())
+        {
+            await gameRepository.EndGameAsync(gameId);
+        }
+    }
+    
+    return result;
+}
 
         public async Task<bool> StartGameAsync(int gameId)
         {

@@ -69,7 +69,7 @@ if __name__ == "__main__":
     play_with_model(
         #model_path='./models/2025-05-08_21-27-41-675/dqn_model.pth',
         #Goat
-        model_path='./models/2025-06-05_21-33-19-904/dqn_model.pth',
-        num_hands=10_000,
+        model_path='./models/2025-06-11_11-51-19-187/dqn_model.pth',
+        num_hands=2_000,
         render_speed=0  # Set to 0 for fast execution
     )

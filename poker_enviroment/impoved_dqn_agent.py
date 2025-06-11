@@ -77,6 +77,7 @@ class DQNAgent(IAgent):
 
         # Device setup
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        #self.device = torch.device('cpu')
         self.model.to(self.device)
         self.target_model.to(self.device)
 
@@ -164,12 +165,13 @@ class DQNAgent(IAgent):
             call_amount = observation['call_amount']
             min_raise = call_amount + 1
             max_raise = observation['chips']
+            RAISE_VALUE = 50 + call_amount
 
             if max_raise >= min_raise:
-                amount = random.randint(min_raise, max_raise)
+                amount = random.randint(min_raise, min(max_raise,RAISE_VALUE))
             else:
                 # If we cannot legally raise, decide to CALL or FOLD
-                if observation['chips'] >= call_amount:
+                if min(max_raise,RAISE_VALUE) >= call_amount:
                     action = Action.CALL
                 else:
                     action = Action.FOLD
@@ -242,12 +244,12 @@ class DQNAgent(IAgent):
         try:
             os.makedirs(folder, exist_ok=True)
             filepath = os.path.join(folder, path)
-            torch.save(self.target_model.state_dict(), filepath)
+            torch.save(self.model.state_dict(), filepath)
             print(f"Model saved to {filepath}")
         except OSError as e:
             print(f"Error saving model to {folder}: {e}")
             # Fall back to saving directly as path
-            torch.save(self.target_model.state_dict(), path)
+            torch.save(self.model.state_dict(), path)
             print(f"Model saved to {path}")
 
     def int_to_binary_tensor(self,n: int, num_bits: int) -> torch.Tensor:

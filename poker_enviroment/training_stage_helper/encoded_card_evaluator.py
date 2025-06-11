@@ -2,6 +2,9 @@ from itertools import combinations
 from collections import Counter
 from typing import List, Tuple, Optional
 
+import torch
+
+
 class EncodedCardEvaluator:
     RANKS = "23456789TJQKA"
     SUITS = "♡♢♧♤"
@@ -11,6 +14,34 @@ class EncodedCardEvaluator:
 
     def _decode_card(self, card_int: int) -> str:
         return self.RANKS[card_int % 13] + self.SUITS[card_int // 13]
+
+    def _decode_onehotencoded_card(self, vector: torch.Tensor) -> int:
+        """
+        Decodes a 17-dim one-hot vector back into a card index (0..51):
+          - First 13 positions are rank
+          - Next 4 positions are suit
+        """
+        if vector.shape[0] != 17:
+            raise ValueError("Input vector must be of length 17.")
+
+        rank = torch.argmax(vector[:13]).item()
+        suit = torch.argmax(vector[13:17]).item()
+
+        return suit * 13 + rank
+
+    def _encode_onehotencoded_card(self, card: int) -> torch.Tensor:
+        """
+        Encodes a single card (0..51) into a 17-dim one-hot vector:
+          - 13 for rank (0..12)
+          - 4  for suit (0..3)
+        """
+        suit = card // 13
+        rank = card % 13
+
+        vector = torch.zeros(17)
+        vector[rank] = 1.0
+        vector[13 + suit] = 1.0
+        return vector
 
     def _get_rank(self, card: int) -> int:
         return card % 13 + 2  # 2-14 (2 to Ace)

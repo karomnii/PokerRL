@@ -3,6 +3,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from training_stage_helper.encoded_card_evaluator import EncodedCardEvaluator
+
 from sympy.physics.units import action
 
 from torch.utils.tensorboard import SummaryWriter
@@ -14,6 +16,11 @@ from agents.random_agent import RandomAgent
 from game.poker_game import Action, PokerGame
 from enviroment.poker_env import PokerEnv
 from impoved_dqn_agent import DQNAgent
+from training_stage_helper.preflop_chart_evaluator import PreflopChartEvaluator
+
+ece = EncodedCardEvaluator()
+pce = PreflopChartEvaluator()
+pce.load_chart_from_file("training_stage_helper/DQN_preflop_chart.json")
 
 class PokerTrainer:
     def __init__(self):
@@ -42,7 +49,7 @@ class PokerTrainer:
         self.dqn_agent = DQNAgent(player_id=0)
 
         self.agents = [self.dqn_agent] + [CautiousAgent(), PseudoIntelligent(), AggressiveAgent()]
-        self.agents[0].model.load_state_dict(torch.load('./best_models/sussy_caller/dqn_model.pth'))
+        #self.agents[0].model.load_state_dict(torch.load('./best_models/sussy_caller/dqn_model.pth'))
         # self.agents = [self.dqn_agent] + [DQNAgent(player_id=i+1) for i in range(2)] + [RandomAgent()]
         #
         # #Load models
@@ -85,22 +92,37 @@ class PokerTrainer:
         return True
 
 
-    def _calculate_reward(self, env, dqn_player_id, folded):
+    def _calculate_reward(self, env, dqn_player_id, folded, episode_transitions):
+        if len(episode_transitions) == 1:
+            card1 = ece._decode_onehotencoded_card(episode_transitions[0]['state'][:17])
+            card2 = ece._decode_onehotencoded_card(episode_transitions[0]['state'][17:34])
+            if episode_transitions[0]['action']==Action.FOLD:
+                if pce.evaluate(card1, card2) == 'raise':
+                    return -0.7
+                elif pce.evaluate(card2, card1) == 'call':
+                    return -0.2
+                else:
+                    return 0.3
+            elif episode_transitions[0]['action']==Action.RAISE:
+                if pce.evaluate(card1, card2) == 'fold':
+                    return -0.7
+                elif pce.evaluate(card2, card1) == 'call':
+                    return 0.1
+                else:
+                    return 0.3
+            else:
+                if pce.evaluate(card1, card2) == 'fold':
+                    return -0.2
+                elif pce.evaluate(card2, card1) == 'raise':
+                    return 0.1
+                else:
+                    return 0.3
+
         net_chips = env.game.get_chip_earning_data()[dqn_player_id]
         self.total_earnings+=net_chips
-        scale_factor = env.game.big_blind * 20
-        fold_bonus: float = 0.05
-        fold_penalty: float = -0.3
+        scale_factor = env.game.big_blind * 50
         chip_reward = np.clip(net_chips / scale_factor, -1.0, 1.0)
-        # chip_reward = net_chips / scale_factor
 
-        # if folded:
-        #     if abs(net_chips) < scale_factor:
-        #         would_have_won = self._would_have_won(env, dqn_player_id)
-        #         if would_have_won:
-        #             return fold_penalty
-        #         else:
-        #             return 0
         return chip_reward
 
 
@@ -164,7 +186,7 @@ class PokerTrainer:
                 folded = True
         # --------------------------------------------
         # Once hand is over, calculate the final reward
-        final_reward = self._calculate_reward(env, dqn_player_id, folded)
+        final_reward = self._calculate_reward(env, dqn_player_id, folded, episode_transitions)
         # Now assign that final_reward to the last transition only
         transitions_with_rewards = self._assign_rewards(episode_transitions, final_reward)
         

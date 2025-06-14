@@ -109,6 +109,13 @@ class _AuthViewState extends State<AuthView> {
                         child:
                             HtmlElementView(viewType: 'google-signin-button'),
                       ),
+                    SizedBox(
+                      width: 50,
+                      child: Divider(
+                        color: Colors.white,
+                        thickness: 2,
+                      ),
+                    ),
                     Center(
                       child: Wrap(
                         alignment: WrapAlignment.center,

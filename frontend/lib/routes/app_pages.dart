@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
+import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:frontend/app/home/games/game/game.binding.dart';
 import 'package:frontend/app/home/games/game/game.view.dart';
+import 'package:frontend/app/home/leaderboard/leaderboard.binding.dart';
+import 'package:frontend/app/home/leaderboard/leaderboard.view.dart';
 import 'package:frontend/app/home/profile/profile.binding.dart';
 import 'package:frontend/app/home/profile/profile.view.dart';
 import 'package:get/get.dart';
@@ -55,6 +58,7 @@ abstract class Routes {
   static const games = '/games';
   static const shop = '/shop';
   static const profile = '/profile';
+  static const leaderboard = '/leaderboard';
 }
 
 /* ───────────────  Page table  ─────────────── */
@@ -95,6 +99,12 @@ final List<GetPage<dynamic>> appPages = [
     name: Routes.profile,
     page: () => const ProfilePageView(),
     binding: ProfilePageBinding(),
+    middlewares: [AuthGuard()],
+  ),
+  GetPage(
+    name: Routes.leaderboard,
+    page: () => const LeaderboardPageView(),
+    binding: LeaderboardPageBinding(),
     middlewares: [AuthGuard()],
   ),
   /* --------  AUTH SUB-TREE (public)  -------- */

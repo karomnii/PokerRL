@@ -44,13 +44,15 @@ Map<String, dynamic> _$CardDtoToJson(CardDto instance) => <String, dynamic>{
       'value': instance.$value,
     };
 
-ChooseUsernameDto _$ChooseUsernameDtoFromJson(Map<String, dynamic> json) =>
-    ChooseUsernameDto(
+ChangeUsernameDto _$ChangeUsernameDtoFromJson(Map<String, dynamic> json) =>
+    ChangeUsernameDto(
+      userId: (json['userId'] as num?)?.toInt() ?? 0,
       username: json['username'] as String?,
     );
 
-Map<String, dynamic> _$ChooseUsernameDtoToJson(ChooseUsernameDto instance) =>
+Map<String, dynamic> _$ChangeUsernameDtoToJson(ChangeUsernameDto instance) =>
     <String, dynamic>{
+      'userId': instance.userId,
       'username': instance.username,
     };
 

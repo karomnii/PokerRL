@@ -295,9 +295,9 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<UserDto>> _apiUsersChooseUsernamePost(
-      {required ChooseUsernameDto? body}) {
-    final Uri $url = Uri.parse('/api/Users/choose-username');
+  Future<Response<UserDto>> _apiUsersChangeUsernamePost(
+      {required ChangeUsernameDto? body}) {
+    final Uri $url = Uri.parse('/api/Users/change-username');
     final $body = body;
     final Request $request = Request(
       'POST',

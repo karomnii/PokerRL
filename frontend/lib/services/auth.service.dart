@@ -100,11 +100,48 @@ class AuthService extends GetxService {
     }
   }
 
+  Future<void> loginWithSocial(
+      {required String provider, required String token}) async {
+    try {
+      final socialDto = SocialLoginDto(provider: provider, token: token);
+      final response = await _api.apiUsersSocialLoginPost(body: socialDto);
+      if (response.error != null) {
+        _handleError(response.error as String);
+      }
+      _saveToken(response.body!);
+    } catch (e) {
+      ErrorService.to.showError('Social login failed: $e');
+      rethrow;
+    }
+  }
+
   void logout() {
     html.window.localStorage.remove(_tokenKey);
     _token.value = null;
   }
 
+  void _handleError(String error) {
+    final decoded = jsonDecode(error);
+    final title = decoded['title'] ?? 'Error';
+
+    final errorsMap = decoded['errors'];
+    String errorMessages = '';
+
+    if (errorsMap is Map<String, dynamic>) {
+      final messages = <String>[];
+      errorsMap.forEach((key, value) {
+        if (value is List) {
+          messages.addAll(value.map((e) => e.toString()));
+        }
+      });
+      errorMessages = messages.join(', ');
+    }
+
+    final message = errorMessages.isNotEmpty ? '$title: $errorMessages' : title;
+
+    ErrorService.to.showError(message);
+    throw '';
+  }
   /* ---------- internals ---------- */
 
   void _saveToken(UserDto user) {

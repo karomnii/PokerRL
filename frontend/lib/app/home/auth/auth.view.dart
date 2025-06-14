@@ -1,20 +1,89 @@
+import 'dart:html' as html;
+import 'dart:ui' as ui; // ignore: undefined_prefixed_name
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'auth.controller.dart';
 
-class AuthView extends StatelessWidget {
-  const AuthView({super.key});
+void registerGoogleSignInButton(String clientId) {
+  // ignore: undefined_prefixed_name
+  ui.platformViewRegistry.registerViewFactory(
+    'google-signin-button',
+    (int viewId) {
+      final html.DivElement element = html.DivElement()
+        ..id = 'google-signin-button-container'
+        ..style.width = '300px'
+        ..style.height = '40px';
+
+      final script = html.ScriptElement()
+        ..type = 'text/javascript'
+        ..text = '''
+          function initializeGoogleSignIn() {
+            google.accounts.id.initialize({
+              client_id: "$clientId",
+              callback: function(response) {
+                window.dispatchEvent(new CustomEvent('googleSignIn', {detail: response.credential}));
+              }
+            });
+            google.accounts.id.renderButton(
+              document.getElementById('google-signin-button-container'),
+              { theme: 'outline', size: 'large', width: 300 }
+            );
+          }
+          if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+            initializeGoogleSignIn();
+          } else {
+            var script = document.createElement('script');
+            script.src = "https://accounts.google.com/gsi/client";
+            script.onload = initializeGoogleSignIn;
+            document.head.appendChild(script);
+          }
+        ''';
+
+      element.append(script);
+
+      return element;
+    },
+  );
+}
+
+class AuthView extends StatefulWidget {
+  AuthView({Key? key}) : super(key: key);
+
+  @override
+  State<AuthView> createState() => _AuthViewState();
+}
+
+class _AuthViewState extends State<AuthView> {
+  final AuthPageController controller = Get.put(AuthPageController());
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (kIsWeb) {
+      registerGoogleSignInButton(controller.googleClientId);
+      html.window.addEventListener('googleSignIn', (event) {
+        final customEvent = event as html.CustomEvent;
+        final String idToken = customEvent.detail;
+        if (idToken.isNotEmpty) {
+          controller.loginWithGoogleIdToken(idToken);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ThemedScaffold(
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 450),
+          constraints: const BoxConstraints(maxWidth: 450),
           child: PageCard(
             title: 'AuthPage',
             child: Center(
@@ -33,27 +102,13 @@ class AuthView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    _socialButton(
-                      label: "Google",
-                      iconUrl:
-                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Google.svg',
-                      color: Colors.red,
-                      onPressed: () {},
-                    ),
-                    _socialButton(
-                      label: "Facebook",
-                      iconUrl:
-                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Facebook.svg',
-                      color: Colors.indigo,
-                      onPressed: () {},
-                    ),
-                    _socialButton(
-                      label: "Twitter",
-                      iconUrl:
-                          'https://raw.githubusercontent.com/gauravghongde/social-icons/9d939e1c5b7ea4a24ac39c3e4631970c0aa1b920/SVG/Color/Twitter.svg',
-                      color: Colors.lightBlue,
-                      onPressed: () {},
-                    ),
+                    if (kIsWeb)
+                      SizedBox(
+                        width: 300,
+                        height: 40,
+                        child:
+                            HtmlElementView(viewType: 'google-signin-button'),
+                      ),
                     Center(
                       child: Wrap(
                         alignment: WrapAlignment.center,
@@ -64,7 +119,7 @@ class AuthView extends StatelessWidget {
                             style: TextStyle(fontSize: 16),
                           ),
                           InkWell(
-                            onTap: () => Get.offNamed('/auth/login',
+                            onTap: () => Get.toNamed('/auth/login',
                                 preventDuplicates: true),
                             child: const Text(
                               'login',
@@ -99,33 +154,6 @@ class AuthView extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _socialButton({
-    required String label,
-    required String iconUrl,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      height: 60,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          backgroundColor: color,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 16)),
-            SvgPicture.network(
-              iconUrl,
-            ),
-          ],
         ),
       ),
     );

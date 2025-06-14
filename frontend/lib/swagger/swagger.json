@@ -806,7 +806,7 @@
         }
       }
     },
-    "/api/Users/choose-username": {
+    "/api/Users/change-username": {
       "post": {
         "tags": [
           "Users"
@@ -815,17 +815,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChooseUsernameDto"
+                "$ref": "#/components/schemas/ChangeUsernameDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/ChooseUsernameDto"
+                "$ref": "#/components/schemas/ChangeUsernameDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/ChooseUsernameDto"
+                "$ref": "#/components/schemas/ChangeUsernameDto"
               }
             }
           }
@@ -1081,9 +1081,13 @@
         },
         "additionalProperties": false
       },
-      "ChooseUsernameDto": {
+      "ChangeUsernameDto": {
         "type": "object",
         "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "username": {
             "type": "string",
             "nullable": true

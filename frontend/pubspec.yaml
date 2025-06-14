@@ -13,6 +13,8 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   get: ^4.6.5
+  google_sign_in: ^6.1.0
+  google_sign_in_web: ^0.12.4+4
   flutter_svg: ^2.0.7
 
   chopper: ^8.0.0

@@ -397,20 +397,20 @@ abstract class Swagger extends ChopperService {
       {@Body() required SocialLoginDto? body});
 
   ///
-  Future<chopper.Response<UserDto>> apiUsersChooseUsernamePost(
-      {required ChooseUsernameDto? body}) {
+  Future<chopper.Response<UserDto>> apiUsersChangeUsernamePost(
+      {required ChangeUsernameDto? body}) {
     generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
 
-    return _apiUsersChooseUsernamePost(body: body);
+    return _apiUsersChangeUsernamePost(body: body);
   }
 
   ///
   @Post(
-    path: '/api/Users/choose-username',
+    path: '/api/Users/change-username',
     optionalBody: true,
   )
-  Future<chopper.Response<UserDto>> _apiUsersChooseUsernamePost(
-      {@Body() required ChooseUsernameDto? body});
+  Future<chopper.Response<UserDto>> _apiUsersChangeUsernamePost(
+      {@Body() required ChangeUsernameDto? body});
 
   ///
   Future<chopper.Response<UserDto>> apiUsersProfileGet() {

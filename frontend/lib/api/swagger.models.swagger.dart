@@ -203,25 +203,30 @@ extension $CardDtoExtension on CardDto {
 }
 
 @JsonSerializable(explicitToJson: true)
-class ChooseUsernameDto {
-  const ChooseUsernameDto({
+class ChangeUsernameDto {
+  const ChangeUsernameDto({
+    this.userId,
     this.username,
   });
 
-  factory ChooseUsernameDto.fromJson(Map<String, dynamic> json) =>
-      _$ChooseUsernameDtoFromJson(json);
+  factory ChangeUsernameDto.fromJson(Map<String, dynamic> json) =>
+      _$ChangeUsernameDtoFromJson(json);
 
-  static const toJsonFactory = _$ChooseUsernameDtoToJson;
-  Map<String, dynamic> toJson() => _$ChooseUsernameDtoToJson(this);
+  static const toJsonFactory = _$ChangeUsernameDtoToJson;
+  Map<String, dynamic> toJson() => _$ChangeUsernameDtoToJson(this);
 
+  @JsonKey(name: 'userId', defaultValue: 0)
+  final int? userId;
   @JsonKey(name: 'username')
   final String? username;
-  static const fromJsonFactory = _$ChooseUsernameDtoFromJson;
+  static const fromJsonFactory = _$ChangeUsernameDtoFromJson;
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other is ChooseUsernameDto &&
+        (other is ChangeUsernameDto &&
+            (identical(other.userId, userId) ||
+                const DeepCollectionEquality().equals(other.userId, userId)) &&
             (identical(other.username, username) ||
                 const DeepCollectionEquality()
                     .equals(other.username, username)));
@@ -232,16 +237,21 @@ class ChooseUsernameDto {
 
   @override
   int get hashCode =>
-      const DeepCollectionEquality().hash(username) ^ runtimeType.hashCode;
+      const DeepCollectionEquality().hash(userId) ^
+      const DeepCollectionEquality().hash(username) ^
+      runtimeType.hashCode;
 }
 
-extension $ChooseUsernameDtoExtension on ChooseUsernameDto {
-  ChooseUsernameDto copyWith({String? username}) {
-    return ChooseUsernameDto(username: username ?? this.username);
+extension $ChangeUsernameDtoExtension on ChangeUsernameDto {
+  ChangeUsernameDto copyWith({int? userId, String? username}) {
+    return ChangeUsernameDto(
+        userId: userId ?? this.userId, username: username ?? this.username);
   }
 
-  ChooseUsernameDto copyWithWrapped({Wrapped<String?>? username}) {
-    return ChooseUsernameDto(
+  ChangeUsernameDto copyWithWrapped(
+      {Wrapped<int?>? userId, Wrapped<String?>? username}) {
+    return ChangeUsernameDto(
+        userId: (userId != null ? userId.value : this.userId),
         username: (username != null ? username.value : this.username));
   }
 }

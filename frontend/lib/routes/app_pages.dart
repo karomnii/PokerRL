@@ -100,7 +100,7 @@ final List<GetPage<dynamic>> appPages = [
   /* --------  AUTH SUB-TREE (public)  -------- */
   GetPage(
     name: Routes.auth,
-    page: () => const AuthView(),
+    page: () => AuthView(),
     binding: AuthPageBinding(),
     children: [
       GetPage(

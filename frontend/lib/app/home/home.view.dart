@@ -28,6 +28,12 @@ class HomePageView extends GetView<HomePageController> {
             tooltipText: 'Shop',
             onPressed: () => Get.toNamed('/shop', preventDuplicates: false),
           ),
+          AppBarIcon(
+            icon: Icons.emoji_events,
+            tooltipText: 'Leaderboard',
+            onPressed: () =>
+                Get.toNamed('/leaderboard', preventDuplicates: false),
+          ),
           PopupMenuButton<String>(
             icon: Tooltip(
               message: 'Account',

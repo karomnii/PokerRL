@@ -528,7 +528,7 @@ namespace TexasHoldemPoker.API.Services
                 }
             }
 
-            if (game.CurrentTurnPlayerId != userId)
+            if (game.CurrentTurnPlayerId != gamePlayer.GamePlayerId)
             {
                 return false;
             }

@@ -57,7 +57,6 @@ namespace TexasHoldemPoker.API.Repositories
         public async Task<Game> CreateGameAsync(Game game)
         {
             game.StartTime = DateTime.UtcNow;
-            //game.CurrentState = "Waiting";
             game.PotSize = 0;
 
             context.Games.Add(game);
@@ -66,7 +65,6 @@ namespace TexasHoldemPoker.API.Repositories
             return game;
         }
 
-        // TODO: Check if it works with GameRound modifications
         public async Task UpdateGameAsync(Game game)
         {
             context.Entry(game).State = EntityState.Modified;
@@ -113,17 +111,25 @@ namespace TexasHoldemPoker.API.Repositories
             if (game == null)
                 return false;
 
-            var gamePlayer = await context.GamePlayers
-                .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
-            if (gamePlayer == null)
-                return false;
+            int? currentTurnPlayerId;
+            if (userId == null)
+            {
+                currentTurnPlayerId = null;
+            }
+            else
+            {
+                var gamePlayer = await context.GamePlayers
+                    .FirstOrDefaultAsync(gp => gp.GameId == gameId && gp.UserId == userId);
+                if (gamePlayer == null)
+                    return false;
+                currentTurnPlayerId = gamePlayer.GamePlayerId;
+            }
 
-            game.CurrentTurnPlayerId = gamePlayer.GamePlayerId;
+            game.CurrentTurnPlayerId = currentTurnPlayerId;
             await context.SaveChangesAsync();
             return true;
         }
 
-        //TODO: Handle change to GamePlayerId
         public async Task<int?> GetCurrentTurnUserIdAsync(int gameId)
         {
             var game = await context.Games.FindAsync(gameId);

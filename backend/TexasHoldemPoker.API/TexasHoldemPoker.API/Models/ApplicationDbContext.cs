@@ -200,9 +200,6 @@ public partial class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<PlayerCard>(entity =>
         {
-            entity.HasIndex(e => new { e.GameRoundId, e.GamePlayerId, e.Position }, "UQ_PlayerCards_GamePlayerPosition")
-                .IsUnique();
-
             entity.HasOne(d => d.Card).WithMany(p => p.PlayerCards)
                 .HasForeignKey(d => d.CardId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

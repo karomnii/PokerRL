@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart' as api;
 import 'package:frontend/services/auth.service.dart';
+import 'package:frontend/services/game.service.dart';
 import 'package:frontend/widgets/cards/playing_card.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
@@ -148,7 +149,7 @@ class PlayerCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return PageCard(
-      title: 'Seat $seatId',
+      title: player!.username ?? 'Unknown',
       highlightColor: player!.userId == currentPlayerId
           ? theme.elevatedButtonTheme.style?.backgroundColor?.resolve({}) ??
               theme.colorScheme.primary
@@ -175,14 +176,6 @@ class PlayerCard extends StatelessWidget {
   /// First row with username, chips and small status badges.
   List<Widget> _buildHeader(ThemeData theme) {
     return [
-      // Username (truncates with ellipsis)
-      Text(
-        player!.username ?? 'Unknown',
-        style: theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
-        overflow: TextOverflow.ellipsis,
-      ),
-      const SizedBox(width: 8),
-      // Current stack
       Text('${player!.currentChips ?? 0} 🪙',
           style: theme.textTheme.bodyMedium),
       const SizedBox(width: 8),

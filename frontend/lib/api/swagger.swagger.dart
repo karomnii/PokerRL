@@ -48,22 +48,19 @@ abstract class Swagger extends ChopperService {
   }
 
   ///
-  Future<chopper.Response<List<ActiveGameDto>>> apiGamesGet() {
-    generatedMapping.putIfAbsent(
-        ActiveGameDto, () => ActiveGameDto.fromJsonFactory);
+  Future<chopper.Response<List<Game>>> apiGamesGet() {
+    generatedMapping.putIfAbsent(Game, () => Game.fromJsonFactory);
 
     return _apiGamesGet();
   }
 
   ///
   @Get(path: '/api/Games')
-  Future<chopper.Response<List<ActiveGameDto>>> _apiGamesGet();
+  Future<chopper.Response<List<Game>>> _apiGamesGet();
 
   ///
-  Future<chopper.Response<ActiveGameDto>> apiGamesPost(
-      {required CreateGameDto? body}) {
-    generatedMapping.putIfAbsent(
-        ActiveGameDto, () => ActiveGameDto.fromJsonFactory);
+  Future<chopper.Response<Game>> apiGamesPost({required CreateGameDto? body}) {
+    generatedMapping.putIfAbsent(Game, () => Game.fromJsonFactory);
 
     return _apiGamesPost(body: body);
   }
@@ -73,7 +70,7 @@ abstract class Swagger extends ChopperService {
     path: '/api/Games',
     optionalBody: true,
   )
-  Future<chopper.Response<ActiveGameDto>> _apiGamesPost(
+  Future<chopper.Response<Game>> _apiGamesPost(
       {@Body() required CreateGameDto? body});
 
   ///
@@ -397,20 +394,20 @@ abstract class Swagger extends ChopperService {
       {@Body() required SocialLoginDto? body});
 
   ///
-  Future<chopper.Response<UserDto>> apiUsersChangeUsernamePost(
-      {required ChangeUsernameDto? body}) {
+  Future<chopper.Response<UserDto>> apiUsersChooseUsernamePost(
+      {required ChooseUsernameDto? body}) {
     generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
 
-    return _apiUsersChangeUsernamePost(body: body);
+    return _apiUsersChooseUsernamePost(body: body);
   }
 
   ///
   @Post(
-    path: '/api/Users/change-username',
+    path: '/api/Users/choose-username',
     optionalBody: true,
   )
-  Future<chopper.Response<UserDto>> _apiUsersChangeUsernamePost(
-      {@Body() required ChangeUsernameDto? body});
+  Future<chopper.Response<UserDto>> _apiUsersChooseUsernamePost(
+      {@Body() required ChooseUsernameDto? body});
 
   ///
   Future<chopper.Response<UserDto>> apiUsersProfileGet() {

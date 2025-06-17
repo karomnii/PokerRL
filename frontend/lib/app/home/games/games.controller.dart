@@ -4,7 +4,7 @@ import 'package:frontend/services/game.service.dart';
 import 'package:get/get.dart';
 
 class GamesPageController extends GetxController {
-  final RxList<ActiveGameDto> games = <ActiveGameDto>[].obs;
+  final RxList<Game> games = <Game>[].obs;
   final RxBool isLoading = false.obs;
   final errorMessage = RxnString();
   final RxBool sortAscending = true.obs;
@@ -44,7 +44,7 @@ class GamesPageController extends GetxController {
     }
   }
 
-  void joinGame(ActiveGameDto game) {
+  void joinGame(Game game) {
     Get.toNamed('/games/${game.gameId}', preventDuplicates: false);
   }
 }

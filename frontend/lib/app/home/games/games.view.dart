@@ -182,8 +182,10 @@ class GamesPageView extends GetView<GamesPageController> {
                                             ascending;
 
                                         controller.games.sort((a, b) {
-                                          final aDiff = a.tableDifficulty ?? '';
-                                          final bDiff = b.tableDifficulty ?? '';
+                                          final aDiff =
+                                              a.table?.difficultyLevel ?? '';
+                                          final bDiff =
+                                              b.table?.difficultyLevel ?? '';
                                           return ascending
                                               ? aDiff.compareTo(bDiff)
                                               : bDiff.compareTo(aDiff);
@@ -204,8 +206,8 @@ class GamesPageView extends GetView<GamesPageController> {
                                     return DataRow(cells: [
                                       DataCell(Text(game.gameId.toString())),
                                       DataCell(Text('')),
-                                      DataCell(Text(
-                                          game.tableDifficulty ?? 'Unknown')),
+                                      DataCell(
+                                          Text(game.table?.name ?? 'Unknown')),
                                       DataCell(Text('0/4')),
                                       DataCell(
                                         FilledButton.icon(

@@ -16,7 +16,7 @@ dependencies:
   google_sign_in: ^6.1.0
   google_sign_in_web: ^0.12.4+4
   flutter_svg: ^2.0.7
-
+  carousel_slider: ^5.1.1
   chopper: ^8.0.0
   json_annotation: ^4.8.0
 

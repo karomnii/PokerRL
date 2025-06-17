@@ -140,8 +140,7 @@ class GameService extends GetxService {
 
     if (response.isSuccessful) {
       return AssetImage(
-          'assets/${response.body!.avatarImage?.split('/').lastOrNull}' ??
-              'assets/avatar.png');
+          'assets/images/${response.body!.avatarImage?.split('/').lastOrNull}');
     } else {
       final error = 'Failed to fetch bots: ${response.error} ${response.body}';
       ErrorService.to.showError(error);

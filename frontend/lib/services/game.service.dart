@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.swagger.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:get/get.dart';
@@ -21,7 +22,7 @@ class GameService extends GetxService {
     return this;
   }
 
-  Future<List<ActiveGameDto>> getGames() async {
+  Future<List<Game>> getGames() async {
     final response = await _api.apiGamesGet();
 
     if (response.isSuccessful) {
@@ -33,7 +34,7 @@ class GameService extends GetxService {
     }
   }
 
-  Future<ActiveGameDto> createGame(CreateGameDto body) async {
+  Future<Game> createGame(CreateGameDto body) async {
     final response = await _api.apiGamesPost(body: body);
 
     if (response.isSuccessful) {
@@ -127,6 +128,20 @@ class GameService extends GetxService {
 
     if (response.isSuccessful) {
       return response.body ?? [];
+    } else {
+      final error = 'Failed to fetch bots: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
+
+  Future<AssetImage> getUserAvatar(int userId) async {
+    final response = await _api.apiUsersProfileUserIdPut(userId: userId);
+
+    if (response.isSuccessful) {
+      return AssetImage(
+          'assets/${response.body!.avatarImage?.split('/').lastOrNull}' ??
+              'assets/avatar.png');
     } else {
       final error = 'Failed to fetch bots: ${response.error} ${response.body}';
       ErrorService.to.showError(error);

@@ -148,28 +148,53 @@ class PlayerCard extends StatelessWidget {
     }
     final theme = Theme.of(context);
 
-    return PageCard(
-      title: player!.username ?? 'Unknown',
-      highlightColor: player!.userId == currentPlayerId
-          ? theme.elevatedButtonTheme.style?.backgroundColor?.resolve({}) ??
-              theme.colorScheme.primary
-          : null,
-      child: Row(
-        children: [
-          PageColumn(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return FutureBuilder<AssetImage>(
+      future: GameService.to.getUserAvatar(player!.userId!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: CircularProgressIndicator()); // lub placeholder
+        }
+
+        if (snapshot.hasError || !snapshot.hasData) {
+          return Text('Error loading avatar'); // lub inny fallback
+        }
+
+        final avatar = snapshot.data!;
+        final isCurrent = player!.userId == currentPlayerId;
+
+        return PageCard(
+          title: player!.username ?? 'Unknown',
+          titleExtras: [
+            CircleAvatar(
+              radius: 24,
+              backgroundImage: avatar,
+            ),
+          ],
+          highlightColor: isCurrent
+              ? Theme.of(context)
+                      .elevatedButtonTheme
+                      .style
+                      ?.backgroundColor
+                      ?.resolve({}) ??
+                  Theme.of(context).colorScheme.primary
+              : null,
+          child: Row(
             children: [
-              ..._buildHeader(theme),
-              ...[
-                const SizedBox(height: 8),
-              ],
+              PageColumn(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ..._buildHeader(Theme.of(context)),
+                  const SizedBox(height: 8),
+                ],
+              ),
+              _buildCardsRow(),
             ],
           ),
-          _buildCardsRow(),
-        ],
-      ),
+        );
+      },
     );
   }
 

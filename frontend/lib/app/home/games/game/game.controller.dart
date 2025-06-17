@@ -1,10 +1,13 @@
 import 'dart:async'; // <-- NEW
+import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/game.service.dart';
 import 'package:get/get.dart';
 
 class GamePageController extends GetxController {
+  ScrollController scrollController = ScrollController();
+
   /* -------- konfiguracja pollingu -------- */
   static const Duration _pollInterval = Duration(seconds: 2);
 

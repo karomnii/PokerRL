@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using TexasHoldemPoker.API.DTOs;
 using TexasHoldemPoker.API.Models;
@@ -96,13 +98,14 @@ namespace TexasHoldemPoker.API.Controllers
         }
         
 
-        /*
-         *Logic of social-login 
-         * Front -> POST /social-login
-         * new user -> returns 202
-         * Front -> POST /choose-username
-         * full registerd new user returns 200
-         */
+        /* Logic of social-login 
+           * Front -> POST /social-login
+           * new user -> returns 202
+           * Front -> POST /choose-username
+           * Front -> POST /change-username for user
+           * to set his own username (requires user id from sociallogin endpoint)
+           * full registerd new user returns 200
+        */
         
         [HttpPost("social-login")]
         public async Task<ActionResult<UserDto>> SocialLogin([FromBody] SocialLoginDto loginDto)
@@ -117,6 +120,7 @@ namespace TexasHoldemPoker.API.Controllers
             var user = await _userRepository.GetByEmailAsync(info.Email);
             if (user is null)
             {
+                var randomPassword = $"SOCIAL_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}";
                 user = new User
                 {
                     Email = info.Email,
@@ -124,10 +128,15 @@ namespace TexasHoldemPoker.API.Controllers
                     ChipsBalance = 5000,
                     IsActive = true,
                     AvatarImage = "/images/default.png",
-                    Username = null
+                    Username = $"user_{Guid.NewGuid().ToString().Substring(0, 8)}",
+                    PasswordHash = _passwordHasher.HashPassword(null, randomPassword)
                 };
                 await _userRepository.CreateUserAsync(user);
             }
+            
+            user.LastLoginDate = DateTime.UtcNow; 
+            await _userRepository.UpdateUserAsync(user);
+            
             if (string.IsNullOrWhiteSpace(user.Username))
             {
                 return Accepted(new
@@ -150,18 +159,18 @@ namespace TexasHoldemPoker.API.Controllers
         
         
         [Authorize]
-        [HttpPost("choose-username")]
-        public async Task<ActionResult<UserDto>> ChooseUsername([FromBody] ChooseUsernameDto dto)
+        [HttpPost("change-username")]
+        public async Task<ActionResult<UserDto>> ChangeUsername([FromBody] ChangeUsernameDto dto)
         {
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(dto.Username))
-                return BadRequest("Username is required.");
+            if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username.Length < 3)
+            return BadRequest("Username must be at least 3 characters.");
 
             if (await _userRepository.GetByUsernameAsync(dto.Username) != null)
                 return BadRequest("Username is taken.");
 
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var user   = await _userRepository.GetByIdAsync(userId);
-            if (user == null) return NotFound();
+            var user = await _userRepository.GetByIdAsync(dto.UserId);
+            if (user == null)
+                return NotFound();
 
             user.Username = dto.Username;
             await _userRepository.UpdateUserAsync(user);

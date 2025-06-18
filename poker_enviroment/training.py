@@ -25,7 +25,7 @@ pce.load_chart_from_file("training_stage_helper/DQN_preflop_chart.json")
 class PokerTrainer:
     def __init__(self):
         self.update_grace_period = 5000
-        self.num_episodes = 500_000
+        self.num_episodes = 5_000_000
         self.update_target_every = 100
         self.save_every = 20_000
         self.print_stats_every = 250

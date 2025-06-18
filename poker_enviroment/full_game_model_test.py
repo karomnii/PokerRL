@@ -1,5 +1,5 @@
 import time
-
+from collections import defaultdict
 from agents.pseudo_inteligent_agent import PseudoIntelligent
 from agents.random_agent import RandomAgent
 from agents.console_player import ConsolePlayer
@@ -31,11 +31,7 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
     env = PokerEnv(agents)
     env.reset()
     recent_earnings=0
-    actions_made = {
-        Action.CALL: 0,
-        Action.RAISE: 0,
-        Action.FOLD: 0
-    }
+    actions_by_stage = defaultdict(lambda: {a: 0 for a in (Action.CALL, Action.RAISE, Action.FOLD)})
     print("Starting a new sim...\n")
     #env.render()
     while hands_played < num_hands:
@@ -48,7 +44,8 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
 
         env.game.step(action, amount)
         if current_index == 0:
-            actions_made[action] += 1
+            street = env.game.round_stage
+            actions_by_stage[street][action] += 1
         if env.game.chip_data_flag:
             earnings = env.game.get_chip_earning_data()[0]
             recent_earnings+= earnings
@@ -58,18 +55,29 @@ def play_with_model(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
             if hands_played % print_stats_every == 0 and hands_played > 0:
                 print(f"Episode{hands_played}/{num_hands}   Recent Earnings: {recent_earnings}, Average earnings {recent_earnings / print_stats_every}")
                 recent_earnings = 0
-        # env.render()
+        env.render()
 
         # Waiting input
         # input()
-    print(f"Actions made: {actions_made}")
-    print(f"Sim finished model earned: {model_earnings} Per Hand {model_earnings/hands_played}")
+    # print(f"Actions made: {actions_made}")
+    print("\nAkcje modelu rozbite na streety:")
+    for street, counters in actions_by_stage.items():
+        print(f"  {street.capitalize():8}  "
+              f"CALL: {counters[Action.CALL]:4} | "
+              f"RAISE: {counters[Action.RAISE]:4} | "
+              f"FOLD: {counters[Action.FOLD]:4}")
+
+    # (dotychczasowe podsumowania zostają)
+    print(f"\nŁącznie: {sum(c[Action.CALL]  for c in actions_by_stage.values())} calli, "
+          f"{sum(c[Action.RAISE] for c in actions_by_stage.values())} raise’ów, "
+          f"{sum(c[Action.FOLD]  for c in actions_by_stage.values())} foldów")
+    print(f"Model zarobił: {model_earnings} żetonów (~{model_earnings/hands_played:.2f} / hand)")
 
 if __name__ == "__main__":
     play_with_model(
         #model_path='./models/2025-05-08_21-27-41-675/dqn_model.pth',
         #Goat
-        model_path='./models/2025-06-11_11-51-19-187/dqn_model.pth',
+        model_path='./models/2025-06-12_08-29-15-023/dqn_model.pth',
         num_hands=2_000,
         render_speed=0  # Set to 0 for fast execution
     )

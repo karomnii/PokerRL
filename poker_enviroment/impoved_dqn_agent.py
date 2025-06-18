@@ -65,7 +65,7 @@ class DQNAgent(IAgent):
                  gamma=0.95,
                  epsilon_start=1,
                  epsilon_end=0.1,
-                 epsilon_decay=0.99999):
+                 epsilon_decay=0.999995):
 
         super().__init__()
         self.player_id = player_id

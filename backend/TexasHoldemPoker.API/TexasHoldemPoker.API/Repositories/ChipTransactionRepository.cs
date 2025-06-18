@@ -35,7 +35,7 @@ namespace TexasHoldemPoker.API.Repositories
                 if (user == null)
                     throw new InvalidOperationException("User not found");
 
-                user.ChipsBalance += chipTransaction.Amount;
+                if((user.IsBot ?? false) == false ) user.ChipsBalance += chipTransaction.Amount;
 
                 chipTransaction.TransactionDate = DateTime.UtcNow;
                 context.ChipTransactions.Add(chipTransaction);
@@ -51,13 +51,13 @@ namespace TexasHoldemPoker.API.Repositories
                 if (user == null)
                     throw new InvalidOperationException("User not found");
 
-                user.ChipsBalance += chipTransaction.Amount;
+                if ((user.IsBot ?? false) == false) user.ChipsBalance += chipTransaction.Amount;
 
                 chipTransaction.TransactionDate = DateTime.UtcNow;
                 context.ChipTransactions.Add(chipTransaction);
 
                 await context.SaveChangesAsync();
-                await dbTransaction.CommitAsync();
+                await dbTransaction.CommitAsync(); 
 
                 return chipTransaction;
             }

@@ -127,7 +127,7 @@ GO
 -- PlayerCards Table
 CREATE TABLE PlayerCards (
     PlayerCardId INT IDENTITY(1,1),
-    GamePlayerId INT NOT NULL,
+    GamePlayerId INT,
 	UserId INT NOT NULL,
 	GameRoundId INT NOT NULL,
     CardId INT NOT NULL,
@@ -229,7 +229,6 @@ ALTER TABLE Models ADD CONSTRAINT UQ_Models_Name UNIQUE (Name);
 ALTER TABLE GamePlayers ADD CONSTRAINT UQ_GamePlayers_GameUser UNIQUE (GameId, UserId);
 ALTER TABLE GamePlayers ADD CONSTRAINT UQ_GamePlayers_GamePosition UNIQUE (GameId, SeatPosition);
 ALTER TABLE CommunityCards ADD CONSTRAINT UQ_CommunityCards_GamePosition UNIQUE (GameRoundId, Position);
-ALTER TABLE PlayerCards ADD CONSTRAINT UQ_PlayerCards_GamePlayerPosition UNIQUE (GameRoundId, GamePlayerId, Position);
 
 -- Check Constraints
 ALTER TABLE GameRounds ADD CONSTRAINT CK_GameRounds_CurrentState CHECK (CurrentState IN ('Waiting', 'PreFlop', 'Flop', 'Turn', 'River', 'Showdown', 'Completed'));

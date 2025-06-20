@@ -19,18 +19,19 @@ final class _$Swagger extends Swagger {
   final Type definitionType = Swagger;
 
   @override
-  Future<Response<List<Game>>> _apiGamesGet() {
+  Future<Response<List<ActiveGameDto>>> _apiGamesGet() {
     final Uri $url = Uri.parse('/api/Games');
     final Request $request = Request(
       'GET',
       $url,
       client.baseUrl,
     );
-    return client.send<List<Game>, Game>($request);
+    return client.send<List<ActiveGameDto>, ActiveGameDto>($request);
   }
 
   @override
-  Future<Response<Game>> _apiGamesPost({required CreateGameDto? body}) {
+  Future<Response<ActiveGameDto>> _apiGamesPost(
+      {required CreateGameDto? body}) {
     final Uri $url = Uri.parse('/api/Games');
     final $body = body;
     final Request $request = Request(
@@ -39,7 +40,7 @@ final class _$Swagger extends Swagger {
       client.baseUrl,
       body: $body,
     );
-    return client.send<Game, Game>($request);
+    return client.send<ActiveGameDto, ActiveGameDto>($request);
   }
 
   @override
@@ -294,9 +295,9 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<UserDto>> _apiUsersChooseUsernamePost(
-      {required ChooseUsernameDto? body}) {
-    final Uri $url = Uri.parse('/api/Users/choose-username');
+  Future<Response<UserDto>> _apiUsersChangeUsernamePost(
+      {required ChangeUsernameDto? body}) {
+    final Uri $url = Uri.parse('/api/Users/change-username');
     final $body = body;
     final Request $request = Request(
       'POST',

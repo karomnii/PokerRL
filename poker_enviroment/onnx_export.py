@@ -1,16 +1,17 @@
 import torch
-from dqn_agent import DQN
+import onnx
+from impoved_dqn_agent import ImprovedDQN
 
-model = DQN()
+model = ImprovedDQN()
 model.eval()
 
-dummy_input = torch.randn(1, 119)
-model.load_state_dict(torch.load('./models/2025-04-22_23-51-42-711/dqn_model.pth'))
+dummy_input = torch.randn(1, 119+17*4+20+3)
+model.load_state_dict(torch.load('./best_models/harmless/dqn_model.pth', map_location='cpu'))
 
 torch.onnx.export(
     model,
     dummy_input,
-    "dqn_model.onnx",
+    "harmless.onnx",
     export_params=True,
     opset_version=11,
     do_constant_folding=True,

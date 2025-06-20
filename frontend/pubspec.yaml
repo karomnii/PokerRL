@@ -40,4 +40,5 @@ flutter:
     - assets/cards/
     - assets/
     - assets/images/
+    - assets/avatars/
   uses-material-design: true

@@ -22,7 +22,7 @@ class GameService extends GetxService {
     return this;
   }
 
-  Future<List<Game>> getGames() async {
+  Future<List<ActiveGameDto>> getGames() async {
     final response = await _api.apiGamesGet();
 
     if (response.isSuccessful) {
@@ -34,7 +34,7 @@ class GameService extends GetxService {
     }
   }
 
-  Future<Game> createGame(CreateGameDto body) async {
+  Future<ActiveGameDto> createGame(CreateGameDto body) async {
     final response = await _api.apiGamesPost(body: body);
 
     if (response.isSuccessful) {
@@ -140,7 +140,8 @@ class GameService extends GetxService {
 
     if (response.isSuccessful) {
       return AssetImage(
-          'assets/images/${response.body!.avatarImage?.split('/').lastOrNull}');
+          // 'assets/images/${response.body!.avatarImage?.split('/').lastOrNull}',
+          'assets/avatars/Icon_78.png');
     } else {
       final error = 'Failed to fetch bots: ${response.error} ${response.body}';
       ErrorService.to.showError(error);

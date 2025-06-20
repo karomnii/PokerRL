@@ -25,7 +25,7 @@ pce.load_chart_from_file("training_stage_helper/DQN_preflop_chart.json")
 class PokerTrainer:
     def __init__(self):
         self.update_grace_period = 5000
-        self.num_episodes = 5_000_000
+        self.num_episodes = 501_000
         self.update_target_every = 100
         self.save_every = 20_000
         self.print_stats_every = 250
@@ -49,7 +49,7 @@ class PokerTrainer:
         self.dqn_agent = DQNAgent(player_id=0)
 
         self.agents = [self.dqn_agent] + [CautiousAgent(), PseudoIntelligent(), AggressiveAgent()]
-        #self.agents[0].model.load_state_dict(torch.load('./best_models/sussy_caller/dqn_model.pth'))
+        self.agents[0].model.load_state_dict(torch.load('./best_models/2025-06-12_08-29-15-023/dqn_model.pth',map_location=torch.device('cpu')))
         # self.agents = [self.dqn_agent] + [DQNAgent(player_id=i+1) for i in range(2)] + [RandomAgent()]
         #
         # #Load models
@@ -117,6 +117,54 @@ class PokerTrainer:
                     return 0.1
                 else:
                     return 0.3
+
+        # discourage bad folds
+        if folded:
+            cards=[]
+            for i in range(7):
+                card_vector = episode_transitions[len(episode_transitions)-1]['state'][i*17:(i+1)*17]
+                # Workaround since -1 was encoded as no card instead of 0 so the empty vector looks like this
+                if not torch.equal(card_vector, torch.tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.])):
+                    cards.append(ece._decode_onehotencoded_card(episode_transitions[len(episode_transitions)-1]['state'][i*17:(i+1)*17]))
+            pocked_card_evaluation = pce.evaluate(cards[0], cards[1])
+            if len(cards)==2:
+                if pocked_card_evaluation == 'fold':
+                    return 0.1
+                else:
+                    return -0.4
+            elif len(cards) == 5:
+                rank,hand = ece.evaluate_best_hand(cards[:2],cards[2:])
+                if rank >= 4:
+                    return -0.8
+                elif rank >= 2:
+                    return -0.4
+                else:
+                    if pocked_card_evaluation == 'fold':
+                        return 0.1
+                    else:
+                        return -0.2
+            elif len(cards) == 6:
+                rank, hand = ece.evaluate_best_hand(cards[:2], cards[2:])
+                if rank >= 4:
+                    return -0.9
+                elif rank >= 2:
+                    return -0.35
+                else:
+                    if pocked_card_evaluation == 'fold':
+                        return 0.2
+                    else:
+                        return -0.3
+            else:
+                rank, hand = ece.evaluate_best_hand(cards[:2], cards[2:])
+                if rank >= 4:
+                    return -1
+                elif rank >= 2:
+                    return -0.3
+                else:
+                    if pocked_card_evaluation == 'fold':
+                        return 0.3
+                    else:
+                        return -0.4
 
         net_chips = env.game.get_chip_earning_data()[dqn_player_id]
         self.total_earnings+=net_chips

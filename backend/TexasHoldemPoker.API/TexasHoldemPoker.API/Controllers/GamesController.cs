@@ -203,7 +203,7 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpPost("{id}/hint/{userId}")]
-        public async Task<ActionResult<HintDto>> GetHint(int id, int userId)
+        public async Task<ActionResult<IEnumerable<HintDto>>> GetHint(int id, int userId)
         {
             var result = await _gameService.GetGameHints(id, userId);
 

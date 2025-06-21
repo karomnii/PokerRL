@@ -122,7 +122,17 @@ public class AiAgentService : IAiAgentService, IDisposable
 
     public async Task<MoveDto> GetBestActionAsync(GameStateDto gameState, string modelId = "1")
     {
-        var features = GameAgentTranslator.ExtractGameFeatures(gameState);
+        float[] features;
+        if (modelId == "1")
+            features = GameAgentTranslator.ExtractGameFeaturesOld(gameState);
+        else if (modelId == "2" || modelId == "3")
+            features = GameAgentTranslator.ExtractGameFeatures(gameState);
+        else
+            return new MoveDto
+            {
+                ActionType = "Fold",
+                Amount = 0
+            };
 
         var output = await PredictActionAsync(features, modelId);
 

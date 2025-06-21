@@ -274,6 +274,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Username, "UQ_Users_Username").IsUnique();
 
             entity.Property(e => e.AvatarImage).HasMaxLength(255);
+            entity.Property(e => e.DeckStyle).HasMaxLength(255);
             entity.Property(e => e.AvatarType)
                 .HasMaxLength(20)
                 .HasDefaultValue("Standard");

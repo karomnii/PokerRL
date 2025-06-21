@@ -20,18 +20,21 @@ namespace TexasHoldemPoker.API.Controllers
         private readonly IPasswordHasher<User> _passwordHasher;
         private readonly ITokenService _tokenService;
         private readonly ILeaderboardRepository _leaderboardRepository;
+        private readonly IShopRepository _shopRepository;
         private readonly ProfileAvatarHelper _avatar;
         public UsersController(
             IUserRepository userRepository,
             IPasswordHasher<User> passwordHasher,
             ITokenService tokenService,
             ILeaderboardRepository leaderboardRepository,
+            IShopRepository shopRepository,
             ProfileAvatarHelper avatar)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _leaderboardRepository = leaderboardRepository ?? throw new ArgumentNullException(nameof(leaderboardRepository));
+            _shopRepository = shopRepository;
             _avatar = avatar;
         }
 
@@ -51,7 +54,7 @@ namespace TexasHoldemPoker.API.Controllers
                 ChipsBalance = 5000,
                 RegistrationDate = DateTime.UtcNow,
                 IsActive = true,
-                AvatarImage = "/images/default.png"
+                AvatarImage = "Blue Egg"
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
@@ -64,7 +67,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = "/images/default.png",
+                AvatarImage = "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "None",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -93,6 +97,7 @@ namespace TexasHoldemPoker.API.Controllers
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
                 AvatarImage = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -127,7 +132,7 @@ namespace TexasHoldemPoker.API.Controllers
                     RegistrationDate = DateTime.UtcNow,
                     ChipsBalance = 5000,
                     IsActive = true,
-                    AvatarImage = "/images/default.png",
+                    AvatarImage = "Blue Egg",
                     Username = $"user_{Guid.NewGuid().ToString().Substring(0, 8)}",
                     PasswordHash = _passwordHasher.HashPassword(null, randomPassword)
                 };
@@ -153,6 +158,7 @@ namespace TexasHoldemPoker.API.Controllers
                 Email        = user.Email,
                 ChipsBalance = user.ChipsBalance,
                 AvatarImage  = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
                 Token        = _tokenService.CreateToken(user)
             });
         }
@@ -182,6 +188,7 @@ namespace TexasHoldemPoker.API.Controllers
                 Email        = user.Email,
                 ChipsBalance = user.ChipsBalance,
                 AvatarImage  = user.AvatarImage,
+                DeckStyle = user.DeckStyle,
                 Token        = _tokenService.CreateToken(user)
             });
         }
@@ -202,7 +209,9 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage
+                AvatarImage = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
+                Token = _tokenService.CreateToken(user)
             };
         }
 
@@ -227,7 +236,7 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
-        [HttpPut("profile/{userId}")]
+        [HttpGet("profile/{userId}")]
         public async Task<ActionResult<UserDto>> GetProfile(int userId)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -240,7 +249,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = _avatar.GetFullAvatarUrl(user.AvatarImage),
+                AvatarImage = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -270,6 +280,128 @@ namespace TexasHoldemPoker.API.Controllers
             };
 
             return Ok(result);
+        }
+
+        [HttpGet("shop")]
+        public async Task<ActionResult<IEnumerable<ShopItemDto>>> GetShopItems()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var shopItemDtos = await _shopRepository.GetAllActiveItemsForUserAsync(userId);
+            if (shopItemDtos == null || !shopItemDtos.Any())
+                return NotFound(new { Message = "No items available in the shop." });
+
+            return Ok(shopItemDtos);
+        }
+
+        [HttpGet("shop/{userId}")]
+        public async Task<ActionResult<IEnumerable<ShopItemDto>>> GetShopItemsWithUserId(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var shopItemDtos = await _shopRepository.GetAllActiveItemsForUserAsync(userId);
+            if (shopItemDtos == null || !shopItemDtos.Any())
+                return NotFound(new { Message = "No items available in the shop." });
+
+            return Ok(shopItemDtos);
+        }
+
+        [HttpGet("inventory")]
+        public async Task<ActionResult<IEnumerable<ShopItemDto>>> GetUserInventory()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var shopItemDtos = await _shopRepository.GetBoughtItemsForUserAsync(userId);
+            if (shopItemDtos == null || !shopItemDtos.Any())
+                return NotFound(new { Message = "No items available in the shop." });
+
+            return Ok(shopItemDtos);
+        }
+
+        [HttpGet("inventory/{userId}")]
+        public async Task<ActionResult<IEnumerable<ShopItemDto>>> GetUserInventory(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var shopItemDtos = await _shopRepository.GetBoughtItemsForUserAsync(userId);
+            if (shopItemDtos == null || !shopItemDtos.Any())
+                return NotFound(new { Message = "No items available in the shop." });
+
+            return Ok(shopItemDtos);
+        }
+
+        [HttpPost("setItem")]
+        public async Task<ActionResult<UserDto>> SelectItem(SelectItemDto selectItem)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var item = await _shopRepository.GetItemByIdAsync(selectItem.ItemId);
+            if (item == null)
+                return NotFound(new { Message = "Item not found." });
+
+            var result = await _shopRepository.SetItemForUser(userId, item.ItemId);
+
+            if (!result)
+                return BadRequest(new { Message = "Failed to set item." });
+
+            user = await _userRepository.GetByIdAsync(userId);
+
+            return Ok(new UserDto
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
+                Token = _tokenService.CreateToken(user)
+            });
+        }
+
+        [HttpPost("setItem/{userId}")]
+        public async Task<ActionResult<UserDto>> SelectItem(SelectItemDto selectItem, int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var item = await _shopRepository.GetItemByIdAsync(selectItem.ItemId);
+            if (item == null)
+                return NotFound(new { Message = "Item not found." });
+
+            var result = await _shopRepository.SetItemForUser(userId, item.ItemId);
+
+            if (!result)
+                return BadRequest(new { Message = "Failed to set item." });
+
+            user = await _userRepository.GetByIdAsync(userId);
+
+            return Ok(new UserDto
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage = user.AvatarImage,
+                DeckStyle = user.DeckStyle ?? "None",
+                Token = _tokenService.CreateToken(user)
+            });
         }
     }
 }

@@ -13,5 +13,7 @@ namespace TexasHoldemPoker.API.Repositories
         Task<bool> DeleteUserAsync(int userId);
         Task<bool> AdjustChipsAsync(int userId, int amountDelta);
         Task<bool> SaveChangesAsync();
+        Task<bool> SetUserDeckStyle(int userId, string deckStyle);
+        Task<bool> SetUserAvatarImage(int userId, string avatarImage);
     }
 }

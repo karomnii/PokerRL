@@ -16,12 +16,14 @@ namespace TexasHoldemPoker.API.Controllers
     {
         private readonly IPokerGameService _gameService;
         private readonly IGameRepository _gameRepository;
+        private readonly IPokerTableRepository _pokerTableRepository;
         private readonly IAiAgentService _aiAgentService;
 
-        public GamesController(IPokerGameService gameService, IGameRepository gameRepository, IAiAgentService aiAgentService)
+        public GamesController(IPokerGameService gameService, IGameRepository gameRepository, IPokerTableRepository pokerTableRepository, IAiAgentService aiAgentService)
         {
             _gameService = gameService;
             _gameRepository = gameRepository;
+            _pokerTableRepository = pokerTableRepository;
             _aiAgentService = aiAgentService;
             
             _gameService.InitializeAgentsPlayingInGames().GetAwaiter().GetResult();
@@ -40,6 +42,14 @@ namespace TexasHoldemPoker.API.Controllers
             });
 
             return Ok(gameDtos);
+        }
+
+        [HttpGet("/tables")]
+        public async Task<ActionResult<IEnumerable<TableDto>>> GetTables()
+        {
+            var pokerTableDTOs = await _pokerTableRepository.GetAllTableDTOsAsync();
+
+            return Ok(pokerTableDTOs);
         }
 
         [HttpGet("{id}")]
@@ -71,11 +81,17 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult<ActiveGameDto>> CreateGame(CreateGameDto createDto)
         {
             var game = await _gameService.CreateGameAsync(createDto.TableId);
+
+            if (game == null)
+                return BadRequest("Failed to create game");
+
+            game = await _gameRepository.GetByIdAsync(game.GameId);
+
             var gameDto = new ActiveGameDto
             {
                 GameId = game.GameId,
-                TableName = "None",
-                TableDifficulty = "None"
+                TableName = game.Table?.Name ?? "Unknown",
+                TableDifficulty = game.Table?.DifficultyLevel ?? "Unknown"
             };
             return CreatedAtAction(nameof(GetGame), new { id = game.GameId }, gameDto);
         }
@@ -96,12 +112,25 @@ namespace TexasHoldemPoker.API.Controllers
         public async Task<ActionResult> LeaveGame(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var game = await _gameRepository.GetByIdAsync(id);
+            if (game == null)
+                return NotFound(new { message = "Game not found" });
+
+            var gamePlayer = game.GamePlayers.FirstOrDefault(p => p.UserId == userId);
+            if (gamePlayer == null)
+                return BadRequest(new { message = "Player not in this game" });
+
             var result = await _gameService.LeaveGameAsync(id, userId);
 
             if (!result)
-                return BadRequest("Failed to leave game");
+                return BadRequest(new { message = "Failed to leave game" });
 
-            return NoContent();
+            return Ok(new
+            {
+                message = $"Player {userId} successfully removed from game",
+                refundedChips = gamePlayer.CurrentChips
+            });
         }
 
         [HttpPost("{id}/start")]
@@ -125,6 +154,18 @@ namespace TexasHoldemPoker.API.Controllers
                 return BadRequest("Invalid move or not your turn");
 
             return NoContent();
+        }
+
+        [HttpPost("{id}/hint")]
+        public async Task<ActionResult<HintDto>> GetHint(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var result = await _gameService.GetGameHints(id,userId);
+
+            if (result == null || !result.Any())
+                return NotFound("No hints available for this game or it is not your turn");
+
+            return Ok(result);
         }
 
         // Admin endpoints for testing/debugging
@@ -161,6 +202,17 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id}/hint/{userId}")]
+        public async Task<ActionResult<HintDto>> GetHint(int id, int userId)
+        {
+            var result = await _gameService.GetGameHints(id, userId);
+
+            if (result == null || !result.Any())
+                return NotFound("No hints available for this game or it is not your turn");
+
+            return Ok(result);
+        }
+
         [HttpPost("{id}/leave/{userId}")]
         public async Task<ActionResult> LeaveGameWithUserId(int id, int userId)
         {
@@ -180,7 +232,7 @@ namespace TexasHoldemPoker.API.Controllers
             return Ok(new
             {
                 message = $"Player {userId} successfully removed from game",
-                refundedChips = gamePlayer.InitialChips
+                refundedChips = gamePlayer.CurrentChips
             });
         }
 

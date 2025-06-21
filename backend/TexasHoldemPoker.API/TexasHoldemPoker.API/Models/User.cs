@@ -19,6 +19,8 @@ public partial class User
 
     public string AvatarType { get; set; } = null!;
 
+    public string? DeckStyle { get; set; }
+
     public DateTime RegistrationDate { get; set; }
 
     public DateTime? LastLoginDate { get; set; }

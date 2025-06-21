@@ -4,6 +4,7 @@
     {
         public int UserId { get; set; }
         public string Username { get; set; }
+        public string? Avatar { get; set; }
         public int CurrentChips { get; set; }
         public bool IsActive { get; set; }
         public bool IsDealer { get; set; }

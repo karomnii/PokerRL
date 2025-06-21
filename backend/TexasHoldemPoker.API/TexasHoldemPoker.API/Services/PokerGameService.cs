@@ -880,22 +880,22 @@ namespace TexasHoldemPoker.API.Services
         private async Task<List<SidePot>> CalculateSidePotsAsync(int gameId, int gameRoundId)
         {
             var sidePods = new List<SidePot>();
-            var allmoves = await moveRepository.GetMovesByGameIdAsync(gameId);
+            var allMoves = await moveRepository.GetLastRoundMovesAsync(gameId,gameRoundId);
 
-            var playercontr = new Dictionary<int, int>();
-            foreach(var move in allmoves.Where(m =>
+            var playerContributions = new Dictionary<int, int>();
+            foreach(var move in allMoves.Where(m =>
                         m.ActionType == "Bet" || m.ActionType == "Call" || 
                         m.ActionType == "Raise" || m.ActionType == "AllIn" || 
                         m.ActionType == "Blind")){
-                if (!playercontr.ContainsKey(move.PlayerId))
+                if (!playerContributions.ContainsKey(move.PlayerId))
                 {
-                    playercontr[move.PlayerId] = 0;
+                    playerContributions[move.PlayerId] = 0;
                 }
-                playercontr[move.PlayerId] += move.Amount;
+                playerContributions[move.PlayerId] += move.Amount;
             }
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).Select(p => p.UserId).ToList();
-            var contributingPlayers = playercontr
+            var contributingPlayers = playerContributions
                 .Where(kvp => activePlayers.Contains(kvp.Key))
                 .OrderBy(kvp => kvp.Value)
                 .ToList();
@@ -1223,6 +1223,7 @@ namespace TexasHoldemPoker.API.Services
                 {
                     UserId = p.UserId,
                     Username = p.User?.Username ?? "Unknown",
+                    Avatar = p.User?.AvatarImage ?? "Blue Egg",
                     CurrentChips = p.CurrentChips,
                     IsActive = p.IsActive,
                     IsDealer = p.IsDealer,
@@ -1315,9 +1316,6 @@ namespace TexasHoldemPoker.API.Services
 
             //await Task.Delay(3000);
 
-            await Task.Delay(3000);
-
-
             var result = await PlaceBetAsync(gameId, userId, move.ActionType, move.Amount);
 
             if (!result)
@@ -1328,6 +1326,36 @@ namespace TexasHoldemPoker.API.Services
             }
             Console.WriteLine($"Agent {userId} made a move {move.ActionType} with amount {move.Amount} in game {gameId}.");
             return result;
+        }
+
+        public async Task<IEnumerable<HintDto>> GetGameHints(int gameId, int userId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            if (game == null) return Enumerable.Empty<HintDto>();
+
+            var player = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+
+            if (player == null || game.CurrentTurnPlayerId != player.GamePlayerId) return Enumerable.Empty<HintDto>();
+
+            var allModels = await modelRepository.GetAllAsync();
+
+            var gameState = await GetGameStateAsync(gameId, userId);
+
+            IEnumerable<HintDto> hints = new List<HintDto>();
+
+            foreach (var model in allModels)
+            {
+                MoveDto move = await aiAgentService.GetBestActionAsync(gameState, model.ModelId.ToString());
+                hints = hints.Append(new HintDto
+                {
+                    ModelName = model.Name,
+                    Difficulty = model.Difficulty ?? "Unknown",
+                    Move = move.ActionType
+                });
+            }
+
+            return hints;
         }
 
         public async Task<IEnumerable<AgentDto>> GetAvailableAgentsAsync(int gameId)

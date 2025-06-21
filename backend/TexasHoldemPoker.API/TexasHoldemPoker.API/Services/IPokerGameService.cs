@@ -17,5 +17,6 @@ namespace TexasHoldemPoker.API.Services
         Task<GameStateDto> GetGameStateAsync(int gameId, int userId);
         Task<IEnumerable<AgentDto>> GetAvailableAgentsAsync(int gameId);
         Task<bool> InitializeAgentsPlayingInGames();
+        Task<IEnumerable<HintDto>> GetGameHints(int gameId, int userId);
     }
 }

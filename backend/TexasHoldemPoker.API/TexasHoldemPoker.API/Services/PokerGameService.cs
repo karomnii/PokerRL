@@ -880,22 +880,22 @@ namespace TexasHoldemPoker.API.Services
         private async Task<List<SidePot>> CalculateSidePotsAsync(int gameId, int gameRoundId)
         {
             var sidePods = new List<SidePot>();
-            var allmoves = await moveRepository.GetMovesByGameIdAsync(gameId);
+            var allMoves = await moveRepository.GetLastRoundMovesAsync(gameId,gameRoundId);
 
-            var playercontr = new Dictionary<int, int>();
-            foreach(var move in allmoves.Where(m =>
+            var playerContributions = new Dictionary<int, int>();
+            foreach(var move in allMoves.Where(m =>
                         m.ActionType == "Bet" || m.ActionType == "Call" || 
                         m.ActionType == "Raise" || m.ActionType == "AllIn" || 
                         m.ActionType == "Blind")){
-                if (!playercontr.ContainsKey(move.PlayerId))
+                if (!playerContributions.ContainsKey(move.PlayerId))
                 {
-                    playercontr[move.PlayerId] = 0;
+                    playerContributions[move.PlayerId] = 0;
                 }
-                playercontr[move.PlayerId] += move.Amount;
+                playerContributions[move.PlayerId] += move.Amount;
             }
             var players = await gamePlayerRepository.GetPlayersByGameIdAsync(gameId);
             var activePlayers = players.Where(p => p.IsActive).Select(p => p.UserId).ToList();
-            var contributingPlayers = playercontr
+            var contributingPlayers = playerContributions
                 .Where(kvp => activePlayers.Contains(kvp.Key))
                 .OrderBy(kvp => kvp.Value)
                 .ToList();

@@ -90,5 +90,23 @@ namespace TexasHoldemPoker.API.Repositories
         {
             return (await _context.SaveChangesAsync()) > 0;
         }
+
+        public async Task<bool> SetUserAvatarImage(int userId, string avatarImage)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && u.IsActive);
+            if (user == null) return false;
+            user.AvatarImage = avatarImage;
+            _context.Entry(user).State = EntityState.Modified;
+            return await SaveChangesAsync();
+        }
+
+        public async Task<bool> SetUserDeckStyle(int userId, string deckStyle)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && u.IsActive);
+            if (user == null) return false;
+            user.DeckStyle = deckStyle;
+            _context.Entry(user).State = EntityState.Modified;
+            return await SaveChangesAsync();
+        }
     }
 }

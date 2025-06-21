@@ -1315,9 +1315,6 @@ namespace TexasHoldemPoker.API.Services
 
             //await Task.Delay(3000);
 
-            await Task.Delay(3000);
-
-
             var result = await PlaceBetAsync(gameId, userId, move.ActionType, move.Amount);
 
             if (!result)

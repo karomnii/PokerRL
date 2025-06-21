@@ -44,6 +44,7 @@ public class Program
         builder.Services.AddScoped<IGameRoundWinnerRepository, GameRoundWinnerRepository>();
         builder.Services.AddScoped<IModelRepository, ModelRepository>();
         builder.Services.AddScoped<IUserModelRepository, UserModelRepository>();
+        builder.Services.AddScoped<IPokerTableRepository, PokerTableRepository>();
 
         // Add services
         builder.Services.AddScoped<IPokerGameService, PokerGameService>();

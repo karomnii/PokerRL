@@ -5,5 +5,5 @@
         public int GameId { get; set; }
         public string TableName { get; set; }
         public string TableDifficulty { get; set; }
-}
+    }
 }

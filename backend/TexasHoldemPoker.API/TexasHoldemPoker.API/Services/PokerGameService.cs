@@ -1327,6 +1327,36 @@ namespace TexasHoldemPoker.API.Services
             return result;
         }
 
+        public async Task<IEnumerable<HintDto>> GetGameHints(int gameId, int userId)
+        {
+            var game = await gameRepository.GetByIdAsync(gameId);
+
+            if (game == null) return Enumerable.Empty<HintDto>();
+
+            var player = await gamePlayerRepository.GetPlayerByGameAndUserAsync(gameId, userId);
+
+            if (player == null || game.CurrentTurnPlayerId != player.GamePlayerId) return Enumerable.Empty<HintDto>();
+
+            var allModels = await modelRepository.GetAllAsync();
+
+            var gameState = await GetGameStateAsync(gameId, userId);
+
+            IEnumerable<HintDto> hints = new List<HintDto>();
+
+            foreach (var model in allModels)
+            {
+                MoveDto move = await aiAgentService.GetBestActionAsync(gameState, model.ModelId.ToString());
+                hints = hints.Append(new HintDto
+                {
+                    ModelName = model.Name,
+                    Difficulty = model.Difficulty ?? "Unknown",
+                    Move = move.ActionType
+                });
+            }
+
+            return hints;
+        }
+
         public async Task<IEnumerable<AgentDto>> GetAvailableAgentsAsync(int gameId)
         {
             var game = await gameRepository.GetByIdAsync(gameId);

@@ -156,6 +156,18 @@ namespace TexasHoldemPoker.API.Controllers
             return NoContent();
         }
 
+        [HttpPost("{id}/hint")]
+        public async Task<ActionResult<HintDto>> GetHint(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var result = await _gameService.GetGameHints(id,userId);
+
+            if (result == null || !result.Any())
+                return NotFound("No hints available for this game or it is not your turn");
+
+            return Ok(result);
+        }
+
         // Admin endpoints for testing/debugging
         [HttpGet("{id}/{userId}")]
         public async Task<ActionResult<GameStateDto>> GetGameWithUserId(int id, int userId)
@@ -188,6 +200,17 @@ namespace TexasHoldemPoker.API.Controllers
                 return BadRequest("Invalid move or not your turn");
 
             return NoContent();
+        }
+
+        [HttpPost("{id}/hint/{userId}")]
+        public async Task<ActionResult<HintDto>> GetHint(int id, int userId)
+        {
+            var result = await _gameService.GetGameHints(id, userId);
+
+            if (result == null || !result.Any())
+                return NotFound("No hints available for this game or it is not your turn");
+
+            return Ok(result);
         }
 
         [HttpPost("{id}/leave/{userId}")]

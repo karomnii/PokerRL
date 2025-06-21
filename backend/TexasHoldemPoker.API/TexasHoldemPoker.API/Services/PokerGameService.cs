@@ -1223,6 +1223,7 @@ namespace TexasHoldemPoker.API.Services
                 {
                     UserId = p.UserId,
                     Username = p.User?.Username ?? "Unknown",
+                    Avatar = p.User?.AvatarImage ?? "Blue Egg",
                     CurrentChips = p.CurrentChips,
                     IsActive = p.IsActive,
                     IsDealer = p.IsDealer,

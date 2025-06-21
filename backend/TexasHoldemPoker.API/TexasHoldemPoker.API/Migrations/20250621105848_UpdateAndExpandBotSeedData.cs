@@ -70,16 +70,16 @@ namespace TexasHoldemPoker.API.Migrations
                 ('Aggressive', 'harmful.onnx', 'Medium'),
                 ('Careful', 'harmless.onnx', 'Hard');
 
-                INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
-                ('Bot_Adam', 'email1', 'password', 2147483647, 1),
-                ('Bot_Michal', 'email2', 'password', 2147483647, 1),
-                ('Bot_Eva', 'email3', 'password', 2147483647, 1),
-                ('Bot_Elizabeth', 'email4', 'password', 2147483647, 1),
-                ('Bot_William', 'email5', 'password', 2147483647, 1),
-                ('Bot_Olivia', 'email6', 'password', 2147483647, 1),
-                ('Bot_Alice', 'email7', 'password', 2147483647, 1),
-                ('Bot_Grace', 'email8', 'password', 2147483647, 1),
-                ('Bot_Jack', 'email9', 'password', 2147483647, 1);
+                INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot, AvatarImage) VALUES
+                ('Bot_Adam', 'email1', 'password', 2147483647, 1,'lolipop'),
+                ('Bot_Michal', 'email2', 'password', 2147483647, 1, 'lolipop'),
+                ('Bot_Eva', 'email3', 'password', 2147483647, 1, 'lolipop'),
+                ('Bot_Elizabeth', 'email4', 'password', 2147483647, 1, 'pumpkin'),
+                ('Bot_William', 'email5', 'password', 2147483647, 1, 'pumpkin'),
+                ('Bot_Olivia', 'email6', 'password', 2147483647, 1, 'pumpkin'),
+                ('Bot_Alice', 'email7', 'password', 2147483647, 1, 'cat'),
+                ('Bot_Grace', 'email8', 'password', 2147483647, 1, 'cat'),
+                ('Bot_Jack', 'email9', 'password', 2147483647, 1, 'cat');
 
                 INSERT INTO UserModels (UserId, ModelId) VALUES
                 (1,1),

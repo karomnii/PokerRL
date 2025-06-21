@@ -21,6 +21,7 @@ CREATE TABLE Users (
     ChipsBalance INT NOT NULL DEFAULT 5000,
     AvatarImage NVARCHAR(255),
     AvatarType NVARCHAR(20) NOT NULL DEFAULT 'Standard',
+	DeckStyle NVARCHAR(255),
     RegistrationDate DATETIME NOT NULL DEFAULT GETDATE(),
     LastLoginDate DATETIME,
     IsActive BIT NOT NULL DEFAULT 1,
@@ -296,14 +297,28 @@ INSERT INTO ShopItems (Name, Description, Price, ItemType, IsActive, Currency) V
 ('Ultra', 'Unlock an ultra avatar for your profile.', 19.99, 'Avatar', 1, 'CHIPS');
 
 INSERT INTO Models (Name, Path, Difficulty) VALUES
-('First', 'dqn_model.onnx', 'Easy');
+('Stupid', 'dqn_model.onnx', 'Easy'),
+('Aggressive', 'harmful.onnx', 'Medium'),
+('Careful', 'harmless.onnx', 'Hard');
 
 INSERT INTO Users(Username, Email, PasswordHash, ChipsBalance, IsBot) VALUES
 ('Bot_Adam', 'email1', 'password', 2147483647, 1),
 ('Bot_Michal', 'email2', 'password', 2147483647, 1),
-('Bot_Eva', 'email3', 'password', 2147483647, 1);
+('Bot_Eva', 'email3', 'password', 2147483647, 1),
+('Bot_Elizabeth', 'email4', 'password', 2147483647, 1),
+('Bot_William', 'email5', 'password', 2147483647, 1),
+('Bot_Olivia', 'email6', 'password', 2147483647, 1),
+('Bot_Alice', 'email7', 'password', 2147483647, 1),
+('Bot_Grace', 'email8', 'password', 2147483647, 1),
+('Bot_Jack', 'email9', 'password', 2147483647, 1);
 
 INSERT INTO UserModels (UserId, ModelId) VALUES
 (1,1),
 (2,1),
-(3,1);
+(3,1),
+(4,2),
+(5,2),
+(6,2),
+(7,3),
+(8,3),
+(9,3);

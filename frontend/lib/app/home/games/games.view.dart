@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/app/home/games/games.controller.dart';
-import 'package:frontend/app/home/games/game_card.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/widgets/app_bar/app_bar.dart';
-import 'package:frontend/widgets/cards/playing_card.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
 import 'package:get/get.dart';
@@ -99,7 +97,7 @@ class GamesPageView extends GetView<GamesPageController> {
 
         return Center(
           child: SizedBox(
-            width: 800.0,
+            width: 620.0,
             child: PageCard(
               title: 'Games',
               titleExtras: [
@@ -172,7 +170,6 @@ class GamesPageView extends GetView<GamesPageController> {
                                   sortAscending: controller.sortAscending.value,
                                   columns: [
                                     const DataColumn(label: Text('Game ID')),
-                                    const DataColumn(label: Text('Owner')),
                                     DataColumn(
                                       label: const Text('Difficulty'),
                                       onSort: (columnIndex, ascending) {
@@ -194,19 +191,17 @@ class GamesPageView extends GetView<GamesPageController> {
                                     const DataColumn(label: Text('')),
                                   ],
                                   rows: controller.games.map((game) {
-                                    // final ownerName = game.gamePlayers
-                                    //         ?.firstWhereOrNull(
-                                    //             (gp) => gp.isActive ?? false)
-                                    //         ?.user
-                                    //         ?.username ??
-                                    //     'Unknown';
-
                                     return DataRow(cells: [
                                       DataCell(Text(game.gameId.toString())),
-                                      DataCell(Text('')),
                                       DataCell(
                                           Text(game.tableName ?? 'Unknown')),
-                                      DataCell(Text('0/4')),
+                                      DataCell(Obx(() {
+                                        final count =
+                                            controller.activePlayersCount[
+                                                    game.gameId!] ??
+                                                0;
+                                        return Text('$count/4');
+                                      })),
                                       DataCell(
                                         FilledButton.icon(
                                           icon: const Icon(
@@ -222,7 +217,8 @@ class GamesPageView extends GetView<GamesPageController> {
                                 ),
                               ),
                             ),
-                          ))),
+                          )),
+                    ),
             ),
           ),
         );

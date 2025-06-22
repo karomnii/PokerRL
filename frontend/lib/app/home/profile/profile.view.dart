@@ -52,6 +52,35 @@ class ProfilePageView extends GetView<ProfilePageController> {
               children: [
                 PageCard(
                   title: 'User Profile',
+                  titleExtras: [
+                    Tooltip(
+                      message: 'Get 1k chips!',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => controller.addChips(),
+                          borderRadius: BorderRadius.circular(
+                              25), // pół szerokości/wysokości
+                          hoverColor: Colors.deepPurpleAccent.withOpacity(0.2),
+                          splashColor: Colors.white24,
+                          child: Ink(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurple,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.redeem,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   child: PageColumn(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,

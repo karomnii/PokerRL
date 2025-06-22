@@ -44,4 +44,14 @@ class ProfileService extends GetxService {
       throw Exception(error);
     }
   }
+
+  Future<void> add1KChips(int userId) async {
+    final response = await _api.apiUsersAdd1KChipsUserIdPost(userId: userId);
+
+    if (!response.isSuccessful) {
+      final error = 'Failed to add chips: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
 }

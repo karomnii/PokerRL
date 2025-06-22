@@ -483,4 +483,16 @@ final class _$Swagger extends Swagger {
     );
     return client.send<UserDto, UserDto>($request);
   }
+
+  @override
+  Future<Response<UserDto>> _apiUsersAdd1KChipsUserIdPost(
+      {required int? userId}) {
+    final Uri $url = Uri.parse('/api/Users/Add1KChips/${userId}');
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<UserDto, UserDto>($request);
+  }
 }

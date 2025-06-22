@@ -4,7 +4,7 @@ from impoved_dqn_agent import DQNAgent
 from training_stage_helper.preflop_chart_evaluator import PreflopChartEvaluator
 import torch
 
-model_path = '../best_models/harmless/dqn_model.pth'
+model_path = '../best_models/harmfull/dqn_model.pth'
 
 class PreflopTester:
     def __init__(self, num_tests=10_000):

@@ -184,16 +184,17 @@ def generate_one_pair():
     pair_suits = random.sample(suits, 2)
     pair = [pair_rank + s for s in pair_suits]
 
-    # Remaining cards: pick 5 cards not using the pair rank
+    # Remaining ranks (excluding the pair rank)
     remaining_ranks = [r for r in ranks if r != pair_rank]
-    remaining_cards = []
 
-    while len(remaining_cards) < 5:
-        rank = random.choice(remaining_ranks)
+    # Pick 5 distinct ranks from remaining ranks
+    other_ranks = random.sample(remaining_ranks, 5)
+
+    remaining_cards = []
+    for rank in other_ranks:
         suit = random.choice(suits)
         card = rank + suit
-        if card not in remaining_cards:
-            remaining_cards.append(card)
+        remaining_cards.append(card)
 
     hand = pair + remaining_cards
     random.shuffle(hand)
@@ -291,7 +292,7 @@ def test_card_value(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
 
 if __name__ == "__main__":
     test_card_value(
-        model_path='best_models/harmless/dqn_model.pth',
-        num_hands=200,
+        model_path='best_models/harmfull/dqn_model.pth',
+        num_hands=2000,
         render_speed=0  # Set to 0 for fast execution
     )

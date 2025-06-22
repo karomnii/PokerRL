@@ -11,6 +11,17 @@ from enviroment import PokerEnv
 
 print_stats_every = 50
 
+card_values={
+          8: "Straight Flush",
+          7: "Four of a Kind",
+          6: "Full House",
+          5: "Flush",
+          4: "Straight",
+          3: "Three of a Kind",
+          2: "Two Pair",
+          1: "One Pair",
+          0: "High Card"
+}
 
 def test_card_value(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
     dqn_agent = DQNAgent(player_id=0)
@@ -63,8 +74,8 @@ def test_card_value(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
         #input()
     # print(f"Actions made: {actions_made}")
     print("\nAkcje modelu rozbite na ręce (best_hand rank):")
-    for hand_rank in actions_by_stage.keys():
-        print(f"\n{hand_rank}:")
+    for hand_rank in sorted(actions_by_stage.keys()):
+        print(f"\n{card_values[hand_rank]}:")
         for action in actions_by_stage[hand_rank]:
             print(f"  {action.name}: {actions_by_stage[hand_rank][action]}")
 
@@ -77,6 +88,6 @@ def test_card_value(model_path='dqn_model.pth', num_hands=5, render_speed=0.7):
 if __name__ == "__main__":
     test_card_value(
         model_path='models/2025-06-20_00-37-26-848/dqn_model.pth',
-        num_hands=2000,
+        num_hands=200,
         render_speed=0  # Set to 0 for fast execution
     )

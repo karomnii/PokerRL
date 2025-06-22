@@ -76,4 +76,9 @@ class ProfilePageController extends GetxController {
       errorMessage.value = e.toString();
     }
   }
+
+  void addChips() async {
+    ProfileService.to.add1KChips(AuthService.to.userId!);
+    Get.snackbar('Success', 'Enjoy your chips!');
+  }
 }

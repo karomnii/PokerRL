@@ -637,6 +637,24 @@ abstract class Swagger extends ChopperService {
     @Path('userId') required int? userId,
     @Body() required SelectItemDto? body,
   });
+
+  ///
+  ///@param userId
+  Future<chopper.Response<UserDto>> apiUsersAdd1KChipsUserIdPost(
+      {required int? userId}) {
+    generatedMapping.putIfAbsent(UserDto, () => UserDto.fromJsonFactory);
+
+    return _apiUsersAdd1KChipsUserIdPost(userId: userId);
+  }
+
+  ///
+  ///@param userId
+  @Post(
+    path: '/api/Users/Add1KChips/{userId}',
+    optionalBody: true,
+  )
+  Future<chopper.Response<UserDto>> _apiUsersAdd1KChipsUserIdPost(
+      {@Path('userId') required int? userId});
 }
 
 typedef $JsonFactory<T> = T Function(Map<String, dynamic> json);

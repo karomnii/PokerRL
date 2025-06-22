@@ -21,6 +21,7 @@ namespace TexasHoldemPoker.API.Controllers
         private readonly ITokenService _tokenService;
         private readonly ILeaderboardRepository _leaderboardRepository;
         private readonly IShopRepository _shopRepository;
+        private readonly IPurchaseRepository _purchaseRepository;
         private readonly ProfileAvatarHelper _avatar;
         public UsersController(
             IUserRepository userRepository,
@@ -28,6 +29,7 @@ namespace TexasHoldemPoker.API.Controllers
             ITokenService tokenService,
             ILeaderboardRepository leaderboardRepository,
             IShopRepository shopRepository,
+            IPurchaseRepository purchaseRepository,
             ProfileAvatarHelper avatar)
         {
             _userRepository = userRepository;
@@ -35,6 +37,7 @@ namespace TexasHoldemPoker.API.Controllers
             _tokenService = tokenService;
             _leaderboardRepository = leaderboardRepository ?? throw new ArgumentNullException(nameof(leaderboardRepository));
             _shopRepository = shopRepository;
+            _purchaseRepository = purchaseRepository;
             _avatar = avatar;
         }
 
@@ -54,12 +57,15 @@ namespace TexasHoldemPoker.API.Controllers
                 ChipsBalance = 5000,
                 RegistrationDate = DateTime.UtcNow,
                 IsActive = true,
-                AvatarImage = "Blue Egg"
+                AvatarImage = "Blue Egg",
+                DeckStyle = "Origin Deck"
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, registerDto.Password);
 
             await _userRepository.CreateUserAsync(user);
+
+            await _purchaseRepository.AddInitialUserItems(user.UserId);
 
             return new UserDto
             {
@@ -67,8 +73,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = "Blue Egg",
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -96,8 +102,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -133,6 +139,7 @@ namespace TexasHoldemPoker.API.Controllers
                     ChipsBalance = 5000,
                     IsActive = true,
                     AvatarImage = "Blue Egg",
+                    DeckStyle = "Origin Deck",
                     Username = $"user_{Guid.NewGuid().ToString().Substring(0, 8)}",
                     PasswordHash = _passwordHasher.HashPassword(null, randomPassword)
                 };
@@ -141,7 +148,9 @@ namespace TexasHoldemPoker.API.Controllers
             
             user.LastLoginDate = DateTime.UtcNow; 
             await _userRepository.UpdateUserAsync(user);
-            
+
+            await _purchaseRepository.AddInitialUserItems(user.UserId);
+
             if (string.IsNullOrWhiteSpace(user.Username))
             {
                 return Accepted(new
@@ -157,8 +166,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username     = user.Username,
                 Email        = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage  = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token        = _tokenService.CreateToken(user)
             });
         }
@@ -187,8 +196,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username     = user.Username,
                 Email        = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage  = user.AvatarImage,
-                DeckStyle = user.DeckStyle,
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token        = _tokenService.CreateToken(user)
             });
         }
@@ -209,8 +218,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             };
         }
@@ -249,8 +258,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             };
         }

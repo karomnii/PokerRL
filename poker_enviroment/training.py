@@ -49,7 +49,7 @@ class PokerTrainer:
         self.dqn_agent = DQNAgent(player_id=0)
 
         self.agents = [self.dqn_agent] + [CautiousAgent(), PseudoIntelligent(), AggressiveAgent()]
-        self.agents[0].model.load_state_dict(torch.load('./best_models/2025-06-12_08-29-15-023/dqn_model.pth',map_location=torch.device('cpu')))
+        #self.agents[0].model.load_state_dict(torch.load('./best_models/2025-06-12_08-29-15-023/dqn_model.pth',map_location=torch.device('cpu')))
         # self.agents = [self.dqn_agent] + [DQNAgent(player_id=i+1) for i in range(2)] + [RandomAgent()]
         #
         # #Load models

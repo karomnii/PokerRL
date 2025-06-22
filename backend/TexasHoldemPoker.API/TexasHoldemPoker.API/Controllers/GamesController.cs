@@ -157,7 +157,7 @@ namespace TexasHoldemPoker.API.Controllers
         }
 
         [HttpPost("{id}/hint")]
-        public async Task<ActionResult<HintDto>> GetHint(int id)
+        public async Task<ActionResult<IEnumerable<HintDto>>> GetHint(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var result = await _gameService.GetGameHints(id,userId);

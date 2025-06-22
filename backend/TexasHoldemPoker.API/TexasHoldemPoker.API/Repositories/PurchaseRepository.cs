@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Stripe;
 using System.Text.RegularExpressions;
 
 using TexasHoldemPoker.API.Models;
@@ -90,6 +91,41 @@ namespace TexasHoldemPoker.API.Repositories
             }
 
             return 1000;
+        }
+
+        public async Task<bool> AddInitialUserItems(int userId)
+        {
+            var defaultAvatar = await _context.ShopItems
+                .FirstOrDefaultAsync(i => i.ItemType == "Avatar" && i.Name == "Blue Egg");
+            if (defaultAvatar == null)
+                return false;
+
+            var defaultDeckStyle = await _context.ShopItems
+                .FirstOrDefaultAsync(i => i.ItemType == "CardDeck" && i.Name == "Origin Deck");
+            if (defaultDeckStyle == null)
+                return false;
+
+            var purchaseAvatar = new Purchase
+            {
+                UserId = userId,
+                ItemId = defaultAvatar.ItemId,
+                PurchaseDate = DateTime.UtcNow,
+                Price = 0
+            };
+
+            var purchaseDeckStyle = new Purchase
+            {
+                UserId = userId,
+                ItemId = defaultDeckStyle.ItemId,
+                PurchaseDate = DateTime.UtcNow,
+                Price = 0
+            };
+
+            _context.Purchases.Add(purchaseAvatar);
+            _context.Purchases.Add(purchaseDeckStyle);
+
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

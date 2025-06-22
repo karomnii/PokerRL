@@ -23,7 +23,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Game"
+                    "$ref": "#/components/schemas/ActiveGameDto"
                   }
                 }
               },
@@ -31,7 +31,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Game"
+                    "$ref": "#/components/schemas/ActiveGameDto"
                   }
                 }
               },
@@ -39,7 +39,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Game"
+                    "$ref": "#/components/schemas/ActiveGameDto"
                   }
                 }
               }
@@ -76,17 +76,55 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Game"
+                  "$ref": "#/components/schemas/ActiveGameDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Game"
+                  "$ref": "#/components/schemas/ActiveGameDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Game"
+                  "$ref": "#/components/schemas/ActiveGameDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableDto"
+                  }
                 }
               }
             }
@@ -116,17 +154,57 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameState"
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameState"
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameState"
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/public": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               }
             }
@@ -264,6 +342,396 @@
         }
       }
     },
+    "/api/Games/{id}/hint": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/{userId}": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/join/{userId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/move/{userId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MakeMoveDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MakeMoveDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MakeMoveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/hint/{userId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/leave/{userId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/ai-agents": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Games/{id}/add/{agentId}": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinGameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Payments/create-checkout-session": {
       "post": {
         "tags": [
@@ -273,27 +741,41 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "integer",
-                "format": "int32"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "type": "integer",
-                "format": "int32"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "type": "integer",
-                "format": "int32"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              }
+            }
           }
         }
       }
@@ -313,6 +795,14 @@
           },
           {
             "name": "itemId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
             "in": "query",
             "schema": {
               "type": "integer",
@@ -435,6 +925,102 @@
         }
       }
     },
+    "/api/Users/social-login": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/change-username": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeUsernameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeUsernameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeUsernameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Users/profile": {
       "get": {
         "tags": [
@@ -493,6 +1079,46 @@
         }
       }
     },
+    "/api/Users/profile/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Users/leaderboard/top": {
       "get": {
         "tags": [
@@ -517,7 +1143,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/LeaderboardEntry"
+                    "$ref": "#/components/schemas/LeaderboardView"
                   }
                 }
               },
@@ -525,7 +1151,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/LeaderboardEntry"
+                    "$ref": "#/components/schemas/LeaderboardView"
                   }
                 }
               },
@@ -533,7 +1159,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/LeaderboardEntry"
+                    "$ref": "#/components/schemas/LeaderboardView"
                   }
                 }
               }
@@ -564,17 +1190,334 @@
           }
         }
       }
+    },
+    "/api/Users/shop": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/shop/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/inventory": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/inventory/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/setItem": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Users/setItem/{userId}": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "Card": {
+      "ActiveGameDto": {
         "type": "object",
         "properties": {
-          "cardId": {
+          "gameId": {
             "type": "integer",
             "format": "int32"
           },
+          "tableName": {
+            "type": "string",
+            "nullable": true
+          },
+          "tableDifficulty": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AgentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CardDto": {
+        "type": "object",
+        "properties": {
           "suit": {
             "type": "string",
             "nullable": true
@@ -582,86 +1525,20 @@
           "value": {
             "type": "string",
             "nullable": true
-          },
-          "communityCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunityCard"
-            },
-            "nullable": true
-          },
-          "playerCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PlayerCard"
-            },
-            "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "ChipTransaction": {
+      "ChangeUsernameDto": {
         "type": "object",
         "properties": {
-          "transactionId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "userId": {
             "type": "integer",
             "format": "int32"
           },
-          "amount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "transactionType": {
+          "username": {
             "type": "string",
             "nullable": true
-          },
-          "referenceId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "transactionDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          }
-        },
-        "additionalProperties": false
-      },
-      "CommunityCard": {
-        "type": "object",
-        "properties": {
-          "communityCardId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "gameId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "cardId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "position": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
-          "card": {
-            "$ref": "#/components/schemas/Card"
           }
         },
         "additionalProperties": false
@@ -679,125 +1556,7 @@
         },
         "additionalProperties": false
       },
-      "Game": {
-        "type": "object",
-        "properties": {
-          "gameId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "tableId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "startTime": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endTime": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "currentState": {
-            "type": "string",
-            "nullable": true
-          },
-          "potSize": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "winnerId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "table": {
-            "$ref": "#/components/schemas/PokerTable"
-          },
-          "winner": {
-            "$ref": "#/components/schemas/User"
-          },
-          "gamePlayers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GamePlayer"
-            },
-            "nullable": true
-          },
-          "moves": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Move"
-            },
-            "nullable": true
-          },
-          "communityCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunityCard"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GamePlayer": {
-        "type": "object",
-        "properties": {
-          "gamePlayerId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "gameId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "seatPosition": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "initialChips": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "currentChips": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "isDealer": {
-            "type": "boolean"
-          },
-          "isSmallBlind": {
-            "type": "boolean"
-          },
-          "isBigBlind": {
-            "type": "boolean"
-          },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
-          "playerCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PlayerCard"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GameState": {
+      "GameStateDto": {
         "type": "object",
         "properties": {
           "gameId": {
@@ -820,37 +1579,83 @@
             "type": "integer",
             "format": "int32"
           },
+          "currentTurnUserId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "communityCards": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Card"
-            },
-            "nullable": true
-          },
-          "playerCards": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Card"
+              "$ref": "#/components/schemas/CardDto"
             },
             "nullable": true
           },
           "players": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PlayerState"
+              "$ref": "#/components/schemas/PlayerStateDto"
+            },
+            "nullable": true
+          },
+          "playerCards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardDto"
             },
             "nullable": true
           },
           "lastMoves": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Move"
+              "$ref": "#/components/schemas/MoveDto"
             },
             "nullable": true
           },
-          "winnerId": {
+          "roundWinners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoundWinnerDto"
+            },
+            "nullable": true
+          },
+          "playerRoundContributions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "callAmount": {
             "type": "integer",
-            "format": "int32",
+            "format": "int32"
+          },
+          "minRaiseAmount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HintDto": {
+        "required": [
+          "difficulty",
+          "modelName",
+          "move"
+        ],
+        "type": "object",
+        "properties": {
+          "modelName": {
+            "type": "string",
+            "nullable": true
+          },
+          "move": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficulty": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -878,7 +1683,7 @@
         },
         "additionalProperties": false
       },
-      "LeaderboardEntry": {
+      "LeaderboardView": {
         "type": "object",
         "properties": {
           "userId": {
@@ -899,15 +1704,18 @@
           },
           "gamesWon": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "gamesPlayed": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "winRatio": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -947,17 +1755,9 @@
         },
         "additionalProperties": false
       },
-      "Move": {
+      "MoveDto": {
         "type": "object",
         "properties": {
-          "moveId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "gameId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "playerId": {
             "type": "integer",
             "format": "int32"
@@ -973,49 +1773,11 @@
           "moveTime": {
             "type": "string",
             "format": "date-time"
-          },
-          "round": {
-            "type": "string",
-            "nullable": true
-          },
-          "game": {
-            "$ref": "#/components/schemas/Game"
-          },
-          "player": {
-            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
       },
-      "PlayerCard": {
-        "type": "object",
-        "properties": {
-          "playerCardId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "gamePlayerId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "cardId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "position": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "gamePlayer": {
-            "$ref": "#/components/schemas/GamePlayer"
-          },
-          "card": {
-            "$ref": "#/components/schemas/Card"
-          }
-        },
-        "additionalProperties": false
-      },
-      "PlayerState": {
+      "PlayerStateDto": {
         "type": "object",
         "properties": {
           "userId": {
@@ -1026,11 +1788,11 @@
             "type": "string",
             "nullable": true
           },
-          "seatPosition": {
-            "type": "integer",
-            "format": "int32"
+          "avatar": {
+            "type": "string",
+            "nullable": true
           },
-          "chipCount": {
+          "currentChips": {
             "type": "integer",
             "format": "int32"
           },
@@ -1046,104 +1808,44 @@
           "isBigBlind": {
             "type": "boolean"
           },
+          "seatPosition": {
+            "type": "integer",
+            "format": "int32"
+          },
           "cards": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Card"
+              "$ref": "#/components/schemas/CardDto"
             },
             "nullable": true
           }
         },
         "additionalProperties": false
       },
-      "PokerTable": {
+      "PurchaseRequestDto": {
         "type": "object",
         "properties": {
-          "tableId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "entryFee": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "minBuyIn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "maxBuyIn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "smallBlind": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bigBlind": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "maxPlayers": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "difficultyLevel": {
-            "type": "string",
-            "nullable": true
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "games": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Game"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "Purchase": {
-        "type": "object",
-        "properties": {
-          "purchaseId": {
+          "itemId": {
             "type": "integer",
             "format": "int32"
           },
           "userId": {
             "type": "integer",
             "format": "int32"
-          },
-          "itemId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "purchaseDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "price": {
-            "type": "number",
-            "format": "double"
-          },
-          "paymentMethod": {
+          }
+        },
+        "additionalProperties": false
+      },
+      "PurchaseResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
             "type": "string",
             "nullable": true
           },
-          "transactionId": {
+          "paymentUrl": {
             "type": "string",
             "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
-          "item": {
-            "$ref": "#/components/schemas/ShopItem"
           }
         },
         "additionalProperties": false
@@ -1174,7 +1876,35 @@
         },
         "additionalProperties": false
       },
-      "ShopItem": {
+      "RoundWinnerDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountWon": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SelectItemDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ShopItemDto": {
         "type": "object",
         "properties": {
           "itemId": {
@@ -1197,19 +1927,65 @@
             "type": "string",
             "nullable": true
           },
-          "isActive": {
-            "type": "boolean"
-          },
           "currency": {
             "type": "string",
             "nullable": true
-          },
-          "purchases": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Purchase"
-            },
+          }
+        },
+        "additionalProperties": false
+      },
+      "SocialLoginDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
             "nullable": true
+          },
+          "token": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TableDto": {
+        "required": [
+          "difficultyLevel",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "difficultyLevel": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minBuyIn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxBuyIn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "smallBlind": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bigBlind": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -1224,87 +2000,6 @@
           },
           "avatarImage": {
             "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "username": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "passwordHash": {
-            "type": "string",
-            "nullable": true
-          },
-          "chipsBalance": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "avatarImage": {
-            "type": "string",
-            "nullable": true
-          },
-          "registrationDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastLoginDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "avatarType": {
-            "type": "string",
-            "nullable": true
-          },
-          "gamePlayers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GamePlayer"
-            },
-            "nullable": true
-          },
-          "wonGames": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Game"
-            },
-            "nullable": true
-          },
-          "moves": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Move"
-            },
-            "nullable": true
-          },
-          "purchases": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Purchase"
-            },
-            "nullable": true
-          },
-          "chipTransactions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChipTransaction"
-            },
             "nullable": true
           }
         },
@@ -1330,6 +2025,10 @@
             "format": "int32"
           },
           "avatarImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "deckStyle": {
             "type": "string",
             "nullable": true
           },

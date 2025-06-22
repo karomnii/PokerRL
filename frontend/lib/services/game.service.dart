@@ -174,4 +174,16 @@ class GameService extends GetxService {
 
     return 'assets/be/cards/$path/';
   }
+
+  Future<int> getActivePlayersCount(int gameId) async {
+    try {
+      final response = await _api.apiGamesIdGet(id: gameId);
+      final gameState = response.body;
+      if (gameState == null || gameState.players == null) return 0;
+      return gameState.players!.where((p) => p.isActive == true).length;
+    } catch (e) {
+      ErrorService.to.showError('Failed to fetch active players count: $e');
+      return 0;
+    }
+  }
 }

@@ -377,8 +377,8 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             });
         }
@@ -407,8 +407,34 @@ namespace TexasHoldemPoker.API.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 ChipsBalance = user.ChipsBalance,
-                AvatarImage = user.AvatarImage,
-                DeckStyle = user.DeckStyle ?? "None",
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
+                Token = _tokenService.CreateToken(user)
+            });
+        }
+
+        [HttpPost("Add1KChips/{userId}")]
+        public async Task<ActionResult<UserDto>> Add1KChips(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return NotFound(new { Message = "User not found." });
+
+            var result = await _userRepository.AdjustChipsAsync(userId, 1000);
+
+            if (!result)
+                return BadRequest(new { Message = "Failed to add chips." });
+
+            user = await _userRepository.GetByIdAsync(userId);
+
+            return Ok(new UserDto
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Email = user.Email,
+                ChipsBalance = user.ChipsBalance,
+                AvatarImage = user.AvatarImage ?? "Blue Egg",
+                DeckStyle = user.DeckStyle ?? "Origin Deck",
                 Token = _tokenService.CreateToken(user)
             });
         }

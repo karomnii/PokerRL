@@ -27,10 +27,7 @@ class LeaderboardPageView extends GetView<LeaderboardPageController> {
             }
 
             final filteredLeaderboard = leaderboard
-                .where((player) =>
-                    player.userId != 1 &&
-                    player.userId != 2 &&
-                    player.userId != 3)
+                .where((player) => player.userId != null && player.userId! > 9)
                 .toList();
 
             return PageCard(
@@ -57,13 +54,16 @@ class LeaderboardPageView extends GetView<LeaderboardPageController> {
                           color: Colors.grey, size: 35);
                     }
 
-                    final avatarPath =
-                        player.avatarImage ?? '/images/default.png';
+                    // Pobieramy avatar jako AssetImage?, tak jak w ProfilePageView
+                    final avatarImage = player.userId != null
+                        ? controller.getAvatarForUser(player.userId!)
+                        : null;
 
                     return ListTile(
                       leading: CircleAvatar(
                         radius: 24,
-                        backgroundImage: AssetImage(avatarPath),
+                        backgroundImage: avatarImage ??
+                            const AssetImage('assets/images/default.png'),
                       ),
                       title: Row(
                         children: [

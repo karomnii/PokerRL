@@ -364,17 +364,26 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/HintDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HintDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HintDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HintDto"
+                  }
                 }
               }
             }
@@ -732,24 +741,41 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PurchaseRequest"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/PurchaseRequest"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/PurchaseRequest"
+                "$ref": "#/components/schemas/PurchaseRequestDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResponseDto"
+                }
+              }
+            }
           }
         }
       }
@@ -769,6 +795,14 @@
           },
           {
             "name": "itemId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "userId",
             "in": "query",
             "schema": {
               "type": "integer",
@@ -1788,12 +1822,30 @@
         },
         "additionalProperties": false
       },
-      "PurchaseRequest": {
+      "PurchaseRequestDto": {
         "type": "object",
         "properties": {
           "itemId": {
             "type": "integer",
             "format": "int32"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PurchaseResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

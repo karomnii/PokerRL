@@ -151,8 +151,8 @@ class PlayerCard extends StatelessWidget {
         ),
       );
     }
-    deck = users[player!.userId!]!.deckStyle!;
-    avatar = users[player!.userId!]!.avatarImage!;
+    deck = users[player?.userId]?.deckStyle ?? 'Origin Deck';
+    avatar = users[player?.userId]?.avatarImage ?? 'Blue Egg';
     final theme = Theme.of(context);
     final isCurrent = player!.userId == currentPlayerId;
     return PageCard(

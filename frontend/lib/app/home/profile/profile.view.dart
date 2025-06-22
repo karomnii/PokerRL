@@ -28,6 +28,11 @@ class ProfilePageView extends GetView<ProfilePageController> {
             onPressed: () => Get.offAndToNamed('/game'),
           ),
           AppBarIcon(
+            icon: Icons.store,
+            tooltipText: 'Shop',
+            onPressed: () => Get.toNamed('/shop', preventDuplicates: false),
+          ),
+          AppBarIcon(
             icon: Icons.home,
             tooltipText: 'Home',
             onPressed: () => Get.offAndToNamed('/'),

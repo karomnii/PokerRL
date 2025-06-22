@@ -131,14 +131,14 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<HintDto>> _apiGamesIdHintPost({required int? id}) {
+  Future<Response<List<HintDto>>> _apiGamesIdHintPost({required int? id}) {
     final Uri $url = Uri.parse('/api/Games/${id}/hint');
     final Request $request = Request(
       'POST',
       $url,
       client.baseUrl,
     );
-    return client.send<HintDto, HintDto>($request);
+    return client.send<List<HintDto>, HintDto>($request);
   }
 
   @override
@@ -246,8 +246,8 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<dynamic>> _apiPaymentsCreateCheckoutSessionPost(
-      {required PurchaseRequest? body}) {
+  Future<Response<PurchaseResponseDto>> _apiPaymentsCreateCheckoutSessionPost(
+      {required PurchaseRequestDto? body}) {
     final Uri $url = Uri.parse('/api/Payments/create-checkout-session');
     final $body = body;
     final Request $request = Request(
@@ -256,18 +256,20 @@ final class _$Swagger extends Swagger {
       client.baseUrl,
       body: $body,
     );
-    return client.send<dynamic, dynamic>($request);
+    return client.send<PurchaseResponseDto, PurchaseResponseDto>($request);
   }
 
   @override
   Future<Response<dynamic>> _apiPaymentsSuccessGet({
     String? sessionId,
     int? itemId,
+    int? userId,
   }) {
     final Uri $url = Uri.parse('/api/Payments/success');
     final Map<String, dynamic> $params = <String, dynamic>{
       'session_id': sessionId,
       'itemId': itemId,
+      'userId': userId,
     };
     final Request $request = Request(
       'GET',

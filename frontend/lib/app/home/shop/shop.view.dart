@@ -50,7 +50,7 @@ class ShopPageView extends GetView<ShopPageController> {
 
         final screenWidth = MediaQuery.of(context).size.width;
 
-        final avatarCrossAxisCount = (screenWidth / 100).clamp(3, 8).floor();
+        final avatarCrossAxisCount = (screenWidth / 200).clamp(3, 8).floor();
         final deckCrossAxisCount = (screenWidth / 180).clamp(2, 4).floor();
 
         return SingleChildScrollView(
@@ -70,7 +70,10 @@ class ShopPageView extends GetView<ShopPageController> {
                   crossAxisSpacing: 12,
                   childAspectRatio: 1,
                 ),
-                itemBuilder: (_, i) => AvatarTile(controller.avatars[i]),
+                itemBuilder: (_, i) => AvatarTile(
+                  controller.avatars[i],
+                  buy: controller.buyAnItem,
+                ),
               ),
               const SizedBox(height: 32),
               Text('Decks', style: Theme.of(context).textTheme.headlineLarge),
@@ -86,7 +89,10 @@ class ShopPageView extends GetView<ShopPageController> {
                   // CardDeckTile ma ok. 260 (wys) × 170 (szer)
                   childAspectRatio: 170 / 180,
                 ),
-                itemBuilder: (_, i) => CardDeckTile(controller.cards[i]),
+                itemBuilder: (_, i) => CardDeckTile(
+                  controller.cards[i],
+                  buy: controller.buyAnItem,
+                ),
               ),
             ],
           ),

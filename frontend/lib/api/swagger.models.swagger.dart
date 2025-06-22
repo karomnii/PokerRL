@@ -1079,27 +1079,32 @@ extension $PlayerStateDtoExtension on PlayerStateDto {
 }
 
 @JsonSerializable(explicitToJson: true)
-class PurchaseRequest {
-  const PurchaseRequest({
+class PurchaseRequestDto {
+  const PurchaseRequestDto({
     this.itemId,
+    this.userId,
   });
 
-  factory PurchaseRequest.fromJson(Map<String, dynamic> json) =>
-      _$PurchaseRequestFromJson(json);
+  factory PurchaseRequestDto.fromJson(Map<String, dynamic> json) =>
+      _$PurchaseRequestDtoFromJson(json);
 
-  static const toJsonFactory = _$PurchaseRequestToJson;
-  Map<String, dynamic> toJson() => _$PurchaseRequestToJson(this);
+  static const toJsonFactory = _$PurchaseRequestDtoToJson;
+  Map<String, dynamic> toJson() => _$PurchaseRequestDtoToJson(this);
 
   @JsonKey(name: 'itemId', defaultValue: 0)
   final int? itemId;
-  static const fromJsonFactory = _$PurchaseRequestFromJson;
+  @JsonKey(name: 'userId', defaultValue: 0)
+  final int? userId;
+  static const fromJsonFactory = _$PurchaseRequestDtoFromJson;
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other is PurchaseRequest &&
+        (other is PurchaseRequestDto &&
             (identical(other.itemId, itemId) ||
-                const DeepCollectionEquality().equals(other.itemId, itemId)));
+                const DeepCollectionEquality().equals(other.itemId, itemId)) &&
+            (identical(other.userId, userId) ||
+                const DeepCollectionEquality().equals(other.userId, userId)));
   }
 
   @override
@@ -1107,17 +1112,78 @@ class PurchaseRequest {
 
   @override
   int get hashCode =>
-      const DeepCollectionEquality().hash(itemId) ^ runtimeType.hashCode;
+      const DeepCollectionEquality().hash(itemId) ^
+      const DeepCollectionEquality().hash(userId) ^
+      runtimeType.hashCode;
 }
 
-extension $PurchaseRequestExtension on PurchaseRequest {
-  PurchaseRequest copyWith({int? itemId}) {
-    return PurchaseRequest(itemId: itemId ?? this.itemId);
+extension $PurchaseRequestDtoExtension on PurchaseRequestDto {
+  PurchaseRequestDto copyWith({int? itemId, int? userId}) {
+    return PurchaseRequestDto(
+        itemId: itemId ?? this.itemId, userId: userId ?? this.userId);
   }
 
-  PurchaseRequest copyWithWrapped({Wrapped<int?>? itemId}) {
-    return PurchaseRequest(
-        itemId: (itemId != null ? itemId.value : this.itemId));
+  PurchaseRequestDto copyWithWrapped(
+      {Wrapped<int?>? itemId, Wrapped<int?>? userId}) {
+    return PurchaseRequestDto(
+        itemId: (itemId != null ? itemId.value : this.itemId),
+        userId: (userId != null ? userId.value : this.userId));
+  }
+}
+
+@JsonSerializable(explicitToJson: true)
+class PurchaseResponseDto {
+  const PurchaseResponseDto({
+    this.message,
+    this.paymentUrl,
+  });
+
+  factory PurchaseResponseDto.fromJson(Map<String, dynamic> json) =>
+      _$PurchaseResponseDtoFromJson(json);
+
+  static const toJsonFactory = _$PurchaseResponseDtoToJson;
+  Map<String, dynamic> toJson() => _$PurchaseResponseDtoToJson(this);
+
+  @JsonKey(name: 'message')
+  final String? message;
+  @JsonKey(name: 'paymentUrl')
+  final String? paymentUrl;
+  static const fromJsonFactory = _$PurchaseResponseDtoFromJson;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is PurchaseResponseDto &&
+            (identical(other.message, message) ||
+                const DeepCollectionEquality()
+                    .equals(other.message, message)) &&
+            (identical(other.paymentUrl, paymentUrl) ||
+                const DeepCollectionEquality()
+                    .equals(other.paymentUrl, paymentUrl)));
+  }
+
+  @override
+  String toString() => jsonEncode(this);
+
+  @override
+  int get hashCode =>
+      const DeepCollectionEquality().hash(message) ^
+      const DeepCollectionEquality().hash(paymentUrl) ^
+      runtimeType.hashCode;
+}
+
+extension $PurchaseResponseDtoExtension on PurchaseResponseDto {
+  PurchaseResponseDto copyWith({String? message, String? paymentUrl}) {
+    return PurchaseResponseDto(
+        message: message ?? this.message,
+        paymentUrl: paymentUrl ?? this.paymentUrl);
+  }
+
+  PurchaseResponseDto copyWithWrapped(
+      {Wrapped<String?>? message, Wrapped<String?>? paymentUrl}) {
+    return PurchaseResponseDto(
+        message: (message != null ? message.value : this.message),
+        paymentUrl: (paymentUrl != null ? paymentUrl.value : this.paymentUrl));
   }
 }
 

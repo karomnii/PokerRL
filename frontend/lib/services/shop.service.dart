@@ -68,6 +68,20 @@ class ShopService extends GetxService {
     }
   }
 
+  Future<PurchaseResponseDto> buyAnItem(PurchaseRequestDto body) async {
+    final response =
+        await _api.apiPaymentsCreateCheckoutSessionPost(body: body);
+
+    if (response.isSuccessful) {
+      return response.body!;
+    } else {
+      final error =
+          'Failed to load inventory items: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
+
   Future<List<AssetImage>> imageList(String name, String type) async {
     if (type == 'Avatar') {
       return [AssetImage('assets/be/avatars/$name.png')];

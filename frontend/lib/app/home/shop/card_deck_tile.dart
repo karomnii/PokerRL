@@ -6,9 +6,9 @@ import 'package:frontend/services/shop.service.dart';
 import 'package:shimmer/shimmer.dart';
 
 class CardDeckTile extends StatefulWidget {
-  const CardDeckTile(this.item, {super.key});
+  const CardDeckTile(this.item, {super.key, required this.buy});
   final ShopItemDto item;
-
+  final void Function(int) buy;
   @override
   State<CardDeckTile> createState() => _CardDeckTileState();
 }
@@ -122,7 +122,7 @@ class _CardDeckTileState extends State<CardDeckTile> {
                       child: SizedBox(
                         width: 150,
                         child: ElevatedButton.icon(
-                            onPressed: () => ErrorService.to.showError('deck'),
+                            onPressed: () => widget.buy(widget.item.itemId!),
                             label: Text(
                               'Buy ${widget.item.price} ${widget.item.currency == 'PLN' ? widget.item.currency : '🪙'}',
                               style: TextStyle(fontSize: 12),

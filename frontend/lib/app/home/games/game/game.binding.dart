@@ -1,5 +1,6 @@
 import 'package:frontend/app/home/games/game/game.controller.dart';
 import 'package:frontend/services/game.service.dart';
+import 'package:frontend/services/profile.service.dart';
 import 'package:get/get.dart';
 
 class GamePageBinding extends Bindings {
@@ -7,5 +8,6 @@ class GamePageBinding extends Bindings {
   void dependencies() {
     Get.lazyPut(() => GamePageController());
     Get.lazyPut(() => GameService());
+    Get.lazyPut(() => ProfileService());
   }
 }

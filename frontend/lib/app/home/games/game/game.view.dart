@@ -64,6 +64,7 @@ class GamePageView extends GetView<GamePageController> {
                         seatId: 1,
                         player: controller.gameState.value.players
                             ?.singleWhereOrNull((p) => p.seatPosition == 1),
+                        users: controller.userInfos,
                         joinGame: () => controller.joinGame(1),
                         showHaveCards: controller
                                 .gameState.value.playerCards?.isNotEmpty ??
@@ -79,6 +80,7 @@ class GamePageView extends GetView<GamePageController> {
                             controller.gameState.value.currentTurnUserId ?? 0,
                         player: controller.gameState.value.players
                             ?.singleWhereOrNull((p) => p.seatPosition == 2),
+                        users: controller.userInfos,
                         seatId: 2,
                         joinGame: () => controller.joinGame(2),
                         showHaveCards: controller
@@ -100,6 +102,7 @@ class GamePageView extends GetView<GamePageController> {
                             controller.gameState.value.currentTurnUserId ?? 0,
                         player: controller.gameState.value.players
                             ?.singleWhereOrNull((p) => p.seatPosition == 3),
+                        users: controller.userInfos,
                         seatId: 3,
                         joinGame: () => controller.joinGame(3),
                         showHaveCards: controller
@@ -116,6 +119,7 @@ class GamePageView extends GetView<GamePageController> {
                             controller.gameState.value.currentTurnUserId ?? 0,
                         player: controller.gameState.value.players
                             ?.singleWhereOrNull((p) => p.seatPosition == 4),
+                        users: controller.userInfos,
                         seatId: 4,
                         joinGame: () => controller.joinGame(4),
                         showHaveCards: controller
@@ -277,6 +281,14 @@ class GamePageView extends GetView<GamePageController> {
                 PageRow(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    ElevatedButton.icon(
+                      onPressed: controller.gameState.value.currentTurnUserId ==
+                              AuthService.to.userId
+                          ? () => controller.getHint()
+                          : null,
+                      label: Text('Hint'),
+                      icon: Icon(Icons.tips_and_updates_sharp),
+                    ),
                     if (!controller.isGameWaiting)
                       ElevatedButton.icon(
                         onPressed: () async {

@@ -2,12 +2,16 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart' as api;
+import 'package:frontend/services/auth.service.dart';
+import 'package:frontend/services/game.service.dart';
 import 'package:frontend/widgets/page_card.dart';
 
 class GameTable extends StatefulWidget {
-  const GameTable({super.key, required this.game});
+  const GameTable({
+    super.key,
+    required this.game,
+  });
   final api.GameStateDto game;
-
   @override
   State<GameTable> createState() => _GameTableState();
 }
@@ -176,7 +180,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
     final rank = rankMap[c.$value?.toUpperCase()] ?? c.$value;
     final suit = suitMap[c.suit?.toUpperCase()] ?? c.suit;
 
-    return 'assets/cards/${rank! == '10' ? 'T' : rank!}${suit!}.png';
+    return '${GameService.to.getPathToCards(AuthService.to.user!.deckStyle!)}/${rank! == '10' ? 'T' : rank!}${suit!}.png';
   }
 
   Widget _cardFace(api.CardDto dto, double angle) {

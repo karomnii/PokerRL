@@ -1,52 +1,32 @@
 import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:frontend/api/swagger.models.swagger.dart';
+import 'package:frontend/services/auth.service.dart';
+import 'package:frontend/services/shop.service.dart';
 import 'package:get/get.dart';
 
-class Product {
-  final String name;
-  final String imageUrl;
-  final double price;
-  final String category;
-
-  Product({
-    required this.name,
-    required this.imageUrl,
-    required this.price,
-    required this.category,
-  });
-}
-
 class ShopPageController extends GetxController {
-  final RxMap<String, List<Product>> categorizedProducts =
-      <String, List<Product>>{}.obs;
+  final RxList<ShopItemDto> cards = RxList<ShopItemDto>();
+  final RxList<ShopItemDto> avatars = RxList<ShopItemDto>();
+  final RxBool isLoading = true.obs;
+  final Rxn<AssetImage> userAvatar = Rxn<AssetImage>();
 
-  final List<String> categories = ['Cards', 'Dices', 'Tables'];
-
-  final int itemCount = 100; // 🛠️ Możesz łatwo zmienić ilość
+  final ScrollController cardsScrollController = ScrollController();
+  final ScrollController avatarsScrollController = ScrollController();
+  final ScrollController pageScrollController = ScrollController();
 
   @override
   void onInit() {
     super.onInit();
-    _generateMockData();
+    getShopItems();
   }
 
-  void _generateMockData() {
-    final random = Random();
+  void getShopItems() async {
+    isLoading.value = true;
+    final res = await ShopService.to.getShopItems(AuthService.to.userId!);
 
-    final products = List.generate(itemCount, (index) {
-      final category = categories[random.nextInt(categories.length)];
-      return Product(
-        name: '${category.substring(0, category.length - 1)} #${index + 1}',
-        imageUrl:
-            'https://picsum.photos/200/125?random=${index + random.nextInt(1000)}',
-        price: (5 + random.nextDouble() * 45).toPrecision(2),
-        category: category,
-      );
-    });
-
-    categorizedProducts.clear();
-    for (var category in categories) {
-      categorizedProducts[category] =
-          products.where((p) => p.category == category).toList();
-    }
+    cards.addAll(res.where((i) => i.itemType == 'CardDeck'));
+    avatars.addAll(res.where((i) => i.itemType == 'Avatar'));
+    isLoading.value = false;
   }
 }

@@ -142,7 +142,21 @@ class AuthService extends GetxService {
     ErrorService.to.showError(message);
     throw '';
   }
-  /* ---------- internals ---------- */
+
+  Future<void> refreshUser() async {
+    try {
+      final response = await _api.apiUsersProfileGet();
+
+      if (response.isSuccessful && response.body != null) {
+        _user.value = response.body;
+        html.window.localStorage[_userKey] = jsonEncode(response.body);
+      } else {
+        ErrorService.to.showError('Nie udało się pobrać danych użytkownika.');
+      }
+    } catch (e) {
+      ErrorService.to.showError('Błąd podczas odświeżania użytkownika: $e');
+    }
+  }
 
   void _saveToken(UserDto user) {
     html.window.localStorage[_tokenKey] = user.token!;

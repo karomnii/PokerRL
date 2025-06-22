@@ -11,6 +11,8 @@ class GamesPageController extends GetxController {
   final RxInt sortColumnIndex = 2.obs;
   final RxInt selectedTableId = 1.obs;
 
+  final RxMap<int, int> activePlayersCount = <int, int>{}.obs;
+
   @override
   void onReady() {
     super.onReady();
@@ -23,8 +25,20 @@ class GamesPageController extends GetxController {
       await Future.delayed(const Duration(seconds: 2));
       final result = await GameService.to.getGames();
       games.assignAll(result);
+      await _loadActivePlayersCounts();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _loadActivePlayersCounts() async {
+    for (final game in games) {
+      try {
+        final count = await GameService.to.getActivePlayersCount(game.gameId!);
+        activePlayersCount[game.gameId!] = count;
+      } catch (e) {
+        activePlayersCount[game.gameId!] = 0;
+      }
     }
   }
 

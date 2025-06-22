@@ -10,7 +10,7 @@ import 'error_service.dart';
 class GameService extends GetxService {
   static GameService get to => Get.find<GameService>();
   static const _tokenKey = 'jwt_token';
-
+  final Map<int, AssetImage> _avatarCache = {};
   final _api = Get.find<Swagger>();
 
   final RxnString _token = RxnString();
@@ -135,17 +135,43 @@ class GameService extends GetxService {
     }
   }
 
-  Future<AssetImage> getUserAvatar(int userId) async {
-    final response = await _api.apiUsersProfileUserIdPut(userId: userId);
+  Future<List<HintDto>> getHint(int gameId, int userId) async {
+    final response =
+        await _api.apiGamesIdHintUserIdPost(id: gameId, userId: userId);
 
     if (response.isSuccessful) {
-      return AssetImage(
-          // 'assets/images/${response.body!.avatarImage?.split('/').lastOrNull}',
-          'assets/avatars/Icon_78.png');
+      return response.body ?? [];
     } else {
       final error = 'Failed to fetch bots: ${response.error} ${response.body}';
       ErrorService.to.showError(error);
       throw Exception(error);
     }
+  }
+
+  Future<AssetImage> getUserAvatar(int userId) async {
+    final response = await _api.apiUsersProfileUserIdGet(userId: userId);
+
+    if (response.isSuccessful) {
+      print(response.body!.avatarImage!);
+      return AssetImage(
+          // 'assets/images/${response.body!.avatarImage?.split('/').lastOrNull}',
+          'assets/be/avatars/${response.body!.avatarImage!}.png');
+    } else {
+      final error = 'Failed to fetch bots: ${response.error} ${response.body}';
+      ErrorService.to.showError(error);
+      throw Exception(error);
+    }
+  }
+
+  String getPathToCards(String name) {
+    String path = name
+        .split(' ')
+        .map((w) => w.toLowerCase())
+        .toList()
+        .sublist(0, name.split(' ').length - 1)
+        .join('-')
+        .trim();
+
+    return 'assets/be/cards/$path/';
   }
 }

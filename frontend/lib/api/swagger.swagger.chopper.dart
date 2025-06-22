@@ -44,6 +44,17 @@ final class _$Swagger extends Swagger {
   }
 
   @override
+  Future<Response<List<TableDto>>> _tablesGet() {
+    final Uri $url = Uri.parse('/tables');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<TableDto>, TableDto>($request);
+  }
+
+  @override
   Future<Response<GameStateDto>> _apiGamesIdGet({required int? id}) {
     final Uri $url = Uri.parse('/api/Games/${id}');
     final Request $request = Request(
@@ -120,6 +131,17 @@ final class _$Swagger extends Swagger {
   }
 
   @override
+  Future<Response<HintDto>> _apiGamesIdHintPost({required int? id}) {
+    final Uri $url = Uri.parse('/api/Games/${id}/hint');
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<HintDto, HintDto>($request);
+  }
+
+  @override
   Future<Response<GameStateDto>> _apiGamesIdUserIdGet({
     required int? id,
     required int? userId,
@@ -168,6 +190,20 @@ final class _$Swagger extends Swagger {
   }
 
   @override
+  Future<Response<List<HintDto>>> _apiGamesIdHintUserIdPost({
+    required int? id,
+    required int? userId,
+  }) {
+    final Uri $url = Uri.parse('/api/Games/${id}/hint/${userId}');
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<HintDto>, HintDto>($request);
+  }
+
+  @override
   Future<Response<dynamic>> _apiGamesIdLeaveUserIdPost({
     required int? id,
     required int? userId,
@@ -211,7 +247,7 @@ final class _$Swagger extends Swagger {
 
   @override
   Future<Response<dynamic>> _apiPaymentsCreateCheckoutSessionPost(
-      {required int? body}) {
+      {required PurchaseRequest? body}) {
     final Uri $url = Uri.parse('/api/Payments/create-checkout-session');
     final $body = body;
     final Request $request = Request(
@@ -334,10 +370,10 @@ final class _$Swagger extends Swagger {
   }
 
   @override
-  Future<Response<UserDto>> _apiUsersProfileUserIdPut({required int? userId}) {
+  Future<Response<UserDto>> _apiUsersProfileUserIdGet({required int? userId}) {
     final Uri $url = Uri.parse('/api/Users/profile/${userId}');
     final Request $request = Request(
-      'PUT',
+      'GET',
       $url,
       client.baseUrl,
     );
@@ -368,5 +404,81 @@ final class _$Swagger extends Swagger {
       client.baseUrl,
     );
     return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<List<ShopItemDto>>> _apiUsersShopGet() {
+    final Uri $url = Uri.parse('/api/Users/shop');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<ShopItemDto>, ShopItemDto>($request);
+  }
+
+  @override
+  Future<Response<List<ShopItemDto>>> _apiUsersShopUserIdGet(
+      {required int? userId}) {
+    final Uri $url = Uri.parse('/api/Users/shop/${userId}');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<ShopItemDto>, ShopItemDto>($request);
+  }
+
+  @override
+  Future<Response<List<ShopItemDto>>> _apiUsersInventoryGet() {
+    final Uri $url = Uri.parse('/api/Users/inventory');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<ShopItemDto>, ShopItemDto>($request);
+  }
+
+  @override
+  Future<Response<List<ShopItemDto>>> _apiUsersInventoryUserIdGet(
+      {required int? userId}) {
+    final Uri $url = Uri.parse('/api/Users/inventory/${userId}');
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<List<ShopItemDto>, ShopItemDto>($request);
+  }
+
+  @override
+  Future<Response<UserDto>> _apiUsersSetItemPost(
+      {required SelectItemDto? body}) {
+    final Uri $url = Uri.parse('/api/Users/setItem');
+    final $body = body;
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+      body: $body,
+    );
+    return client.send<UserDto, UserDto>($request);
+  }
+
+  @override
+  Future<Response<UserDto>> _apiUsersSetItemUserIdPost({
+    required int? userId,
+    required SelectItemDto? body,
+  }) {
+    final Uri $url = Uri.parse('/api/Users/setItem/${userId}');
+    final $body = body;
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+      body: $body,
+    );
+    return client.send<UserDto, UserDto>($request);
   }
 }

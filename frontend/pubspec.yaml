@@ -18,12 +18,13 @@ dependencies:
   flutter_svg: ^2.0.7
   carousel_slider: ^5.1.1
   chopper: ^8.0.0
-  json_annotation: ^4.8.0
+  json_annotation: ^4.9.0
 
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
   loading_animation_widget: ^1.3.0
   collection: ^1.19.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -40,5 +41,17 @@ flutter:
     - assets/cards/
     - assets/
     - assets/images/
-    - assets/avatars/
+    - assets/be/avatars/
+    - assets/be/cards/aqua/
+    - assets/be/cards/dusky/
+    - assets/be/cards/forest/
+    - assets/be/cards/green-magenta-swap/
+    - assets/be/cards/inverse/
+    - assets/be/cards/magenta/
+    - assets/be/cards/night/
+    - assets/be/cards/origin/
+    - assets/be/cards/pastel/
+    - assets/be/cards/psychedelic/
+    - assets/be/cards/rose/
+    - assets/be/cards/sepia/
   uses-material-design: true

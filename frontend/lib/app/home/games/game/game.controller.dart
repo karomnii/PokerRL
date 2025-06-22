@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/game.service.dart';
+import 'package:frontend/services/profile.service.dart';
 import 'package:get/get.dart';
 
 class GamePageController extends GetxController {
   ScrollController scrollController = ScrollController();
-
+  final RxMap<int, UserDto> userInfos = <int, UserDto>{}.obs;
   /* -------- konfiguracja pollingu -------- */
   static const Duration _pollInterval = Duration(seconds: 2);
 
@@ -64,6 +65,20 @@ class GamePageController extends GetxController {
       gameState.value = result;
       if (currentBet.value == 0) {
         currentBet.value = result.minRaiseAmount ?? currentBet.value;
+      }
+      final playerIds =
+          result.players?.map((p) => p.userId).whereType<int>().toSet() ?? {};
+
+      for (final id in playerIds) {
+        if (!userInfos.containsKey(id)) {
+          try {
+            final profile = await ProfileService.to
+                .fetchProfileId(id); // <- Dodaj metodę poniżej
+            userInfos[id] = profile;
+          } catch (e) {
+            // np. print lub ignoruj
+          }
+        }
       }
     } catch (e, s) {
       errorMessage.value = e.toString();
@@ -129,6 +144,75 @@ class GamePageController extends GetxController {
       final gameId = gameState.value.gameId!;
       GameService.to.addBot(gameId, agentId, body);
     } finally {}
+  }
+
+  Future<void> getHint() async {
+    try {
+      final gameId = gameState.value.gameId!;
+      final hints =
+          await GameService.to.getHint(gameId, AuthService.to.userId!);
+
+      final messageWidgets = hints
+          .map(
+            (h) => Row(
+              children: [
+                Image.asset(
+                  'assets/be/avatars/${h.modelName == 'Stupid' ? 'Lollipop.png' : h.modelName == 'Aggressive' ? 'Pumpkin.png' : 'Cat.png'}',
+                  width: 32,
+                  height: 32,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${h.modelName} ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(text: 'says: '),
+                        TextSpan(
+                          text: h.move,
+                          style: TextStyle(color: Colors.amber),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+          .toList();
+
+      Get.rawSnackbar(
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundGradient: LinearGradient(
+          colors: [Color(0xFF121112), Color(0xFF121112)],
+        ),
+        borderRadius: 16,
+        margin: EdgeInsets.all(16),
+        duration: Duration(seconds: 8),
+        padding: EdgeInsets.all(16),
+        messageText: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '🤖 Bots are saying...',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 12),
+            ...messageWidgets,
+          ],
+        ),
+      );
+    } catch (e) {
+      Get.snackbar('Oops!', 'Nie udało się pobrać podpowiedzi 😢');
+    }
   }
 
   /* ===== polling utils ===== */

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/app/home/shop/shop.controller.dart';
-import 'package:frontend/widgets/page_card.dart';
 import 'package:get/get.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+
+import 'package:frontend/app/home/shop/shop.controller.dart';
+import 'package:frontend/app/home/shop/avatar_tile.dart';
+import 'package:frontend/app/home/shop/card_deck_tile.dart';
+
 import 'package:frontend/widgets/page_scaffold.dart';
 import 'package:frontend/widgets/app_bar/app_bar.dart';
 import 'package:frontend/widgets/app_bar/app_bar_icon.dart';
@@ -28,71 +32,64 @@ class ShopPageView extends GetView<ShopPageController> {
           AppBarIcon(
             icon: Icons.person,
             tooltipText: 'Account',
-            onPressed: () {},
+            onPressed: () => Get.offAndToNamed('/profile'),
           ),
         ],
       ),
       body: Obx(() {
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: controller.categorizedProducts.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: PageCard(
-                    title: '',
-                    child: Text(
-                      entry.key,
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+        if (controller.isLoading.value) {
+          return Center(
+            child: LoadingAnimationWidget.discreteCircle(
+              color: Theme.of(context).primaryColor,
+              secondRingColor: Theme.of(context).secondaryHeaderColor,
+              thirdRingColor: Theme.of(context).cardTheme.color!,
+              size: 200,
+            ),
+          );
+        }
+
+        final screenWidth = MediaQuery.of(context).size.width;
+
+        final avatarCrossAxisCount = (screenWidth / 100).clamp(3, 8).floor();
+        final deckCrossAxisCount = (screenWidth / 180).clamp(2, 4).floor();
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Avatars', style: Theme.of(context).textTheme.headlineLarge),
+              const SizedBox(height: 8),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.avatars.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: avatarCrossAxisCount,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1,
                 ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: entry.value.map((product) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 12.0),
-                        child: PageCard(
-                          title: '',
-                          child: Column(
-                            children: [
-                              Image.network(
-                                product.imageUrl,
-                                fit: BoxFit.contain,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(product.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    Text(
-                                      '\$${product.price.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        color: context.theme.primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                itemBuilder: (_, i) => AvatarTile(controller.avatars[i]),
+              ),
+              const SizedBox(height: 32),
+              Text('Decks', style: Theme.of(context).textTheme.headlineLarge),
+              const SizedBox(height: 8),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.cards.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: deckCrossAxisCount,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  // CardDeckTile ma ok. 260 (wys) × 170 (szer)
+                  childAspectRatio: 170 / 180,
                 ),
-                const SizedBox(height: 24),
-              ],
-            );
-          }).toList(),
+                itemBuilder: (_, i) => CardDeckTile(controller.cards[i]),
+              ),
+            ],
+          ),
         );
       }),
     );

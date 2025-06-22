@@ -9,7 +9,7 @@ import 'package:collection/collection.dart';
 import 'dart:math' show min, pi;
 
 class PlayerCard extends StatelessWidget {
-  const PlayerCard({
+  PlayerCard({
     super.key,
     this.player,
     this.joinGame,
@@ -20,8 +20,13 @@ class PlayerCard extends StatelessWidget {
     required this.gameId,
     required this.currentPlayerId,
     required this.showHaveCards,
+    required this.users,
+    this.deck,
+    this.avatar,
   });
-
+  final Map<int, api.UserDto> users;
+  String? deck;
+  String? avatar;
   final api.PlayerStateDto? player;
   final int seatId;
   final int gameId;
@@ -146,55 +151,40 @@ class PlayerCard extends StatelessWidget {
         ),
       );
     }
+    deck = users[player!.userId!]!.deckStyle!;
+    avatar = users[player!.userId!]!.avatarImage!;
     final theme = Theme.of(context);
-
-    return FutureBuilder<AssetImage>(
-      future: GameService.to.getUserAvatar(player!.userId!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-              child: CircularProgressIndicator()); // lub placeholder
-        }
-
-        if (snapshot.hasError || !snapshot.hasData) {
-          return Text('Error loading avatar'); // lub inny fallback
-        }
-
-        final avatar = snapshot.data!;
-        final isCurrent = player!.userId == currentPlayerId;
-
-        return PageCard(
-          title: player!.username ?? 'Unknown',
-          titleExtras: [
-            CircleAvatar(
-              radius: 24,
-              backgroundImage: avatar,
-            ),
-          ],
-          highlightColor: isCurrent
-              ? Theme.of(context)
-                      .elevatedButtonTheme
-                      .style
-                      ?.backgroundColor
-                      ?.resolve({}) ??
-                  Theme.of(context).colorScheme.primary
-              : null,
-          child: Row(
+    final isCurrent = player!.userId == currentPlayerId;
+    return PageCard(
+      title: player!.username ?? 'Unknown',
+      titleExtras: [
+        CircleAvatar(
+          radius: 24,
+          backgroundImage: AssetImage('assets/be/avatars/$avatar.png'),
+        ),
+      ],
+      highlightColor: isCurrent
+          ? Theme.of(context)
+                  .elevatedButtonTheme
+                  .style
+                  ?.backgroundColor
+                  ?.resolve({}) ??
+              Theme.of(context).colorScheme.primary
+          : null,
+      child: Row(
+        children: [
+          PageColumn(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              PageColumn(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ..._buildHeader(Theme.of(context)),
-                  const SizedBox(height: 8),
-                ],
-              ),
-              _buildCardsRow(),
+              ..._buildHeader(Theme.of(context)),
+              const SizedBox(height: 8),
             ],
           ),
-        );
-      },
+          _buildCardsRow(deck ?? ''),
+        ],
+      ),
     );
   }
 
@@ -231,7 +221,7 @@ class PlayerCard extends StatelessWidget {
   }
 
   /// Shows up to four cards in a horizontal row.
-  Widget _buildCardsRow() {
+  Widget _buildCardsRow(String deck) {
     const w = 110.0;
     const h = 150.0;
 
@@ -252,6 +242,7 @@ class PlayerCard extends StatelessWidget {
           (i) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: FlippableCard(
+              path: null,
               key: ValueKey('back_${seatId}_$i'), // 👈 NOWE
               width: w,
               height: h,
@@ -261,16 +252,16 @@ class PlayerCard extends StatelessWidget {
         ),
       );
     }
-
-    // 3️⃣ visible cards (yours or showdown)
+    final path = GameService.to.getPathToCards(deck);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: cards.take(2).mapIndexed((i, card) {
-        final asset = 'assets/cards/${card.$value == "10" ? "T" : card.$value}'
+        final asset = '$path${card.$value == "10" ? "T" : card.$value}'
             '${card.suit![0]}.png';
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: FlippableCard(
+            path: path,
             key: ValueKey('${seatId}_${asset}_$i'), // 👈 NOWE
             width: w,
             height: h,
@@ -306,12 +297,14 @@ class FlippableCard extends StatefulWidget {
     super.key,
     required this.width,
     required this.height,
-    required this.frontAsset, // null = rewers
+    required this.frontAsset,
+    required this.path,
   });
 
   final double width;
   final double height;
   final String? frontAsset;
+  final String? path;
 
   @override
   State<FlippableCard> createState() => _FlippableCardState();
@@ -379,15 +372,16 @@ class _FlippableCardState extends State<FlippableCard>
 
   @override
   Widget build(BuildContext context) {
+    print(widget.frontAsset);
     return AnimatedBuilder(
       animation: _rotation,
       builder: (context, child) {
-        // > π/2 – widzimy rewers; ≤ π/2 – awers
         final showBack = _rotation.value > pi / 2.0;
         return Transform(
           alignment: Alignment.center,
           transform: Matrix4.rotationY(_rotation.value),
           child: PlayingCard(
+            path: widget.path,
             width: widget.width,
             height: widget.height,
             frontAsset: showBack ? null : widget.frontAsset,

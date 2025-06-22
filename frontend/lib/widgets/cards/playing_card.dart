@@ -4,13 +4,16 @@ import 'dart:math';
 // ignore: must_be_immutable
 class PlayingCard extends StatefulWidget {
   String? frontAsset;
-  final String backAsset;
+  String? path;
+
+  String backAsset;
   final double width;
   final double height;
   final Duration duration;
 
   PlayingCard({
     super.key,
+    this.path,
     this.frontAsset,
     this.backAsset = 'assets/cards/back.png',
     this.width = 220,
@@ -79,6 +82,8 @@ class PlayingCardState extends State<PlayingCard>
 
   @override
   Widget build(BuildContext context) {
+    final backAsset =
+        widget.path != null ? widget.path! + 'back.png' : widget.backAsset;
     return GestureDetector(
       onTap: flipCard,
       child: SizedBox(
@@ -99,7 +104,7 @@ class PlayingCardState extends State<PlayingCard>
             Widget face;
             if (isUnderHalf) {
               // Widzimy tył
-              face = Image.asset(widget.backAsset, fit: BoxFit.cover);
+              face = Image.asset(backAsset, fit: BoxFit.cover);
             } else {
               // Widzimy przód – trzeba go obrócić o π, by nie był lustrzany
               face = Transform(
@@ -107,7 +112,7 @@ class PlayingCardState extends State<PlayingCard>
                 transform: Matrix4.rotationY(pi), // ← dodatkowy obrót
                 child: (_frontAsset != null)
                     ? Image.asset(_frontAsset!, fit: BoxFit.cover)
-                    : Image.asset(widget.backAsset, fit: BoxFit.cover),
+                    : Image.asset(backAsset, fit: BoxFit.cover),
               );
             }
 

@@ -118,6 +118,18 @@ Map<String, dynamic> _$GameStateDtoToJson(GameStateDto instance) =>
       'minRaiseAmount': instance.minRaiseAmount,
     };
 
+HintDto _$HintDtoFromJson(Map<String, dynamic> json) => HintDto(
+      modelName: json['modelName'] as String?,
+      move: json['move'] as String?,
+      difficulty: json['difficulty'] as String?,
+    );
+
+Map<String, dynamic> _$HintDtoToJson(HintDto instance) => <String, dynamic>{
+      'modelName': instance.modelName,
+      'move': instance.move,
+      'difficulty': instance.difficulty,
+    };
+
 JoinGameDto _$JoinGameDtoFromJson(Map<String, dynamic> json) => JoinGameDto(
       seatPosition: (json['seatPosition'] as num?)?.toInt() ?? 0,
       buyInAmount: (json['buyInAmount'] as num?)?.toInt() ?? 0,
@@ -192,6 +204,7 @@ PlayerStateDto _$PlayerStateDtoFromJson(Map<String, dynamic> json) =>
     PlayerStateDto(
       userId: (json['userId'] as num?)?.toInt() ?? 0,
       username: json['username'] as String?,
+      avatar: json['avatar'] as String?,
       currentChips: (json['currentChips'] as num?)?.toInt() ?? 0,
       isActive: json['isActive'] as bool? ?? false,
       isDealer: json['isDealer'] as bool? ?? false,
@@ -208,6 +221,7 @@ Map<String, dynamic> _$PlayerStateDtoToJson(PlayerStateDto instance) =>
     <String, dynamic>{
       'userId': instance.userId,
       'username': instance.username,
+      'avatar': instance.avatar,
       'currentChips': instance.currentChips,
       'isActive': instance.isActive,
       'isDealer': instance.isDealer,
@@ -215,6 +229,16 @@ Map<String, dynamic> _$PlayerStateDtoToJson(PlayerStateDto instance) =>
       'isBigBlind': instance.isBigBlind,
       'seatPosition': instance.seatPosition,
       'cards': instance.cards?.map((e) => e.toJson()).toList(),
+    };
+
+PurchaseRequest _$PurchaseRequestFromJson(Map<String, dynamic> json) =>
+    PurchaseRequest(
+      itemId: (json['itemId'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$PurchaseRequestToJson(PurchaseRequest instance) =>
+    <String, dynamic>{
+      'itemId': instance.itemId,
     };
 
 RegisterDto _$RegisterDtoFromJson(Map<String, dynamic> json) => RegisterDto(
@@ -244,6 +268,35 @@ Map<String, dynamic> _$RoundWinnerDtoToJson(RoundWinnerDto instance) =>
       'amountWon': instance.amountWon,
     };
 
+SelectItemDto _$SelectItemDtoFromJson(Map<String, dynamic> json) =>
+    SelectItemDto(
+      itemId: (json['itemId'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$SelectItemDtoToJson(SelectItemDto instance) =>
+    <String, dynamic>{
+      'itemId': instance.itemId,
+    };
+
+ShopItemDto _$ShopItemDtoFromJson(Map<String, dynamic> json) => ShopItemDto(
+      itemId: (json['itemId'] as num?)?.toInt() ?? 0,
+      name: json['name'] as String?,
+      description: json['description'] as String?,
+      price: (json['price'] as num?)?.toDouble(),
+      itemType: json['itemType'] as String?,
+      currency: json['currency'] as String?,
+    );
+
+Map<String, dynamic> _$ShopItemDtoToJson(ShopItemDto instance) =>
+    <String, dynamic>{
+      'itemId': instance.itemId,
+      'name': instance.name,
+      'description': instance.description,
+      'price': instance.price,
+      'itemType': instance.itemType,
+      'currency': instance.currency,
+    };
+
 SocialLoginDto _$SocialLoginDtoFromJson(Map<String, dynamic> json) =>
     SocialLoginDto(
       provider: json['provider'] as String?,
@@ -254,6 +307,28 @@ Map<String, dynamic> _$SocialLoginDtoToJson(SocialLoginDto instance) =>
     <String, dynamic>{
       'provider': instance.provider,
       'token': instance.token,
+    };
+
+TableDto _$TableDtoFromJson(Map<String, dynamic> json) => TableDto(
+      tableId: (json['tableId'] as num?)?.toInt() ?? 0,
+      name: json['name'] as String?,
+      difficultyLevel: json['difficultyLevel'] as String?,
+      maxPlayers: (json['maxPlayers'] as num?)?.toInt() ?? 0,
+      minBuyIn: (json['minBuyIn'] as num?)?.toInt() ?? 0,
+      maxBuyIn: (json['maxBuyIn'] as num?)?.toInt() ?? 0,
+      smallBlind: (json['smallBlind'] as num?)?.toInt() ?? 0,
+      bigBlind: (json['bigBlind'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$TableDtoToJson(TableDto instance) => <String, dynamic>{
+      'tableId': instance.tableId,
+      'name': instance.name,
+      'difficultyLevel': instance.difficultyLevel,
+      'maxPlayers': instance.maxPlayers,
+      'minBuyIn': instance.minBuyIn,
+      'maxBuyIn': instance.maxBuyIn,
+      'smallBlind': instance.smallBlind,
+      'bigBlind': instance.bigBlind,
     };
 
 UpdateProfileDto _$UpdateProfileDtoFromJson(Map<String, dynamic> json) =>
@@ -274,6 +349,7 @@ UserDto _$UserDtoFromJson(Map<String, dynamic> json) => UserDto(
       email: json['email'] as String?,
       chipsBalance: (json['chipsBalance'] as num?)?.toInt() ?? 0,
       avatarImage: json['avatarImage'] as String?,
+      deckStyle: json['deckStyle'] as String?,
       token: json['token'] as String?,
     );
 
@@ -283,5 +359,6 @@ Map<String, dynamic> _$UserDtoToJson(UserDto instance) => <String, dynamic>{
       'email': instance.email,
       'chipsBalance': instance.chipsBalance,
       'avatarImage': instance.avatarImage,
+      'deckStyle': instance.deckStyle,
       'token': instance.token,
     };

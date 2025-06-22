@@ -5,8 +5,9 @@ import 'package:frontend/services/shop.service.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AvatarTile extends StatelessWidget {
-  const AvatarTile(this.item, {super.key});
+  const AvatarTile(this.item, {super.key, required this.buy});
   final ShopItemDto item;
+  final void Function(int) buy;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +63,7 @@ class AvatarTile extends StatelessWidget {
                     height: 10,
                   ),
                   ElevatedButton.icon(
-                      onPressed: () => ErrorService.to.showError('avatar'),
+                      onPressed: () => buy(item.itemId!),
                       label: Text(
                         'Buy ${item.price} ${item.currency == 'PLN' ? item.currency : '🪙'}',
                         style: TextStyle(fontSize: 12),

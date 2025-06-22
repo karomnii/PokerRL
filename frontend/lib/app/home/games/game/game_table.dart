@@ -180,12 +180,14 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
     final rank = rankMap[c.$value?.toUpperCase()] ?? c.$value;
     final suit = suitMap[c.suit?.toUpperCase()] ?? c.suit;
 
-    return '${GameService.to.getPathToCards(AuthService.to.user!.deckStyle!)}/${rank! == '10' ? 'T' : rank!}${suit!}.png';
+    return '${GameService.to.getPathToCards(AuthService.to.user?.deckStyle ?? 'Origin Deck')}/${rank! == '10' ? 'T' : rank!}${suit!}.png';
   }
 
   Widget _cardFace(api.CardDto dto, double angle) {
     final backVisible = angle > pi / 2;
-    final asset = backVisible ? 'assets/cards/back.png' : _assetFor(dto);
+    final asset = backVisible
+        ? '${GameService.to.getPathToCards(AuthService.to.user?.deckStyle ?? 'Origin Deck')}back.png'
+        : _assetFor(dto);
     return Padding(
       padding: const EdgeInsets.only(left: 20, right: 20),
       child: Image.asset(asset, width: _w, height: _h, fit: BoxFit.cover),

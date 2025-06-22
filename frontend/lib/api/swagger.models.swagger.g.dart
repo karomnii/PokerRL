@@ -231,14 +231,29 @@ Map<String, dynamic> _$PlayerStateDtoToJson(PlayerStateDto instance) =>
       'cards': instance.cards?.map((e) => e.toJson()).toList(),
     };
 
-PurchaseRequest _$PurchaseRequestFromJson(Map<String, dynamic> json) =>
-    PurchaseRequest(
+PurchaseRequestDto _$PurchaseRequestDtoFromJson(Map<String, dynamic> json) =>
+    PurchaseRequestDto(
       itemId: (json['itemId'] as num?)?.toInt() ?? 0,
+      userId: (json['userId'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$PurchaseRequestToJson(PurchaseRequest instance) =>
+Map<String, dynamic> _$PurchaseRequestDtoToJson(PurchaseRequestDto instance) =>
     <String, dynamic>{
       'itemId': instance.itemId,
+      'userId': instance.userId,
+    };
+
+PurchaseResponseDto _$PurchaseResponseDtoFromJson(Map<String, dynamic> json) =>
+    PurchaseResponseDto(
+      message: json['message'] as String?,
+      paymentUrl: json['paymentUrl'] as String?,
+    );
+
+Map<String, dynamic> _$PurchaseResponseDtoToJson(
+        PurchaseResponseDto instance) =>
+    <String, dynamic>{
+      'message': instance.message,
+      'paymentUrl': instance.paymentUrl,
     };
 
 RegisterDto _$RegisterDtoFromJson(Map<String, dynamic> json) => RegisterDto(

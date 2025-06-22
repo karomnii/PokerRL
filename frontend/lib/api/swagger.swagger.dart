@@ -188,7 +188,8 @@ abstract class Swagger extends ChopperService {
 
   ///
   ///@param id
-  Future<chopper.Response<HintDto>> apiGamesIdHintPost({required int? id}) {
+  Future<chopper.Response<List<HintDto>>> apiGamesIdHintPost(
+      {required int? id}) {
     generatedMapping.putIfAbsent(HintDto, () => HintDto.fromJsonFactory);
 
     return _apiGamesIdHintPost(id: id);
@@ -200,7 +201,7 @@ abstract class Swagger extends ChopperService {
     path: '/api/Games/{id}/hint',
     optionalBody: true,
   )
-  Future<chopper.Response<HintDto>> _apiGamesIdHintPost(
+  Future<chopper.Response<List<HintDto>>> _apiGamesIdHintPost(
       {@Path('id') required int? id});
 
   ///
@@ -359,8 +360,12 @@ abstract class Swagger extends ChopperService {
   });
 
   ///
-  Future<chopper.Response> apiPaymentsCreateCheckoutSessionPost(
-      {required PurchaseRequest? body}) {
+  Future<chopper.Response<PurchaseResponseDto>>
+      apiPaymentsCreateCheckoutSessionPost(
+          {required PurchaseRequestDto? body}) {
+    generatedMapping.putIfAbsent(
+        PurchaseResponseDto, () => PurchaseResponseDto.fromJsonFactory);
+
     return _apiPaymentsCreateCheckoutSessionPost(body: body);
   }
 
@@ -369,26 +374,32 @@ abstract class Swagger extends ChopperService {
     path: '/api/Payments/create-checkout-session',
     optionalBody: true,
   )
-  Future<chopper.Response> _apiPaymentsCreateCheckoutSessionPost(
-      {@Body() required PurchaseRequest? body});
+  Future<chopper.Response<PurchaseResponseDto>>
+      _apiPaymentsCreateCheckoutSessionPost(
+          {@Body() required PurchaseRequestDto? body});
 
   ///
   ///@param session_id
   ///@param itemId
+  ///@param userId
   Future<chopper.Response> apiPaymentsSuccessGet({
     String? sessionId,
     int? itemId,
+    int? userId,
   }) {
-    return _apiPaymentsSuccessGet(sessionId: sessionId, itemId: itemId);
+    return _apiPaymentsSuccessGet(
+        sessionId: sessionId, itemId: itemId, userId: userId);
   }
 
   ///
   ///@param session_id
   ///@param itemId
+  ///@param userId
   @Get(path: '/api/Payments/success')
   Future<chopper.Response> _apiPaymentsSuccessGet({
     @Query('session_id') String? sessionId,
     @Query('itemId') int? itemId,
+    @Query('userId') int? userId,
   });
 
   ///

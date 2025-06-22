@@ -1,14 +1,11 @@
 using TexasHoldemPoker.API.Models;
 using TexasHoldemPoker.API.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Stripe.Checkout;
+using TexasHoldemPoker.API.DTOs;
 
 namespace TexasHoldemPoker.API.Controllers;
-
-public class PurchaseRequest
-{
-    public int ItemId { get; set; }
-}
 
 [ApiController]
 [Route("api/[controller]")]
@@ -42,8 +39,16 @@ public class PaymentsController : ControllerBase
             user.ChipsBalance -= (int)item.Price;
         }
 
-        if (item.ItemType == "Avatar") user.AvatarType = item.Name;
+        if (item.ItemType == "Avatar")
+        {
+            user.AvatarType = item.Name;
+        }
 
+        if (item.ItemType == "CardDeck")
+        {
+            user.DeckStyle = item.Name;
+        }
+        
         var purchase = new Purchase
         {
             UserId = user.UserId,
@@ -60,34 +65,35 @@ public class PaymentsController : ControllerBase
         return true;
     }
 
-
     [HttpPost("create-checkout-session")]
-    public async Task<IActionResult> CreateCheckoutSession([FromBody] PurchaseRequest request)
+    public async Task<IActionResult> CreateCheckoutSession([FromBody] PurchaseRequestDto request)
     {
+        var user = await _context.Users.FindAsync(request.UserId);
+
+        if (user == null)
+            return NotFound(new { Message = "User not found." });
+
         try
         {
-            if (request == null || request.ItemId <= 0)
-                return BadRequest(new { Message = "Invalid request. ItemId is required." });
-
-            var item = _context.ShopItems.FirstOrDefault(i => i.ItemId == request.ItemId && i.IsActive);
+            var item = await  _context.ShopItems.FirstOrDefaultAsync(i => i.ItemId == request.ItemId && i.IsActive);
 
             if (item == null)
                 return NotFound(new { Message = "Item not found or unavailable." });
 
-            var userId = 5;
-
             if (item.Currency == "PLN")
             {
-                var successUrl =
-                    $"http://localhost:5000/api/payments/success?session_id={{CHECKOUT_SESSION_ID}}&itemId={item.ItemId}";
-                var cancelUrl = "http://localhost:5000/api/payments/cancel";
+                var successUrl = $"https://localhost:65463/api/payments/success?session_id={{CHECKOUT_SESSION_ID}}&itemId={item.ItemId}&userId={request.UserId}";
+                var cancelUrl = "https://localhost:65463/api/payments/cancel";
 
-                var result = _paymentService.CreateCheckoutSession(item, successUrl, cancelUrl, userId);
+                var result = _paymentService.CreateCheckoutSession(item, successUrl, cancelUrl, request.UserId);
+                if (result == null)
+                    return BadRequest(new { Message = "Failed to create checkout session." });
+
                 return Ok(result);
             }
             else if (item.Currency == "CHIPS")
             {
-                var purchaseResult = await ProcessPurchaseAsync(userId, item, "CHIPS");
+                var purchaseResult = await ProcessPurchaseAsync(request.UserId, item, "CHIPS");
                 if (!purchaseResult)
                     return BadRequest(new { Message = "Purchase failed. Check your balance or item availability." });
 
@@ -104,7 +110,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet("success")]
-    public async Task<IActionResult> Success(string session_id, int itemId)
+    public async Task<IActionResult> Success(string session_id, int itemId, int userId)
     {
         try
         {
@@ -119,8 +125,6 @@ public class PaymentsController : ControllerBase
 
                 if (session.PaymentStatus != "paid")
                     return BadRequest(new { Message = "Payment not successful." });
-
-                var userId = int.Parse(session.Metadata["userId"]);
 
                 var purchaseResult = await ProcessPurchaseAsync(userId, item, "Stripe", session.Id);
                 if (!purchaseResult)

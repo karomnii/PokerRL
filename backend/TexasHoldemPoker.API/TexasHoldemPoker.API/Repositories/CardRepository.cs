@@ -70,25 +70,6 @@ namespace TexasHoldemPoker.API.Repositories
             if (gameRound == null)
                 return false;
 
-            var existingCard = await context.CommunityCards
-                .FirstOrDefaultAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.Position == position);
-
-            if (existingCard != null)
-                return false;
-
-            var cardUsed = await context.CommunityCards
-                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
-
-            if (cardUsed)
-                return false;
-
-            var cardUsedByPlayer = await context.PlayerCards
-                .Include(pc => pc.GamePlayer)
-                .AnyAsync(pc => pc.GamePlayer.GameId == gameId && pc.CardId == cardId);
-
-            if (cardUsedByPlayer)
-                return false;
-
             var communityCard = new CommunityCard
             {
                 GameRoundId = gameRound.GameRoundId,
@@ -113,29 +94,6 @@ namespace TexasHoldemPoker.API.Repositories
                 .FirstOrDefaultAsync();
 
             if (gameRound == null)
-                return false;
-
-            var existingCard = await context.PlayerCards
-                .FirstOrDefaultAsync(pc =>
-                    pc.GamePlayerId == gamePlayerId && pc.GameRoundId == gameRound.GameRoundId &&
-                    pc.Position == position);
-
-            if (existingCard != null)
-                return false;
-
-            var cardUsedInCommunity = await context.CommunityCards
-                .AnyAsync(cc => cc.GameRoundId == gameRound.GameRoundId && cc.CardId == cardId);
-
-            if (cardUsedInCommunity)
-                return false;
-
-            var cardUsedByOtherPlayer = await context.PlayerCards
-                .Include(pc => pc.GamePlayer)
-                .AnyAsync(pc => pc.GameRoundId == gameRound.GameRoundId &&
-                                pc.CardId == cardId &&
-                                pc.GamePlayer.GamePlayerId != gamePlayerId);
-
-            if (cardUsedByOtherPlayer)
                 return false;
 
             var playerCard = new PlayerCard

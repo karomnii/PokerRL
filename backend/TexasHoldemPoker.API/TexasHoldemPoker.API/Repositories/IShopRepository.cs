@@ -1,4 +1,5 @@
-﻿using TexasHoldemPoker.API.Models;
+﻿using TexasHoldemPoker.API.DTOs;
+using TexasHoldemPoker.API.Models;
 
 namespace TexasHoldemPoker.API.Repositories
 {
@@ -10,5 +11,8 @@ namespace TexasHoldemPoker.API.Repositories
         Task<ShopItem> CreateItemAsync(ShopItem item);
         Task UpdateItemAsync(ShopItem item);
         Task<bool> DeactivateItemAsync(int itemId);
+        Task<IEnumerable<ShopItemDto>> GetAllActiveItemsForUserAsync(int userId);
+        Task<IEnumerable<ShopItemDto>> GetBoughtItemsForUserAsync(int userId);
+        Task<bool> SetItemForUser(int userId, int itemId);
     }
 }

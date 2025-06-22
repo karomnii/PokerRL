@@ -67,11 +67,11 @@ namespace TexasHoldemPoker.API.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Move>> GetLastRoundMovesAsync(int gameId, int gameRoundId, string state)
+        public async Task<IEnumerable<Move>> GetLastRoundMovesAsync(int gameId, int gameRoundId)
         {
             return await _context.Moves
                 .Include(m => m.GameRound)
-                .Where(m => m.GameRound.GameId == gameId && m.Round == state && m.GameRoundId == gameRoundId)
+                .Where(m => m.GameRound.GameId == gameId && m.GameRoundId == gameRoundId)
                 .OrderBy(m => m.MoveTime)
                 .ToListAsync();
         }

@@ -187,13 +187,13 @@ namespace TexasHoldemPoker.API.Repositories
                 .Include(gp => gp.PlayerCards)
                 .FirstOrDefaultAsync(gp => gp.GamePlayerId == gamePlayerId);
 
+            if (gamePlayer == null)
+                return false;
+
             var gameRound = await context.GameRounds
                 .Where(gr => gr.GameId == gamePlayer.GameId)
                 .OrderByDescending(gr => gr.RoundNumber)
                 .FirstOrDefaultAsync();
-
-            if (gamePlayer == null)
-                return false;
 
             if (gameRound.CurrentState != "Waiting" && gameRound.CurrentState != "Completed")
                 return false;
@@ -202,12 +202,27 @@ namespace TexasHoldemPoker.API.Repositories
 
             try
             {
-                if (gamePlayer.PlayerCards != null && gamePlayer.PlayerCards.Any())
+                await chipTransactionRepository.RecordGameRefundAsync(gamePlayer.UserId, gamePlayer.GameId, gamePlayer.CurrentChips);
+
+                var playerCards = await context.PlayerCards
+                    .Where(pc => pc.GamePlayerId == gamePlayerId)
+                    .ToListAsync();
+
+                foreach (var card in playerCards)
                 {
-                    context.PlayerCards.RemoveRange(gamePlayer.PlayerCards);
+                    card.GamePlayerId = null;
                 }
-                var user = await context.Users.FindAsync(gamePlayer.UserId);
-                user.ChipsBalance += gamePlayer.CurrentChips;
+
+                context.PlayerCards.UpdateRange(playerCards);
+
+                var game = await context.Games
+                    .FirstOrDefaultAsync(g => g.GameId == gamePlayer.GameId);
+
+                if (game?.CurrentTurnPlayerId != null)
+                {
+                    game.CurrentTurnPlayerId = null;
+                    context.Games.Update(game);
+                }
 
                 await chipTransactionRepository.RecordGameRefundAsync(
                     gamePlayer.UserId, 

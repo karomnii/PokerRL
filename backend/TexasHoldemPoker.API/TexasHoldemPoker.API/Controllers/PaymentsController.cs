@@ -66,7 +66,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost("create-checkout-session")]
-    public async Task<IActionResult> CreateCheckoutSession([FromBody] PurchaseRequestDto request)
+    public async Task<ActionResult<PurchaseResponseDto>> CreateCheckoutSession([FromBody] PurchaseRequestDto request)
     {
         var user = await _context.Users.FindAsync(request.UserId);
 
@@ -89,7 +89,15 @@ public class PaymentsController : ControllerBase
                 if (result == null)
                     return BadRequest(new { Message = "Failed to create checkout session." });
 
-                return Ok(result);
+                dynamic sessionResult = result;
+
+                var purchaseResponseDto = new PurchaseResponseDto
+                {
+                    Message = "Checkout session created successfully.",
+                    PaymentUrl = sessionResult.url
+                };
+
+                return Ok(purchaseResponseDto);
             }
             else if (item.Currency == "CHIPS")
             {
@@ -97,7 +105,12 @@ public class PaymentsController : ControllerBase
                 if (!purchaseResult)
                     return BadRequest(new { Message = "Purchase failed. Check your balance or item availability." });
 
-                return Ok(new { Message = $"{item.Name} purchased successfully!" });
+                var purchaseResponseDto = new PurchaseResponseDto
+                {
+                    Message = $"{item.Name} purchased successfully!"
+                };
+
+                return Ok(purchaseResponseDto);
             }
 
             return BadRequest(new { Message = "Invalid currency type." });

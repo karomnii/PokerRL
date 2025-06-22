@@ -114,10 +114,11 @@ namespace TexasHoldemPoker.API.Controllers
                 return BadRequest("Provider and token are required.");
 
             var info = await _tokenService.ValidateSocialTokenAsync(loginDto.Provider, loginDto.Token);
-            if (info is null) return Unauthorized("Invalid social token");
-
-
+            if (info is null) 
+                return Unauthorized("Invalid social token");
+            
             var user = await _userRepository.GetByEmailAsync(info.Email);
+            
             if (user is null)
             {
                 var randomPassword = $"SOCIAL_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}";
@@ -132,29 +133,44 @@ namespace TexasHoldemPoker.API.Controllers
                     PasswordHash = _passwordHasher.HashPassword(null, randomPassword)
                 };
                 await _userRepository.CreateUserAsync(user);
-            }
-            
-            user.LastLoginDate = DateTime.UtcNow; 
-            await _userRepository.UpdateUserAsync(user);
-            
-            if (string.IsNullOrWhiteSpace(user.Username))
-            {
+                
+                user.LastLoginDate = DateTime.UtcNow; 
+                await _userRepository.UpdateUserAsync(user);
+                
                 return Accepted(new
                 {
                     RequiresUsername = true,
-                    UserId   = user.UserId,
-                    Email    = user.Email
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    Message = "Account created successfully. Please choose a username."
                 });
             }
-            return Ok(new UserDto
+            else
             {
-                UserId       = user.UserId,
-                Username     = user.Username,
-                Email        = user.Email,
-                ChipsBalance = user.ChipsBalance,
-                AvatarImage  = user.AvatarImage,
-                Token        = _tokenService.CreateToken(user)
-            });
+                user.LastLoginDate = DateTime.UtcNow; 
+                await _userRepository.UpdateUserAsync(user);
+                
+                if (string.IsNullOrWhiteSpace(user.Username))
+                {
+                    return Accepted(new
+                    {
+                        RequiresUsername = true,
+                        UserId = user.UserId,
+                        Email = user.Email,
+                        Message = "Please choose a username to complete your profile."
+                    });
+                }
+                
+                return Ok(new UserDto
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    Email = user.Email,
+                    ChipsBalance = user.ChipsBalance,
+                    AvatarImage = user.AvatarImage,
+                    Token = _tokenService.CreateToken(user),
+                });
+            }
         }
         
         

@@ -88,15 +88,12 @@ class _AuthViewState extends State<AuthView> {
           child: PageCard(
             title: 'AuthPage',
             titleExtras: [
-              Positioned(
-                left: 0,
-                child: AppBarIcon(
-                  icon: Icons.info_sharp,
-                  tooltipText: 'Privacy Policy',
-                  iconColor: Colors.white,
-                  onPressed: () =>
-                      Get.toNamed('/policy', preventDuplicates: false),
-                ),
+              AppBarIcon(
+                icon: Icons.info_sharp,
+                tooltipText: 'Privacy Policy',
+                iconColor: Colors.white,
+                onPressed: () =>
+                    Get.toNamed('/policy', preventDuplicates: false),
               ),
             ],
             child: Center(

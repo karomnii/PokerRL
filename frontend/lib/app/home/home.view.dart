@@ -38,6 +38,11 @@ class HomePageView extends GetView<HomePageController> {
             onPressed: () => Get.toNamed('/shop', preventDuplicates: false),
           ),
           AppBarIcon(
+            icon: Icons.info_sharp,
+            tooltipText: 'Privacy Policy',
+            onPressed: () => Get.toNamed('/policy', preventDuplicates: false),
+          ),
+          AppBarIcon(
             icon: Icons.emoji_events,
             tooltipText: 'Leaderboard',
             onPressed: () =>

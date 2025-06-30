@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/app/home/auth/login/login.controller.dart';
+import 'package:frontend/widgets/app_bar/app_bar_icon.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
@@ -64,6 +65,18 @@ class LoginView extends GetView<LoginPageController> {
                           ),
                         ),
                       ),
+                    ),
+                    Row(
+                      children: [
+                        AppBarIcon(
+                          icon: Icons.info_sharp,
+                          iconColor: Colors.white,
+                          tooltipText: 'Privacy Policy',
+                          onPressed: () =>
+                              Get.toNamed('/policy', preventDuplicates: false),
+                        ),
+                        Text('Privacy policy')
+                      ],
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(

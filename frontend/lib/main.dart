@@ -5,6 +5,7 @@ import 'package:chopper/chopper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:frontend/api/swagger.swagger.dart';
+import 'package:frontend/app/home/auth/register/register.controller.dart';
 import 'package:frontend/routes/app_pages.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/error_service.dart';

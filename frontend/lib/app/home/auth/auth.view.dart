@@ -3,6 +3,7 @@ import 'dart:ui' as ui; // ignore: undefined_prefixed_name
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend/widgets/app_bar/app_bar_icon.dart';
 import 'package:frontend/widgets/page_card.dart';
 import 'package:frontend/widgets/page_column.dart';
 import 'package:frontend/widgets/page_scaffold.dart';
@@ -86,6 +87,18 @@ class _AuthViewState extends State<AuthView> {
           constraints: const BoxConstraints(maxWidth: 450),
           child: PageCard(
             title: 'AuthPage',
+            titleExtras: [
+              Positioned(
+                left: 0,
+                child: AppBarIcon(
+                  icon: Icons.info_sharp,
+                  tooltipText: 'Privacy Policy',
+                  iconColor: Colors.white,
+                  onPressed: () =>
+                      Get.toNamed('/policy', preventDuplicates: false),
+                ),
+              ),
+            ],
             child: Center(
               child: IntrinsicWidth(
                 child: PageColumn(

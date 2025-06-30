@@ -93,7 +93,7 @@ class RegisterView extends GetView<RegisterPageController> {
                             onPressed: () => Get.toNamed('/policy',
                                 preventDuplicates: false),
                           ),
-                          Text('Privacy policy'),
+                          Text('Accept privacy policy'),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Transform.scale(

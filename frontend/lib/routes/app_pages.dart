@@ -4,6 +4,8 @@ import 'package:frontend/app/home/games/game/game.binding.dart';
 import 'package:frontend/app/home/games/game/game.view.dart';
 import 'package:frontend/app/home/leaderboard/leaderboard.binding.dart';
 import 'package:frontend/app/home/leaderboard/leaderboard.view.dart';
+import 'package:frontend/app/home/policy/policy.binding.dart';
+import 'package:frontend/app/home/policy/policy.view.dart';
 import 'package:frontend/app/home/profile/profile.binding.dart';
 import 'package:frontend/app/home/profile/profile.view.dart';
 import 'package:get/get.dart';
@@ -59,6 +61,7 @@ abstract class Routes {
   static const shop = '/shop';
   static const profile = '/profile';
   static const leaderboard = '/leaderboard';
+  static const policy = '/policy';
 }
 
 /* ───────────────  Page table  ─────────────── */
@@ -107,6 +110,11 @@ final List<GetPage<dynamic>> appPages = [
     binding: LeaderboardPageBinding(),
     middlewares: [AuthGuard()],
   ),
+  GetPage(
+    name: Routes.policy,
+    page: () => PolicyPageView(),
+    binding: PolicyPageBinding(),
+  ),
   /* --------  AUTH SUB-TREE (public)  -------- */
   GetPage(
     name: Routes.auth,
@@ -120,7 +128,7 @@ final List<GetPage<dynamic>> appPages = [
       ),
       GetPage(
         name: '/register',
-        page: () => const RegisterView(),
+        page: () => RegisterView(),
         binding: RegisterPageBinding(),
       ),
     ],

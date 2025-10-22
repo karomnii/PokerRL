@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.swagger.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
+import 'package:frontend/platform/token_storage.dart';
 import 'package:get/get.dart';
 import 'error_service.dart';
 
@@ -18,7 +18,7 @@ class GameService extends GetxService {
   bool get isLoggedIn => _token.value != null;
 
   Future<GameService> init() async {
-    _token.value = html.window.localStorage[_tokenKey];
+    _token.value = await TokenStore.readToken();
     return this;
   }
 

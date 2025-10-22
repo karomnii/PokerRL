@@ -1,4 +1,4 @@
-import 'dart:html' as html;
+import 'package:frontend/platform/token_storage.dart';
 import 'package:get/get.dart';
 import 'package:frontend/api/swagger.swagger.dart';
 import 'error_service.dart';
@@ -15,7 +15,7 @@ class ProfileService extends GetxService {
   bool get isLoggedIn => _token.value != null;
 
   Future<ProfileService> init() async {
-    _token.value = html.window.localStorage[_tokenKey];
+    _token.value = await TokenStore.readToken();
     return this;
   }
 

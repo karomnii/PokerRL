@@ -1,4 +1,3 @@
-import 'dart:html' as html;
 import 'dart:ui' as ui; // ignore: undefined_prefixed_name
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -11,47 +10,48 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'auth.controller.dart';
 
-void registerGoogleSignInButton(String clientId) {
-  // ignore: undefined_prefixed_name
-  ui.platformViewRegistry.registerViewFactory(
-    'google-signin-button',
-    (int viewId) {
-      final html.DivElement element = html.DivElement()
-        ..id = 'google-signin-button-container'
-        ..style.width = '300px'
-        ..style.height = '40px';
+// TODO: MICHAL NAPRAW
+// void registerGoogleSignInButton(String clientId) {
+//   // ignore: undefined_prefixed_name
+//   ui.platformViewRegistry.registerViewFactory(
+//     'google-signin-button',
+//     (int viewId) {
+//       final html.DivElement element = html.DivElement()
+//         ..id = 'google-signin-button-container'
+//         ..style.width = '300px'
+//         ..style.height = '40px';
 
-      final script = html.ScriptElement()
-        ..type = 'text/javascript'
-        ..text = '''
-          function initializeGoogleSignIn() {
-            google.accounts.id.initialize({
-              client_id: "$clientId",
-              callback: function(response) {
-                window.dispatchEvent(new CustomEvent('googleSignIn', {detail: response.credential}));
-              }
-            });
-            google.accounts.id.renderButton(
-              document.getElementById('google-signin-button-container'),
-              { theme: 'outline', size: 'large', width: 300 }
-            );
-          }
-          if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            initializeGoogleSignIn();
-          } else {
-            var script = document.createElement('script');
-            script.src = "https://accounts.google.com/gsi/client";
-            script.onload = initializeGoogleSignIn;
-            document.head.appendChild(script);
-          }
-        ''';
+//       final script = html.ScriptElement()
+//         ..type = 'text/javascript'
+//         ..text = '''
+//           function initializeGoogleSignIn() {
+//             google.accounts.id.initialize({
+//               client_id: "$clientId",
+//               callback: function(response) {
+//                 window.dispatchEvent(new CustomEvent('googleSignIn', {detail: response.credential}));
+//               }
+//             });
+//             google.accounts.id.renderButton(
+//               document.getElementById('google-signin-button-container'),
+//               { theme: 'outline', size: 'large', width: 300 }
+//             );
+//           }
+//           if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+//             initializeGoogleSignIn();
+//           } else {
+//             var script = document.createElement('script');
+//             script.src = "https://accounts.google.com/gsi/client";
+//             script.onload = initializeGoogleSignIn;
+//             document.head.appendChild(script);
+//           }
+//         ''';
 
-      element.append(script);
+//       element.append(script);
 
-      return element;
-    },
-  );
-}
+//       return element;
+//     },
+//   );
+// }
 
 class AuthView extends StatefulWidget {
   AuthView({Key? key}) : super(key: key);
@@ -67,16 +67,17 @@ class _AuthViewState extends State<AuthView> {
   void initState() {
     super.initState();
 
-    if (kIsWeb) {
-      registerGoogleSignInButton(controller.googleClientId);
-      html.window.addEventListener('googleSignIn', (event) {
-        final customEvent = event as html.CustomEvent;
-        final String idToken = customEvent.detail;
-        if (idToken.isNotEmpty) {
-          controller.loginWithGoogleIdToken(idToken);
-        }
-      });
-    }
+    // TODO: MICHAL NAPRAW
+    // if (kIsWeb) {
+    //   registerGoogleSignInButton(controller.googleClientId);
+    //   html.window.addEventListener('googleSignIn', (event) {
+    //     final customEvent = event as html.CustomEvent;
+    //     final String idToken = customEvent.detail;
+    //     if (idToken.isNotEmpty) {
+    //       controller.loginWithGoogleIdToken(idToken);
+    //     }
+    //   });
+    // }
   }
 
   @override

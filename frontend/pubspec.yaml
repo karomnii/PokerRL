@@ -26,6 +26,7 @@ dependencies:
   collection: ^1.19.1
   shimmer: ^3.0.0
   url_launcher: ^6.2.5
+  shared_preferences: ^2.5.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

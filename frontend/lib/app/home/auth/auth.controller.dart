@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/error_service.dart';
-import 'dart:html' as html;
 
 class AuthPageController extends GetxController {
   final String googleClientId =
@@ -20,13 +19,14 @@ class AuthPageController extends GetxController {
       scopes: ['email', 'profile', 'openid'],
     );
 
-    if (kIsWeb) {
-      html.window.addEventListener('googleSignIn', (event) {
-        final customEvent = event as html.CustomEvent;
-        final idToken = customEvent.detail as String;
-        loginWithGoogleIdToken(idToken);
-      });
-    }
+    // TODO: MICHAL NAPRAW
+    // if (kIsWeb) {
+    //   html.window.addEventListener('googleSignIn', (event) {
+    //     final customEvent = event as html.CustomEvent;
+    //     final idToken = customEvent.detail as String;
+    //     loginWithGoogleIdToken(idToken);
+    //   });
+    // }
   }
 
   Future<void> loginWithGoogle() async {

@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'package:frontend/api/swagger.swagger.dart';
+import 'package:frontend/platform/token_storage.dart';
 import 'package:get/get.dart';
 import 'error_service.dart';
 
@@ -22,9 +22,9 @@ class AuthService extends GetxService {
   int? get userId => _user.value?.userId; // convenience
 
   Future<AuthService> init() async {
-    _token.value = html.window.localStorage[_tokenKey];
+    _token.value = await TokenStore.readToken();
 
-    final rawUser = html.window.localStorage[_userKey];
+    final rawUser = await TokenStore.readUserJson();
     if (rawUser != null) {
       _user.value =
           UserDto.fromJson(jsonDecode(rawUser) as Map<String, dynamic>);
@@ -116,7 +116,7 @@ class AuthService extends GetxService {
   }
 
   void logout() {
-    html.window.localStorage.remove(_tokenKey);
+    TokenStore.clearToken();
     _token.value = null;
   }
 
@@ -149,7 +149,8 @@ class AuthService extends GetxService {
 
       if (response.isSuccessful && response.body != null) {
         _user.value = response.body;
-        html.window.localStorage[_userKey] = jsonEncode(response.body);
+        TokenStore.saveUserJson(jsonEncode(response.body));
+        // html.window.localStorage[_userKey] = jsonEncode(response.body);
       } else {
         ErrorService.to.showError('Nie udało się pobrać danych użytkownika.');
       }
@@ -159,9 +160,11 @@ class AuthService extends GetxService {
   }
 
   void _saveToken(UserDto user) {
-    html.window.localStorage[_tokenKey] = user.token!;
+    TokenStore.saveToken(user.token!);
+    // html.window.localStorage[_tokenKey] = user.token!;
     _token.value = user.token!;
-    html.window.localStorage[_userKey] = jsonEncode(user);
+    TokenStore.saveUserJson(jsonEncode(user));
+    // html.window.localStorage[_userKey] = jsonEncode(user);
     _user.value = user;
   }
 }

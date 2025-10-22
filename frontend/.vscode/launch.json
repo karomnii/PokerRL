@@ -11,16 +11,11 @@
             "args": ["--web-port", "8000"],
         },
         {
-            "name": "frontend (profile mode)",
+            "name": "frontend (Android)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "debug",
+            "deviceId": "emulator-5554"
         },
-        {
-            "name": "frontend (release mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        }
     ]
 }

@@ -3,7 +3,6 @@ import 'dart:async';
 
 import 'package:chopper/chopper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:frontend/api/swagger.swagger.dart';
 import 'package:frontend/app/home/auth/register/register.controller.dart';
 import 'package:frontend/routes/app_pages.dart';
@@ -13,7 +12,7 @@ import 'package:frontend/theme/theme.dart';
 import 'package:get/get.dart' as getx;
 
 Future<void> main() async {
-  setUrlStrategy(PathUrlStrategy());
+  // setUrlStrategy(PathUrlStrategy());
   WidgetsFlutterBinding.ensureInitialized();
 
   getx.Get.put(ErrorService(), permanent: true);

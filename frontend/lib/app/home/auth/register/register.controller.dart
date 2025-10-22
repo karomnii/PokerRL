@@ -8,8 +8,14 @@ class RegisterPageController extends GetxController {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+  final checkedPolicy = false.obs;
   final isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    print("RegisterPageController initialized");
+  }
 
   @override
   void onClose() {
@@ -27,7 +33,7 @@ class RegisterPageController extends GetxController {
     if (username.isEmpty || email.isEmpty || password.length < 6) {
       ErrorService.to.showError(
         'Invalid data\nPlease enter a username, a valid email, and a 6-char password.',
-        );
+      );
       return;
     }
 

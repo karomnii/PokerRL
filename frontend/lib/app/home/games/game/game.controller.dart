@@ -2,6 +2,7 @@ import 'dart:async'; // <-- NEW
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
 import 'package:frontend/services/auth.service.dart';
+import 'package:frontend/services/error_service.dart';
 import 'package:frontend/services/game.service.dart';
 import 'package:frontend/services/profile.service.dart';
 import 'package:get/get.dart';
@@ -60,7 +61,7 @@ class GamePageController extends GetxController {
     }
 
     try {
-      final gameId = int.parse(Uri.base.pathSegments[1]);
+      final gameId = int.parse(Get.parameters['id']!);
       final result = await GameService.to.getGame(gameId);
       gameState.value = result;
       if (currentBet.value == 0) {

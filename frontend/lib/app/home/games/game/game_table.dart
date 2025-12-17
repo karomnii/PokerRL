@@ -138,10 +138,10 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('⚡  State     : ${widget.game.currentState}'),
+                  Text('⚡ State     : ${widget.game.currentState}'),
                   Text('💰 Pot size  : ${widget.game.potSize} 🪙'),
                   Text('💀 Level     : ${widget.game.tableName}'),
-                  Text('↗  Min raise : ${widget.game.minRaiseAmount} 🪙'),
+                  Text('↗ Min raise : ${widget.game.minRaiseAmount} 🪙'),
                 ],
               ),
             ),
@@ -180,7 +180,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
     final rank = rankMap[c.$value?.toUpperCase()] ?? c.$value;
     final suit = suitMap[c.suit?.toUpperCase()] ?? c.suit;
 
-    return '${GameService.to.getPathToCards(AuthService.to.user?.deckStyle ?? 'Origin Deck')}/${rank! == '10' ? 'T' : rank!}${suit!}.png';
+    return '${GameService.to.getPathToCards(AuthService.to.user?.deckStyle ?? 'Origin Deck')}${rank! == '10' ? 'T' : rank!}${suit!}.png';
   }
 
   Widget _cardFace(api.CardDto dto, double angle) {

@@ -48,7 +48,7 @@ class GamesPageController extends GetxController {
       final newGame = await GameService.to.createGame(
         CreateGameDto(tableId: selectedTableId.value),
       );
-
+      print(newGame.gameId);
       Get.toNamed('/games/${newGame.gameId}', preventDuplicates: false);
     } catch (e) {
       ErrorService.to.showError('Failed to create game');

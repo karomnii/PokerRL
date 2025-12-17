@@ -14,6 +14,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/io_client.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 
 http.Client createDevUnsafeClient() {
   final io = HttpClient()
@@ -39,6 +40,11 @@ Future<void> main() async {
   );
   getx.Get.put<Swagger>(swagger, permanent: true);
   await getx.Get.putAsync(() => AuthService().init());
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   runApp(const MyApp());
 }

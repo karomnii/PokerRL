@@ -159,7 +159,7 @@ class GamesPageView extends GetView<GamesPageController> {
                                   theme.iconTheme.copyWith(color: Colors.white),
                             ),
                             child: ConstrainedBox(
-                              constraints: BoxConstraints(maxHeight: 400),
+                              constraints: BoxConstraints(maxHeight: 120),
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
                                 controller: ScrollController(),
@@ -203,13 +203,16 @@ class GamesPageView extends GetView<GamesPageController> {
                                         return Text('$count/4');
                                       })),
                                       DataCell(
-                                        FilledButton.icon(
-                                          icon: const Icon(
-                                              Icons.play_arrow_sharp),
-                                          onPressed: () {
-                                            controller.joinGame(game);
-                                          },
-                                          label: const Text('Join'),
+                                        Padding(
+                                          padding: const EdgeInsets.all(0.5),
+                                          child: FilledButton.icon(
+                                            icon: const Icon(
+                                                Icons.play_arrow_sharp),
+                                            onPressed: () {
+                                              controller.joinGame(game);
+                                            },
+                                            label: const Text('Join'),
+                                          ),
                                         ),
                                       ),
                                     ]);

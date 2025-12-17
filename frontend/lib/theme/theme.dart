@@ -180,7 +180,8 @@ class AppTheme {
         ),
         extensions: const <ThemeExtension<dynamic>>[
           AppCustomTheme(
-              backgroundImageAsset: "background_gold_and_silver_dimmed2.png"),
+              backgroundImageAsset:
+                  "assets/background_gold_and_silver_dimmed2.png"),
         ],
       );
 }

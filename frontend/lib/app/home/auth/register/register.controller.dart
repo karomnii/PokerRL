@@ -43,7 +43,10 @@ class RegisterPageController extends GetxController {
       await AuthService.to.register(email, username, password);
 
       Get.offAllNamed(Routes.home);
-    } catch (_) {
+    } catch (e) {
+      ErrorService.to.showError(
+        'Error: $e',
+      );
     } finally {
       isLoading.value = false;
     }

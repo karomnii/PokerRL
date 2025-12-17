@@ -10,6 +10,17 @@ import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/error_service.dart';
 import 'package:frontend/theme/theme.dart';
 import 'package:get/get.dart' as getx;
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/io_client.dart';
+import 'package:http/http.dart' as http;
+
+http.Client createDevUnsafeClient() {
+  final io = HttpClient()
+    ..badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+  return IOClient(io);
+}
 
 Future<void> main() async {
   // setUrlStrategy(PathUrlStrategy());
@@ -18,12 +29,13 @@ Future<void> main() async {
   getx.Get.put(ErrorService(), permanent: true);
 
   final swagger = Swagger.create(
-    baseUrl: Uri.parse('https://localhost:65463'),
+    baseUrl: Uri.parse('https://10.0.2.2:65463'),
     converter: $JsonSerializableConverter(),
     interceptors: [
       AuthInterceptor(),
       ErrorInterceptor(),
     ],
+    httpClient: createDevUnsafeClient(),
   );
   getx.Get.put<Swagger>(swagger, permanent: true);
   await getx.Get.putAsync(() => AuthService().init());

@@ -95,7 +95,7 @@ class RegisterView extends GetView<RegisterPageController> {
                           ),
                           Text('Accept privacy policy'),
                           Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(4.0),
                             child: Transform.scale(
                               scale: 1.4,
                               child: Checkbox(

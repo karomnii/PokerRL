@@ -85,7 +85,7 @@ class HomePageView extends GetView<HomePageController> {
                       Hero(
                         tag: 'dices-image',
                         child: Image.asset(
-                          'images/banner.png',
+                          'assets/images/banner.png',
                           height: 400,
                           fit: BoxFit.fitWidth,
                         ),
@@ -114,15 +114,15 @@ class HomePageView extends GetView<HomePageController> {
                 CarouselSlider(
                   items: const [
                     _GameBanner(
-                      image: 'images/fun.png',
+                      image: 'assets/images/fun.png',
                       title: 'Play with friends!',
                     ),
                     _GameBanner(
-                      image: 'images/ai.png',
+                      image: 'assets/images/ai.png',
                       title: 'Face various AI models!',
                     ),
                     _GameBanner(
-                      image: 'images/friends.png',
+                      image: 'assets/images/friends.png',
                       title: 'Have fun!',
                     ),
                   ],

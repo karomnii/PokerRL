@@ -17,6 +17,12 @@ import 'package:collection/collection.dart';
 class GamePageView extends GetView<GamePageController> {
   const GamePageView({super.key});
 
+  Widget getDorkingSpaceXD() {
+    return SizedBox(
+      width: 5,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = 300.0;
@@ -48,7 +54,64 @@ class GamePageView extends GetView<GamePageController> {
               spacing: 1,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GameTable(game: controller.gameState.value),
+                GameTable(game: controller.gameState.value, actions: [
+                  ...getActions(),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: controller.gameState.value.currentTurnUserId ==
+                            AuthService.to.userId
+                        ? () => controller.getHint()
+                        : null,
+                    label: Text('Hint'),
+                    icon: Icon(Icons.tips_and_updates_sharp),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  getDorkingSpaceXD(),
+                  if (!controller.isGameWaiting)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        if (controller.isGameOver) {
+                          await controller.leaveGame();
+                          Get.back();
+                        } else {
+                          Get.snackbar(
+                              'Error', "You can't leave during the game!");
+                        }
+                      },
+                      label: Text('Exit'),
+                      icon: Icon(Icons.exit_to_app),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        minimumSize: const Size(0, 28),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  getDorkingSpaceXD(),
+                  ElevatedButton.icon(
+                    onPressed: controller.isGameOver
+                        ? () => controller.makeMove('Check', 0)
+                        : null,
+                    label: Text('Next'),
+                    icon: Icon(Icons.double_arrow_sharp),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ]),
                 PageRow(
                     spacing: 1,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,11 +150,6 @@ class GamePageView extends GetView<GamePageController> {
                                 .gameState.value.playerCards?.isNotEmpty ??
                             false,
                       )),
-                    ]),
-                PageRow(
-                    spacing: 1,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
                       Expanded(
                           child: PlayerCard(
                         gameId: controller.gameState.value.gameId ?? 0,
@@ -132,185 +190,7 @@ class GamePageView extends GetView<GamePageController> {
                 ),
                 PageRow(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: (controller.gameState.value.currentState ?? '') ==
-                          'Waiting'
-                      ? [
-                          ElevatedButton.icon(
-                            onPressed:
-                                (controller.gameState.value.players?.length ??
-                                            0) >
-                                        1
-                                    ? () => controller.startGame()
-                                    : null,
-                            label: Text('Start'),
-                            icon: Icon(Icons.start_sharp),
-                          ),
-                        ]
-                      : [
-                          // Check
-                          ElevatedButton.icon(
-                            onPressed: controller.gameState.value
-                                            .currentTurnUserId ==
-                                        AuthService.to.userId &&
-                                    (controller.gameState.value.callAmount ??
-                                            0) ==
-                                        0
-                                ? () => controller.makeMove('Check', 0)
-                                : null,
-                            label: Text('Check'),
-                            icon: Icon(Icons.pan_tool_alt_outlined),
-                          ),
-                          // Call
-                          ElevatedButton.icon(
-                            onPressed: controller
-                                        .gameState.value.currentTurnUserId ==
-                                    AuthService.to.userId
-                                ? () => controller.makeMove(
-                                      'Call',
-                                      // <- MUSI pójść kwota do dopłacenia
-                                      controller.gameState.value.callAmount ??
-                                          0,
-                                    )
-                                : null,
-                            label: const Text('Call'),
-                            icon: const Icon(Icons.equalizer_sharp),
-                          ),
-                          // Bet
-                          BetButtonWidget(
-                            isEnabled: controller
-                                        .gameState.value.currentTurnUserId ==
-                                    AuthService.to.userId &&
-                                controller.gameState.value.minRaiseAmount! <=
-                                    controller.gameState.value.players!
-                                        .singleWhere((p) =>
-                                            p.userId == AuthService.to.userId)
-                                        .currentChips!,
-                            bet: controller.gameState.value.currentTurnUserId ==
-                                        AuthService.to.userId &&
-                                    (controller.gameState.value.callAmount ??
-                                            0) ==
-                                        0 &&
-                                    controller
-                                            .gameState.value.minRaiseAmount! <=
-                                        controller.gameState.value.players!
-                                            .singleWhere((p) =>
-                                                p.userId! ==
-                                                AuthService.to.userId!)
-                                            .currentChips! &&
-                                    controller
-                                            .gameState.value.minRaiseAmount! <=
-                                        controller.currentBet.value
-                                ? () => controller.makeMove(
-                                    'Bet', controller.currentBet.value)
-                                : null,
-                            addValue: () {
-                              final chipsLeft = controller
-                                  .gameState.value.players!
-                                  .singleWhere(
-                                      (p) => p.userId == AuthService.to.userId)
-                                  .currentChips!;
-                              final next = controller.currentBet.value +
-                                  controller.gameState.value.minRaiseAmount!;
-                              if (next <= chipsLeft) {
-                                controller.currentBet.value = next;
-                              }
-                            },
-                            removeValue: () {
-                              final next = controller.currentBet.value -
-                                  controller.gameState.value.minRaiseAmount!;
-                              // nie schodź poniżej minRaise
-                              if (next >=
-                                  controller.gameState.value.minRaiseAmount!) {
-                                controller.currentBet.value = next;
-                              }
-                            },
-                            currentValue: controller.currentBet.value,
-                            changeValue: (x) => controller.currentBet.value = x,
-                          ),
-                          // Raise
-                          ElevatedButton.icon(
-                            onPressed:
-                                controller.gameState.value.currentTurnUserId ==
-                                        AuthService.to.userId
-                                    ? () => controller.makeMove(
-                                          'Raise',
-                                          controller.currentBet.value,
-                                        )
-                                    : null,
-                            label: Text('Raise'),
-                            icon: Icon(Icons.more_sharp),
-                          ),
-                          // AllIn
-                          ElevatedButton.icon(
-                            onPressed: controller.gameState.value
-                                            .currentTurnUserId ==
-                                        AuthService.to.userId &&
-                                    controller.gameState.value.players!
-                                            .singleWhere((p) =>
-                                                p.userId! ==
-                                                AuthService.to.userId!)
-                                            .currentChips! >
-                                        0
-                                ? () => controller.makeMove(
-                                    'AllIn',
-                                    controller.gameState.value.players!
-                                        .singleWhere((p) =>
-                                            p.userId! == AuthService.to.userId!)
-                                        .currentChips!)
-                                : null,
-                            label: Text('All In'),
-                            icon: Icon(Icons.flash_on_outlined),
-                          ),
-                          // Fold
-                          ElevatedButton.icon(
-                            onPressed: controller
-                                        .gameState.value.currentTurnUserId ==
-                                    AuthService.to.userId
-                                ? () => controller.makeMove('Fold',
-                                    controller.gameState.value.minRaiseAmount!)
-                                : null,
-                            label: Text('Fold'),
-                            icon: Icon(Icons.stop_sharp),
-                          ),
-                        ],
-                ),
-                SizedBox(
-                  height: 50,
-                ),
-                PageRow(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: controller.gameState.value.currentTurnUserId ==
-                              AuthService.to.userId
-                          ? () => controller.getHint()
-                          : null,
-                      label: Text('Hint'),
-                      icon: Icon(Icons.tips_and_updates_sharp),
-                    ),
-                    if (!controller.isGameWaiting)
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          if (controller.isGameOver) {
-                            await controller.leaveGame();
-                            Get.back();
-                          } else {
-                            Get.snackbar(
-                                'Error', "You can't leave during the game!");
-                          }
-                        },
-                        label: Text('Exit'),
-                        icon: Icon(Icons.exit_to_app),
-                      ),
-                    ElevatedButton.icon(
-                      onPressed: controller.isGameOver
-                          ? () => controller.makeMove('Check', 0)
-                          : null,
-                      label: Text('Next'),
-                      icon: Icon(Icons.double_arrow_sharp),
-                    ),
-                  ],
+                  children: [],
                 ),
               ],
             ),
@@ -318,5 +198,167 @@ class GamePageView extends GetView<GamePageController> {
         );
       }),
     );
+  }
+
+  List<Widget> getActions() {
+    return (controller.gameState.value.currentState ?? '') == 'Waiting'
+        ? [
+            ElevatedButton.icon(
+              onPressed: (controller.gameState.value.players?.length ?? 0) > 1
+                  ? () => controller.startGame()
+                  : null,
+              label: Text('Start'),
+              icon: Icon(Icons.start_sharp),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ]
+        : [
+            // Check
+            ElevatedButton.icon(
+              onPressed: controller.gameState.value.currentTurnUserId ==
+                          AuthService.to.userId &&
+                      (controller.gameState.value.callAmount ?? 0) == 0
+                  ? () => controller.makeMove('Check', 0)
+                  : null,
+              label: Text('Check'),
+              icon: Icon(Icons.pan_tool_alt_outlined),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            getDorkingSpaceXD(),
+            // Call
+            ElevatedButton.icon(
+              onPressed: controller.gameState.value.currentTurnUserId ==
+                      AuthService.to.userId
+                  ? () => controller.makeMove(
+                        'Call',
+                        // <- MUSI pójść kwota do dopłacenia
+                        controller.gameState.value.callAmount ?? 0,
+                      )
+                  : null,
+              label: const Text('Call'),
+              icon: const Icon(Icons.equalizer_sharp),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            getDorkingSpaceXD(),
+            // Bet
+            BetButtonWidget(
+              isEnabled: controller.gameState.value.currentTurnUserId ==
+                      AuthService.to.userId &&
+                  controller.gameState.value.minRaiseAmount! <=
+                      controller.gameState.value.players!
+                          .singleWhere((p) => p.userId == AuthService.to.userId)
+                          .currentChips!,
+              bet: controller.gameState.value.currentTurnUserId ==
+                          AuthService.to.userId &&
+                      (controller.gameState.value.callAmount ?? 0) == 0 &&
+                      controller.gameState.value.minRaiseAmount! <=
+                          controller.gameState.value.players!
+                              .singleWhere(
+                                  (p) => p.userId! == AuthService.to.userId!)
+                              .currentChips! &&
+                      controller.gameState.value.minRaiseAmount! <=
+                          controller.currentBet.value
+                  ? () =>
+                      controller.makeMove('Bet', controller.currentBet.value)
+                  : null,
+              addValue: () {
+                final chipsLeft = controller.gameState.value.players!
+                    .singleWhere((p) => p.userId == AuthService.to.userId)
+                    .currentChips!;
+                final next = controller.currentBet.value +
+                    controller.gameState.value.minRaiseAmount!;
+                if (next <= chipsLeft) {
+                  controller.currentBet.value = next;
+                }
+              },
+              removeValue: () {
+                final next = controller.currentBet.value -
+                    controller.gameState.value.minRaiseAmount!;
+                // nie schodź poniżej minRaise
+                if (next >= controller.gameState.value.minRaiseAmount!) {
+                  controller.currentBet.value = next;
+                }
+              },
+              currentValue: controller.currentBet.value,
+              changeValue: (x) => controller.currentBet.value = x,
+            ),
+            getDorkingSpaceXD(),
+            // Raise
+            ElevatedButton.icon(
+              onPressed: controller.gameState.value.currentTurnUserId ==
+                      AuthService.to.userId
+                  ? () => controller.makeMove(
+                        'Raise',
+                        controller.currentBet.value,
+                      )
+                  : null,
+              label: Text('Raise'),
+              icon: Icon(Icons.more_sharp),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            getDorkingSpaceXD(),
+            // AllIn
+            ElevatedButton.icon(
+              onPressed: controller.gameState.value.currentTurnUserId ==
+                          AuthService.to.userId &&
+                      controller.gameState.value.players!
+                              .singleWhere(
+                                  (p) => p.userId! == AuthService.to.userId!)
+                              .currentChips! >
+                          0
+                  ? () => controller.makeMove(
+                      'AllIn',
+                      controller.gameState.value.players!
+                          .singleWhere(
+                              (p) => p.userId! == AuthService.to.userId!)
+                          .currentChips!)
+                  : null,
+              label: Text('All In'),
+              icon: Icon(Icons.flash_on_outlined),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+            getDorkingSpaceXD(),
+            // Fold
+            ElevatedButton.icon(
+              onPressed: controller.gameState.value.currentTurnUserId ==
+                      AuthService.to.userId
+                  ? () => controller.makeMove(
+                      'Fold', controller.gameState.value.minRaiseAmount!)
+                  : null,
+              label: Text('Fold'),
+              icon: Icon(Icons.stop_sharp),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ];
   }
 }

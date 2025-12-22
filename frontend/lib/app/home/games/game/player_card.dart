@@ -44,6 +44,10 @@ class PlayerCard extends StatelessWidget {
     if (player == null) {
       return PageCard(
         title: 'Seat $seatId',
+        padding: 2,
+        margin: 2,
+        spacingColumn: 0,
+        paddingColumn: 2,
         child: Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -53,7 +57,7 @@ class PlayerCard extends StatelessWidget {
                 onPressed: joinGame,
                 child: Icon(
                   Icons.play_arrow_sharp,
-                  size: 50,
+                  size: 20,
                 ),
               ),
               ElevatedButton(
@@ -143,7 +147,7 @@ class PlayerCard extends StatelessWidget {
                 },
                 child: const Icon(
                   Icons.smart_toy_sharp,
-                  size: 50,
+                  size: 20,
                 ),
               ),
             ],
@@ -156,12 +160,21 @@ class PlayerCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isCurrent = player!.userId == currentPlayerId;
     return PageCard(
+      padding: 2,
+      margin: 2,
+      spacingColumn: 0,
+      paddingColumn: 2,
       title: player!.username ?? 'Unknown',
+      extrasTitleSpace: 10,
       titleExtras: [
         CircleAvatar(
-          radius: 24,
+          radius: 16,
           backgroundImage: AssetImage('assets/be/avatars/$avatar.png'),
         ),
+        SizedBox(
+          width: 10,
+        ),
+        _buildStatusBadges(),
       ],
       highlightColor: isCurrent
           ? Theme.of(context)
@@ -171,16 +184,10 @@ class PlayerCard extends StatelessWidget {
                   ?.resolve({}) ??
               Theme.of(context).colorScheme.primary
           : null,
-      child: Row(
+      child: Column(
         children: [
-          PageColumn(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ..._buildHeader(Theme.of(context)),
-              const SizedBox(height: 8),
-            ],
+          Row(
+            children: [..._buildHeader(theme)],
           ),
           _buildCardsRow(deck ?? ''),
         ],
@@ -197,15 +204,12 @@ class PlayerCard extends StatelessWidget {
       Center(
         child: Icon(
           Icons.dangerous_sharp,
-          size: 50,
+          size: 25,
           color: player!.isActive!
               ? const Color.fromARGB(255, 61, 61, 61)
               : Colors.redAccent,
         ),
       ),
-      const SizedBox(width: 8),
-      // Status badges (Dealer, SB, BB)
-      _buildStatusBadges(),
     ];
   }
 
@@ -222,8 +226,8 @@ class PlayerCard extends StatelessWidget {
 
   /// Shows up to four cards in a horizontal row.
   Widget _buildCardsRow(String deck) {
-    const w = 110.0;
-    const h = 150.0;
+    const w = 110.0 * 0.6;
+    const h = 150.0 * 0.6;
 
     final cards = player!.cards ?? const <api.CardDto>[];
     final isEnemy = player!.userId != AuthService.to.userId;

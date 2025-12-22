@@ -10,6 +10,9 @@ class PageCard extends StatelessWidget implements PreferredSizeWidget {
     this.highlightColor,
     this.margin,
     this.padding,
+    this.extrasTitleSpace,
+    this.spacingColumn,
+    this.paddingColumn,
   });
 
   final String? title;
@@ -18,6 +21,9 @@ class PageCard extends StatelessWidget implements PreferredSizeWidget {
   final Color? highlightColor;
   final double? margin;
   final double? padding;
+  final double? extrasTitleSpace;
+  final double? spacingColumn;
+  final double? paddingColumn;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -36,6 +42,8 @@ class PageCard extends StatelessWidget implements PreferredSizeWidget {
       child: Padding(
         padding: EdgeInsets.all(padding ?? 16.0),
         child: PageColumn(
+          spacing: spacingColumn ?? 8,
+          padding: EdgeInsets.all(paddingColumn ?? 16.0),
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -56,8 +64,8 @@ class PageCard extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ),
                   if (titleExtras != null && titleExtras!.isNotEmpty) ...[
-                    const SizedBox(
-                      width: 100.0,
+                    SizedBox(
+                      width: extrasTitleSpace ?? 100.0,
                       height: 1.0,
                     ),
                     ...titleExtras!,

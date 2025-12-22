@@ -10,8 +10,10 @@ class GameTable extends StatefulWidget {
   const GameTable({
     super.key,
     required this.game,
+    required this.actions,
   });
   final api.GameStateDto game;
+  final List<Widget> actions;
   @override
   State<GameTable> createState() => _GameTableState();
 }
@@ -20,7 +22,7 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
   final List<api.CardDto> _cards = [];
   final List<AnimationController> _ctrl = [];
 
-  static const _w = 110.0, _h = 150.0;
+  static const _w = 110.0 * 0.6, _h = 150.0 * 0.6;
 
   void _resetTable() {
     for (final c in _ctrl) {
@@ -96,54 +98,64 @@ class _GameTableState extends State<GameTable> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return PageCard(
       title: 'Table',
+      padding: 0,
+      margin: 0,
+      spacingColumn: 0,
+      paddingColumn: 2,
+      titleExtras: widget.actions,
+      extrasTitleSpace: 20,
       child: SizedBox(
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_cards.length, (i) {
-                final ctrl = _ctrl[i];
-
-                final slide = Tween<Offset>(
-                  begin: const Offset(1.4, 0),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(parent: ctrl, curve: Curves.easeOutBack),
-                );
-
-                final flip = Tween<double>(begin: pi, end: 0).animate(
-                  CurvedAnimation(parent: ctrl, curve: Curves.easeInOut),
-                );
-
-                return KeyedSubtree(
-                  key: ValueKey(_cards[i].hashCode),
-                  child: SlideTransition(
-                    position: slide,
-                    child: AnimatedBuilder(
-                      animation: flip,
-                      builder: (_, __) => Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()
-                          ..setEntry(3, 2, 0.001) // perspektywa
-                          ..rotateY(flip.value),
-                        child: _cardFace(_cards[i], flip.value),
-                      ),
-                    ),
+              children: [
+                SizedBox(
+                  // width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('⚡ State     : ${widget.game.currentState}'),
+                      Text('💰 Pot size  : ${widget.game.potSize} 🪙'),
+                      Text('💀 Level     : ${widget.game.tableName}'),
+                      Text('↗ Min raise : ${widget.game.minRaiseAmount} 🪙'),
+                    ],
                   ),
-                );
-              }),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('⚡ State     : ${widget.game.currentState}'),
-                  Text('💰 Pot size  : ${widget.game.potSize} 🪙'),
-                  Text('💀 Level     : ${widget.game.tableName}'),
-                  Text('↗ Min raise : ${widget.game.minRaiseAmount} 🪙'),
-                ],
-              ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_cards.length, (i) {
+                    final ctrl = _ctrl[i];
+
+                    final slide = Tween<Offset>(
+                      begin: const Offset(1.4, 0),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(parent: ctrl, curve: Curves.easeOutBack),
+                    );
+
+                    final flip = Tween<double>(begin: pi, end: 0).animate(
+                      CurvedAnimation(parent: ctrl, curve: Curves.easeInOut),
+                    );
+
+                    return KeyedSubtree(
+                      key: ValueKey(_cards[i].hashCode),
+                      child: SlideTransition(
+                        position: slide,
+                        child: AnimatedBuilder(
+                          animation: flip,
+                          builder: (_, __) => Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.001) // perspektywa
+                              ..rotateY(flip.value),
+                            child: _cardFace(_cards[i], flip.value),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
           ],
         ),

@@ -1,7 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
-import 'package:frontend/services/error_service.dart';
 import 'package:frontend/services/shop.service.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -9,17 +8,25 @@ class CardDeckTile extends StatefulWidget {
   const CardDeckTile(this.item, {super.key, required this.buy});
   final ShopItemDto item;
   final void Function(int) buy;
+
   @override
   State<CardDeckTile> createState() => _CardDeckTileState();
 }
 
 class _CardDeckTileState extends State<CardDeckTile> {
-  int _pageIdx = 0; // numer widocznego slajdu (0-based)
+  late Future<List<ImageProvider>> _imagesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Zapamiętujemy Future w initState
+    _imagesFuture = ShopService.to.imageList(widget.item.name!, 'CardsDeck');
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: ShopService.to.imageList(widget.item.name!, 'CardsDeck'),
+      future: _imagesFuture,
       builder: (context, snap) {
         if (!snap.hasData) {
           return Shimmer.fromColors(
@@ -35,105 +42,88 @@ class _CardDeckTileState extends State<CardDeckTile> {
         }
 
         final images = snap.data!;
-        final pageCount = (images.length / 3).ceil();
 
-        return LayoutBuilder(
-          builder: (context, c) {
-            final sliderHeight = c.maxHeight * .88; // 88 % na karty
-
-            return Card(
-              color: Color(0xFF232223),
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        return Card(
+          color: const Color(0xFF232223),
+          elevation: 6,
+          // Poprawka marginesu (opcjonalna, z poprzednich kroków)
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0, bottom: 2.0),
+                child: Text(
+                  widget.item.name!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 6,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Text(
-                        widget.item.name!,
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  CarouselSlider.builder(
-                    itemCount: images.length,
-                    itemBuilder: (_, idx, __) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: AspectRatio(
-                        aspectRatio: 0.66, // proporcje karty
-                        child: Image(
-                          image: images[idx],
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.none,
-                          isAntiAlias: false,
-                        ),
-                      ),
-                    ),
-                    options: CarouselOptions(
-                      height: sliderHeight,
-                      viewportFraction: 1 / 3, // 3 karty naraz
-                      padEnds: false,
-                      enlargeCenterPage: false,
-                      autoPlay: true,
-                      autoPlayInterval: const Duration(seconds: 2),
-                      onPageChanged: (absoluteIdx, _) {
-                        // przeliczamy indeks slajdu na nr „strony” (0..pageCount-1)
-                        final newPageIdx = (absoluteIdx / 3).floor();
-                        if (newPageIdx != _pageIdx) {
-                          setState(() => _pageIdx = newPageIdx);
-                        }
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 80,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        pageCount,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          height: 6,
-                          width: _pageIdx == i ? 18 : 6,
-                          decoration: BoxDecoration(
-                            color: _pageIdx == i
-                                ? Theme.of(context).primaryColor
-                                : Colors.white70,
-                            borderRadius: BorderRadius.circular(3),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    return CarouselSlider.builder(
+                      itemCount: images.length,
+                      itemBuilder: (_, idx, __) => Padding(
+                        padding: EdgeInsets.zero,
+                        child: AspectRatio(
+                          aspectRatio: 0.66,
+                          child: Image(
+                            image: images[idx],
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                  child: Icon(Icons.broken_image,
+                                      color: Colors.white24));
+                            },
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 10,
-                    right: 0,
-                    left: 0,
-                    child: Center(
-                      child: SizedBox(
-                        width: 150,
-                        child: ElevatedButton.icon(
-                            onPressed: () => widget.buy(widget.item.itemId!),
-                            label: Text(
-                              'Buy ${widget.item.price} ${widget.item.currency == 'PLN' ? widget.item.currency : '🪙'}',
-                              style: TextStyle(fontSize: 12),
-                            )),
+                      options: CarouselOptions(
+                        height: c.maxHeight,
+                        viewportFraction: 0.20,
+                        padEnds: true,
+                        enlargeCenterPage: true,
+                        enlargeFactor: 0.2,
+                        autoPlay: true,
+                        autoPlayInterval: const Duration(seconds: 3),
                       ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(3.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 24,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: Colors.deepPurple,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => widget.buy(widget.item.itemId!),
+                    child: Text(
+                      '${widget.item.price} ${widget.item.currency == 'PLN' ? 'PLN' : '🪙'}',
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
         );
       },
     );

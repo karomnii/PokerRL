@@ -7,47 +7,29 @@ class CardsList extends StatelessWidget {
   final void Function(int) onItemSelect;
   final String deck;
 
-  const CardsList(
-      {super.key,
-      required this.items,
-      required this.deck,
-      required this.onItemSelect});
+  const CardsList({
+    super.key,
+    required this.items,
+    required this.deck,
+    required this.onItemSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scrollController = ScrollController();
-
-    return SizedBox(
-      height: 300,
-      child: Scrollbar(
-        controller: scrollController,
-        thumbVisibility: true, // <- zawsze widoczny
-        thickness: 12,
-        trackVisibility: true,
-        radius: Radius.circular(4),
-        child: SingleChildScrollView(
-          controller: scrollController,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: items
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: SizedBox(
-                      width: 250,
-                      child: CardDeckProfileTile(
-                        item,
-                        deck,
-                        onItemSelect: onItemSelect,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 12),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return SizedBox(
+          height: 160,
+          child: CardDeckProfileTile(
+            item,
+            deck,
+            onItemSelect: onItemSelect,
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

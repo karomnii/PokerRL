@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/api/swagger.models.swagger.dart';
-import 'package:frontend/services/error_service.dart';
 import 'package:frontend/services/shop.service.dart';
 import 'package:shimmer/shimmer.dart';
 
-class AvatarProfileTile extends StatelessWidget {
+class AvatarProfileTile extends StatefulWidget {
   const AvatarProfileTile(this.item,
       {super.key, required this.ava, required this.onItemSelect});
   final ShopItemDto item;
@@ -12,63 +11,86 @@ class AvatarProfileTile extends StatelessWidget {
   final void Function(int) onItemSelect;
 
   @override
+  State<AvatarProfileTile> createState() => _AvatarProfileTileState();
+}
+
+class _AvatarProfileTileState extends State<AvatarProfileTile> {
+  late Future<List<ImageProvider>> _imagesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _imagesFuture = ShopService.to.imageList(widget.item.name!, 'Avatar');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: ShopService.to.imageList(item.name!, 'Avatar'),
+      future: _imagesFuture,
       builder: (context, snap) {
         if (!snap.hasData) {
-          // shimmer – subtelna animacja zamiast kręcącego się kółka
           return Shimmer.fromColors(
             baseColor: Colors.grey.shade300,
             highlightColor: Colors.grey.shade100,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           );
         }
-        final inUse = item.name == ava;
-        final image = snap.data!.first; // ImageProvider
-        return Card(
-          color: Color(0xFF232223),
-          elevation: 6,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 400),
-            tween: Tween(begin: 0, end: 1),
-            builder: (_, value, child) => Opacity(opacity: value, child: child),
+
+        final image = snap.data!.first;
+
+        final inUse = widget.item.name == widget.ava;
+
+        return InkWell(
+          onTap: inUse ? null : () => widget.onItemSelect(widget.item.itemId!),
+          borderRadius: BorderRadius.circular(8),
+          child: Card(
+            color: const Color(0xFF232223),
+            elevation: 4,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: inUse
+                  ? const BorderSide(color: Colors.deepPurpleAccent, width: 2)
+                  : BorderSide.none,
+            ),
+            clipBehavior: Clip.hardEdge,
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 children: [
                   Text(
-                    item.name!,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Tooltip(
-                    message: item.description,
-                    child: Image(
-                      image: image,
-                      fit: BoxFit.fill,
+                    widget.item.name!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.white,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: inUse ? null : () => onItemSelect(item.itemId!),
-                    label: Text(
-                      inUse ? 'In use' : 'Use',
-                      style: TextStyle(fontSize: 12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Tooltip(
+                        message: widget.item.description,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Image(
+                            image: image,
+                            fit: BoxFit.contain,
+                            color: inUse ? null : Colors.white.withOpacity(0.9),
+                            colorBlendMode: BlendMode.modulate,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],

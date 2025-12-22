@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/services/auth.service.dart';
-import 'package:frontend/services/error_service.dart';
 import 'package:frontend/services/game.service.dart';
 import 'package:frontend/services/profile.service.dart';
 import 'package:frontend/services/shop.service.dart';
@@ -16,69 +14,104 @@ class ProfilePageController extends GetxController {
   final RxList<ShopItemDto> avatars = RxList<ShopItemDto>();
   final Rxn<AssetImage> userAvatar = Rxn<AssetImage>();
 
-  Timer? _pollingTimer;
+  final RxInt currentTab = 0.obs;
+
+  final RxString activeDeckName = ''.obs;
+  final RxString activeAvatarName = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-    loadProfile();
-    getInventoryItems();
-    AuthService.to.refreshUser();
-
-    _pollingTimer = Timer.periodic(Duration(seconds: 2), (_) {
-      loadProfile();
-      getInventoryItems();
-      AuthService.to.refreshUser();
-    });
+    if (AuthService.to.userId != null) {
+      loadData();
+    }
   }
 
-  @override
-  void onClose() {
-    _pollingTimer?.cancel(); // zatrzymanie timera przy dispose
-    super.onClose();
+  void loadData() async {
+    await loadProfile();
+    await getInventoryItems();
+    AuthService.to.refreshUser();
+  }
+
+  void switchTab(int index) {
+    currentTab.value = index;
   }
 
   void setItem(int itemId) async {
-    ShopService.to.setItem(
-      AuthService.to.userId!,
-      SelectItemDto(itemId: itemId),
-    );
+    ShopItemDto? selectedItem;
+    bool isDeck = false;
+
+    final foundDecks = cards.where((e) => e.itemId == itemId);
+    if (foundDecks.isNotEmpty) {
+      selectedItem = foundDecks.first;
+      isDeck = true;
+    } else {
+      final foundAvatars = avatars.where((e) => e.itemId == itemId);
+      if (foundAvatars.isNotEmpty) {
+        selectedItem = foundAvatars.first;
+        isDeck = false;
+      }
+    }
+    if (selectedItem == null || selectedItem.name == null) {
+      print("⚠️ Błąd: Nie znaleziono przedmiotu o ID $itemId na listach.");
+      return;
+    }
+
+    if (isDeck) {
+      activeDeckName.value = selectedItem.name!;
+    } else {
+      activeAvatarName.value = selectedItem.name!;
+    }
+
+    try {
+      await ShopService.to.setItem(
+        AuthService.to.userId!,
+        SelectItemDto(itemId: itemId),
+      );
+      await loadProfile();
+    } catch (e) {
+      print('Błąd zapisu na serwerze: $e');
+      loadProfile();
+    }
   }
 
-  void getInventoryItems() async {
-    final res = await ShopService.to.getInventoryItems(AuthService.to.userId!);
-    cards.assignAll(res.where((i) => i.itemType == 'CardDeck'));
-    avatars.assignAll(res.where((i) => i.itemType == 'Avatar'));
+  Future<void> getInventoryItems() async {
+    try {
+      final res =
+          await ShopService.to.getInventoryItems(AuthService.to.userId!);
+      cards.assignAll(res.where((i) => i.itemType == 'CardDeck'));
+      avatars.assignAll(res.where((i) => i.itemType == 'Avatar'));
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> loadProfile() async {
     try {
       final fetched = await ProfileService.to.fetchProfile();
-
-      if (jsonEncode(fetched) != jsonEncode(user.value)) {
-        user.value = fetched;
-
-        // odśwież avatar tylko jeśli faktycznie się zmienił
-        final id = fetched.userId;
-        if (id != null) {
-          try {
-            final avatar = await GameService.to.getUserAvatar(id);
-            userAvatar.value = avatar;
-          } catch (_) {
-            // zostaw stary avatar jeśli nie udało się pobrać
-          }
-        }
+      user.value = fetched;
+      if (fetched.deckStyle != null) {
+        activeDeckName.value = fetched.deckStyle!;
+      }
+      if (fetched.avatarImage != null) {
+        activeAvatarName.value = fetched.avatarImage!;
       }
 
-      errorMessage.value = null;
+      if (fetched.userId != null) {
+        try {
+          final avatar = await GameService.to.getUserAvatar(fetched.userId!);
+          userAvatar.value = avatar;
+        } catch (_) {}
+      }
     } catch (e) {
-      ErrorService.to.showError('Failed to load profile');
       errorMessage.value = e.toString();
     }
   }
 
   void addChips() async {
-    ProfileService.to.add1KChips(AuthService.to.userId!);
-    Get.snackbar('Success', 'Enjoy your chips!');
+    await ProfileService.to.add1KChips(AuthService.to.userId!);
+    Get.snackbar('Success', 'Added 1000 chips!',
+        backgroundColor: Colors.green, colorText: Colors.white);
+    loadProfile();
   }
 }

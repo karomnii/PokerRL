@@ -1,69 +1,53 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/error_service.dart';
 
 class AuthPageController extends GetxController {
-  final String googleClientId =
-      '533287616724-te0nubq86i5lflffeb89na991ljfiq47.apps.googleusercontent.com';
+  final checkedPolicy = false.obs;
 
   late GoogleSignIn _googleSignIn;
 
   @override
   void onInit() {
     super.onInit();
-
     _googleSignIn = GoogleSignIn(
-      clientId: googleClientId,
+      serverClientId:
+          '223466103850-5vqlkbbc8oefpl2sh3oumjmbtgaiot72.apps.googleusercontent.com',
       scopes: ['email', 'profile', 'openid'],
     );
-
-    // TODO: MICHAL NAPRAW
-    // if (kIsWeb) {
-    //   html.window.addEventListener('googleSignIn', (event) {
-    //     final customEvent = event as html.CustomEvent;
-    //     final idToken = customEvent.detail as String;
-    //     loginWithGoogleIdToken(idToken);
-    //   });
-    // }
   }
 
   Future<void> loginWithGoogle() async {
+    if (!checkedPolicy.value) return;
     try {
-      if (kIsWeb) {
-        final account = await _googleSignIn.signInSilently();
-        if (account != null) {
-          final auth = await account.authentication;
-          final idToken = auth.idToken;
-          if (idToken != null && idToken.isNotEmpty) {
-            await loginWithGoogleIdToken(idToken);
-            return;
-          }
-        }
-        ErrorService.to
-            .showError('Kliknij przycisk Google Sign-In, aby się zalogować.');
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final String? idToken = googleAuth.idToken;
+
+      print(
+          "Otrzymany ID Token: ${idToken != null ? 'TAK (długość: ${idToken.length})' : 'NIE (null)'}");
+
+      if (idToken != null && idToken.isNotEmpty) {
+        await loginWithBackend(idToken);
       } else {
-        final googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) {
-          return;
-        }
-        final googleAuth = await googleUser.authentication;
-        final idToken = googleAuth.idToken;
-        if (idToken != null && idToken.isNotEmpty) {
-          await loginWithGoogleIdToken(idToken);
-        } else {
-          ErrorService.to
-              .showError('Google login failed: No ID token received');
-        }
+        ErrorService.to.showError(
+            'Google login failed: No ID token received (Check Web Client ID)');
       }
     } catch (e) {
+      print("Google Sign In Error: $e");
       ErrorService.to.showError('Google login failed: $e');
     }
   }
 
-  Future<void> loginWithGoogleIdToken(String idToken) async {
-    print("Google ID Token: $idToken");
+  Future<void> loginWithBackend(String idToken) async {
+    print("Sending Google ID Token to Backend...");
     try {
       await AuthService.to.loginWithSocial(provider: 'google', token: idToken);
       Get.offAllNamed('/home');

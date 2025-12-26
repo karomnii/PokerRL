@@ -4,8 +4,6 @@ import 'package:frontend/services/auth.service.dart';
 import 'package:frontend/services/shop.service.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-// DODANO IMPORT KONTROLERA PROFILU
 import 'package:frontend/app/home/profile/profile.controller.dart';
 
 class ShopPageController extends GetxController {
@@ -38,24 +36,15 @@ class ShopPageController extends GetxController {
 
       if (res.paymentUrl != null) {
         openExternalUrl(res.paymentUrl!);
-        // W przypadku zewnętrznej płatności odświeżenie może wymagać powrotu z przeglądarki,
-        // ale na razie zostawiamy standardowe flow.
       } else {
-        // ZAKUP ZA ŻETONY (SUKCES)
         Get.snackbar(
           'Success',
           res.message ?? 'Item purchased!',
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
-
-        // 1. Odświeżamy listę w sklepie (np. żeby zaktualizować stan przycisku kupna)
         getShopItems();
-
-        // 2. --- FIX: ODŚWIEŻAMY PROFIL ---
-        // Sprawdzamy, czy kontroler profilu jest w pamięci (czy użytkownik go odwiedził)
         if (Get.isRegistered<ProfilePageController>()) {
-          // Wymuszamy pobranie nowych danych (loadData jest publiczne w Twoim nowym kodzie)
           Get.find<ProfilePageController>().loadData();
         }
       }

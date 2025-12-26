@@ -13,7 +13,7 @@ class AuthPageController extends GetxController {
     super.onInit();
     _googleSignIn = GoogleSignIn(
       serverClientId:
-          '223466103850-5vqlkbbc8oefpl2sh3oumjmbtgaiot72.apps.googleusercontent.com',
+          '223466103850-40gih1ae267jthtvm3g6hqctv3ooo1qf.apps.googleusercontent.com',
       scopes: ['email', 'profile', 'openid'],
     );
   }

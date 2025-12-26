@@ -12,97 +12,96 @@ class LeaderboardPageView extends GetView<LeaderboardPageController> {
   Widget build(BuildContext context) {
     return ThemedScaffold(
       appBar: ThemedAppBar(title: 'Leaderboard'),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return const CircularProgressIndicator();
-            }
+      body: SizedBox.expand(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const CircularProgressIndicator();
+          }
 
-            final leaderboard = controller.leaderboard;
+          final leaderboard = controller.leaderboard;
 
-            if (leaderboard.isEmpty) {
-              return const Text('No leaderboard data available.');
-            }
+          if (leaderboard.isEmpty) {
+            return const Text('No leaderboard data available.');
+          }
 
-            final filteredLeaderboard = leaderboard
-                .where((player) => player.userId != null && player.userId! > 9)
-                .toList();
+          final filteredLeaderboard = leaderboard
+              .where((player) => player.userId != null && player.userId! > 9)
+              .toList();
 
-            return PageCard(
-              title: 'Top Players',
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.6,
-                child: ListView.builder(
-                  itemCount: filteredLeaderboard.length,
-                  itemBuilder: (context, index) {
-                    final player = filteredLeaderboard[index];
+          return PageCard(
+            padding: 0,
+            margin: 0,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: filteredLeaderboard.length,
+                itemBuilder: (context, index) {
+                  final player = filteredLeaderboard[index];
 
-                    Widget icon;
-                    if (index == 0) {
-                      icon = const Icon(Icons.emoji_events,
-                          color: Color(0xFFFFD700), size: 35);
-                    } else if (index == 1) {
-                      icon = const Icon(Icons.emoji_events,
-                          color: Color(0xFFC0C0C0), size: 35);
-                    } else if (index == 2) {
-                      icon = const Icon(Icons.emoji_events,
-                          color: Color(0xFF8B4513), size: 35);
-                    } else {
-                      icon = const Icon(Icons.military_tech,
-                          color: Colors.grey, size: 35);
-                    }
+                  Widget icon;
+                  if (index == 0) {
+                    icon = const Icon(Icons.emoji_events,
+                        color: Color(0xFFFFD700), size: 35);
+                  } else if (index == 1) {
+                    icon = const Icon(Icons.emoji_events,
+                        color: Color(0xFFC0C0C0), size: 35);
+                  } else if (index == 2) {
+                    icon = const Icon(Icons.emoji_events,
+                        color: Color(0xFF8B4513), size: 35);
+                  } else {
+                    icon = const Icon(Icons.military_tech,
+                        color: Colors.grey, size: 35);
+                  }
 
-                    // Pobieramy avatar jako AssetImage?, tak jak w ProfilePageView
-                    final avatarImage = player.userId != null
-                        ? controller.getAvatarForUser(player.userId!)
-                        : null;
+                  // Pobieramy avatar jako AssetImage?, tak jak w ProfilePageView
+                  final avatarImage = player.userId != null
+                      ? controller.getAvatarForUser(player.userId!)
+                      : null;
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        radius: 24,
-                        backgroundImage: avatarImage ??
-                            const AssetImage('assets/images/default.png'),
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              player.username ?? 'Unknown',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 24,
+                      backgroundImage: avatarImage ??
+                          const AssetImage('assets/images/default.png'),
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            player.username ?? 'Unknown',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          icon,
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Games Won: ${player.gamesWon ?? 0}',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            'Win Ratio: ${(player.winRatio ?? 0).toStringAsFixed(2)}',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            'Chips: ${player.chipsBalance ?? 0}',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                        icon,
+                      ],
+                    ),
+                    subtitle: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Games Won: ${player.gamesWon ?? 0}   ',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        Text(
+                          'Win Ratio: ${(player.winRatio ?? 0).toStringAsFixed(2)}   ',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        Text(
+                          'Chips: ${player.chipsBalance ?? 0}',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            );
-          }),
-        ),
+            ),
+          );
+        }),
       ),
     );
   }

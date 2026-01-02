@@ -55,118 +55,126 @@ class HomePageView extends GetView<HomePageController> {
       // ──────────────────────────────────────────────────────────────────────
       //  Body
       // ──────────────────────────────────────────────────────────────────────
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Hero Section ──────────────────────────────────────────
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 820;
+            final theme = Theme.of(context);
+            final loggedIn = AuthService.to.isLoggedIn;
+
+            Widget carouselCard() {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CarouselSlider(
+                  items: const [
+                    _GameBanner(image: 'assets/images/banner.png', title: ''),
+                    _GameBanner(
+                        image: 'assets/images/fun.png',
+                        title: 'Play with friends!'),
+                    _GameBanner(
+                        image: 'assets/images/ai.png',
+                        title: 'Face various AI models!'),
+                    _GameBanner(
+                        image: 'assets/images/friends.png', title: 'Have fun!'),
+                  ],
+                  options: CarouselOptions(
+                    // NIE ustawiaj height tutaj
+                    aspectRatio: isWide ? 16 / 9 : 4 / 5,
+                    autoPlay: true,
+                    autoPlayInterval: const Duration(seconds: 3),
+                    enlargeCenterPage: true,
+                    viewportFraction: 0.65,
+                  ),
+                ),
+              );
+            }
+
+            Widget actionsCard() {
+              var space = 10.0;
+              return Column(
+                children: [
+                  PageCard(
+                    padding: 4.0,
+                    margin: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () =>
+                              Get.toNamed('/games', preventDuplicates: false),
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Play Now'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 14),
+                            textStyle: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        SizedBox(height: space),
+
+                        // reszta przycisków pod spodem
+                        FilledButton.icon(
+                          onPressed: () =>
+                              Get.toNamed('/shop', preventDuplicates: false),
+                          icon: const Icon(Icons.store),
+                          label: const Text('Shop'),
+                        ),
+                        SizedBox(height: space),
+
+                        FilledButton.icon(
+                          onPressed: () => Get.toNamed('/leaderboard',
+                              preventDuplicates: false),
+                          icon: const Icon(Icons.leaderboard),
+                          label: const Text('Rankings'),
+                        ),
+                        SizedBox(height: space),
+
+                        FilledButton.icon(
+                          onPressed: () => Get.toNamed(
+                            loggedIn ? '/profile/' : '/auth/',
+                            preventDuplicates: false,
+                          ),
+                          icon: const Icon(Icons.person),
+                          label: Text(loggedIn ? 'Profile' : 'Sign In'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text(
-                        'Poker AI',
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Experience next‑gen poker gaming powered by AI',
-                        style: theme.textTheme.titleMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      Hero(
-                        tag: 'dices-image',
-                        child: Image.asset(
-                          'assets/images/banner.png',
-                          height: 400,
-                          fit: BoxFit.fitWidth,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            Get.toNamed('/games', preventDuplicates: false),
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('Play Now'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 14,
-                          ),
-                          textStyle: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      Expanded(
+                        child: isWide
+                            ? Row(
+                                children: [
+                                  Expanded(flex: 7, child: carouselCard()),
+                                  const SizedBox(width: 16),
+                                  Expanded(flex: 4, child: actionsCard()),
+                                ],
+                              )
+                            : Column(
+                                children: [
+                                  Expanded(flex: 6, child: carouselCard()),
+                                  const SizedBox(height: 16),
+                                  Expanded(flex: 4, child: actionsCard()),
+                                ],
+                              ),
                       ),
                     ],
                   ),
                 ),
-
-                // ── Featured Games Carousel ───────────────────────────────
-                CarouselSlider(
-                  items: const [
-                    _GameBanner(
-                      image: 'assets/images/fun.png',
-                      title: 'Play with friends!',
-                    ),
-                    _GameBanner(
-                      image: 'assets/images/ai.png',
-                      title: 'Face various AI models!',
-                    ),
-                    _GameBanner(
-                      image: 'assets/images/friends.png',
-                      title: 'Have fun!',
-                    ),
-                  ],
-                  options: CarouselOptions(
-                    height: 480,
-                    autoPlay: true,
-                    autoPlayInterval: const Duration(seconds: 3),
-                    enlargeCenterPage: true,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // ── Quick Links ────────────────────────────────────────────
-                PageRow(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _QuickLink(
-                      icon: Icons.store,
-                      label: 'Shop',
-                      route: '/shop',
-                    ),
-                    _QuickLink(
-                      icon: Icons.leaderboard,
-                      label: 'Rankings',
-                      route: '/leaderboard',
-                    ),
-                    if (!loggedIn)
-                      _QuickLink(
-                        icon: Icons.person,
-                        label: 'Sign In',
-                        route: '/auth/',
-                      )
-                    else
-                      _QuickLink(
-                        icon: Icons.person,
-                        label: 'Profile',
-                        route: '/profile/',
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -279,32 +287,6 @@ class _GameBanner extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-//  Quick Link Button Widget
-// ────────────────────────────────────────────────────────────────────────────
-class _QuickLink extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String route;
-
-  const _QuickLink({
-    required this.icon,
-    required this.label,
-    required this.route,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: FilledButton.icon(
-        onPressed: () => Get.toNamed(route, preventDuplicates: false),
-        icon: Icon(icon),
-        label: Text(label, textAlign: TextAlign.center),
       ),
     );
   }

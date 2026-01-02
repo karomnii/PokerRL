@@ -19,18 +19,40 @@ class ProfilePageController extends GetxController {
   final RxString activeDeckName = ''.obs;
   final RxString activeAvatarName = ''.obs;
 
+  Timer? _refreshTimer;
+  bool _isLoading = false;
+
   @override
   void onInit() {
     super.onInit();
     if (AuthService.to.userId != null) {
       loadData();
+
+      _refreshTimer = Timer.periodic(
+        const Duration(seconds: 5),
+        (_) => loadData(),
+      );
     }
   }
 
+  @override
+  void onClose() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+    super.onClose();
+  }
+
   void loadData() async {
-    await loadProfile();
-    await getInventoryItems();
-    AuthService.to.refreshUser();
+    if (_isLoading) return;
+
+    _isLoading = true;
+    try {
+      await loadProfile();
+      await getInventoryItems();
+      AuthService.to.refreshUser();
+    } finally {
+      _isLoading = false;
+    }
   }
 
   void switchTab(int index) {
